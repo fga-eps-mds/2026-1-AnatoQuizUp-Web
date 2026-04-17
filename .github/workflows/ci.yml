@@ -1,0 +1,106 @@
+name: CI - Frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint, Build, Test e SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar ESLint
+        run: npm run lint
+
+      - name: Build do projeto
+        run: npm run build
+
+      - name: Rodar testes com cobertura
+        run: npm test -- --coverage --watchAll=false --passWithNoTests
+
+      - name: Verificar cobertura mínima (85%)
+        run: |
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "::warning::coverage-summary.json não encontrado. Verifique configuração do Jest (coverageReporters precisa incluir 'json-summary')."
+            exit 0
+          fi
+          COVERAGE=$(node -p "Math.round(require('./coverage/coverage-summary.json').total.lines.pct)")
+          echo "Cobertura de linhas: $COVERAGE%"
+          if [ "$COVERAGE" -lt 85 ]; then
+            echo "::error::Cobertura ($COVERAGE%) abaixo do mínimo de 85%."
+            exit 1
+          fi
+          echo "::notice::Cobertura ok: $COVERAGE%"
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Aguardar SonarCloud Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Exportar metrics.json do SonarCloud
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PROJECT_KEY: fga-eps-mds_2026-1-AnatoQuizUp-Front
+        run: |
+          mkdir -p metrics
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/measures/component?component=$PROJECT_KEY&metricKeys=coverage,code_smells,bugs,vulnerabilities,duplicated_lines_density,sqale_index,ncloc,reliability_rating,security_rating,sqale_rating" \
+            -o metrics/raw.json
+          echo "{\"timestamp\":\"$TIMESTAMP\",\"commit\":\"${{ github.sha }}\",\"data\":$(cat metrics/raw.json)}" > metrics.json
+          cat metrics.json
+
+      - name: Upload metrics.json (artefato)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-${{ github.sha }}
+          path: metrics.json
+          retention-days: 90
+
+      - name: Commit metrics.json no repo de documentação
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          DOC_PUSH_TOKEN: ${{ secrets.DOC_PUSH_TOKEN }}
+        run: |
+          if [ -z "$DOC_PUSH_TOKEN" ]; then
+            echo "::warning::Secret DOC_PUSH_TOKEN não configurada — pulando commit no repo de doc."
+            exit 0
+          fi
+          git clone --depth 1 https://x-access-token:$DOC_PUSH_TOKEN@github.com/fga-eps-mds/2026-1-AnatoQuizUp-Doc.git doc-repo
+          cd doc-repo
+          mkdir -p metrics/frontend
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          cp ../metrics.json "metrics/frontend/${TIMESTAMP}.json"
+          # mantém também um "latest"
+          cp ../metrics.json metrics/frontend/latest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add metrics/
+          git commit -m "chore(metrics): atualiza métricas frontend ${TIMESTAMP} [skip ci]" || echo "Sem mudanças para commitar."
+          git push
