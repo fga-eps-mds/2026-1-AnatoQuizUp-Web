@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "preview": "vite preview",
+    "test": "jest",
+    "test:ci": "jest --coverage --runInBand"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -26,8 +28,21 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "jest": "^30.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4"
+  },
+  "jest": {
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "json-summary"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/**/index.{js,ts}"
+    ]
   }
 }
