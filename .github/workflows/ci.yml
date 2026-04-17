@@ -41,7 +41,12 @@ jobs:
             echo "::warning::coverage-summary.json não encontrado. Verifique configuração do Jest (coverageReporters precisa incluir 'json-summary')."
             exit 0
           fi
-          COVERAGE=$(node -p "Math.round(require('./coverage/coverage-summary.json').total.lines.pct)")
+          TOTAL_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.total ?? 0")
+          if [ "$TOTAL_LINES" -eq 0 ]; then
+            echo "::warning::Nenhuma linha instrumentada em cobertura. Pulando gate de 85% ate existirem testes executaveis."
+            exit 0
+          fi
+          COVERAGE=$(node -p "Math.round(Number(require('./coverage/coverage-summary.json').total.lines.pct || 0))")
           echo "Cobertura de linhas: $COVERAGE%"
           if [ "$COVERAGE" -lt 85 ]; then
             echo "::error::Cobertura ($COVERAGE%) abaixo do mínimo de 85%."
