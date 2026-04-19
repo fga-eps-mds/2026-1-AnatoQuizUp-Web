@@ -1,20 +1,23 @@
-import { create } from 'zustand';
+export type Role = 'STUDENT' | 'PROFESSOR' | 'ADMIN';
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
+export type AuthProviderType = 'LOCAL' | 'MICROSOFT';
 
 export interface User {
   id: string;
   name: string;
+  email: string;
+  role: Role;
+  status: UserStatus;
+  authProvider: AuthProviderType;
+  microsoftId?: string | null;
+  institution?: string | null;
+  course?: string | null;
+  period?: number | null;
 }
 
-interface UserModel {
-  data: User | null;
-  isAuth: boolean;
-  login: (userData: User) => void;
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
-
-export const useUserModel = create<UserModel>((set) => ({
-  data: null,
-  isAuth: false,
-  login: (userData) => set({ data: userData, isAuth: true }),
-  logout: () => set({ data: null, isAuth: false }),
-}));
