@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
+import { Button } from '../../../shared/ui/button/Button';
+import { Input } from '../../../shared/ui/input/Input';
 import { loginWithCredencials } from '../model/authService';
 
 export const LoginForm = () => {

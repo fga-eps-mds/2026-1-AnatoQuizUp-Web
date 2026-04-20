@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { Button } from '../../../shared/ui/Button';
+import { Button } from '../../../shared/ui/button/Button';
 
 export const HomePage = () => {
   const { user, isAuthenticated, logout } = useAuth();
