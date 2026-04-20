@@ -25,5 +25,9 @@ export const loginWithCredencials = async(email:string, password:string) : Promi
     }
   }
 
+  if (email === 'desativado@unb.br') {
+    throw { status: 403, message: 'Conta desativada. Entre em contato com o administrador.' };
+  }
+
   throw { status: 401, message: 'Email ou senha inválidos' };
 }

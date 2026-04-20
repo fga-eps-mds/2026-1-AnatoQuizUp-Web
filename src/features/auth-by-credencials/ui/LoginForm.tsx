@@ -25,8 +25,15 @@ export const LoginForm = () => {
       login(response.token, response.user);
       navigate('/home');
     } catch (err) {
-      const error = err as Error;
-      setErrorMsg(error.message || 'Erro ao entrar.');
+     const error = err as { status?: number };
+
+      if (error.status === 401) {
+        setErrorMsg('Email ou senha inválidos');
+      } else if (error.status === 403) {
+        setErrorMsg('Conta desativada. Entre em contato com o administrador.');
+      } else {
+        setErrorMsg('Ocorreu um erro inesperado.');
+      }
     } finally {
       setIsLoading(false);
     }
