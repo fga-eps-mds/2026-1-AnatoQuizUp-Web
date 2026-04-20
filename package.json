@@ -21,6 +21,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -30,15 +33,32 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4"
   },
   "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/src/setupTests.ts"],
+    "transform": {
+      "^.+\\.tsx?$": ["ts-jest", { 
+        "tsconfig": "tsconfig.app.json",
+        "isolatedModules": true,
+        "diagnostics": false
+      }]
+    },
     "coverageReporters": [
       "text",
       "lcov",
       "json-summary"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "src/main.tsx",
+      "src/app/App.tsx"
     ],
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
