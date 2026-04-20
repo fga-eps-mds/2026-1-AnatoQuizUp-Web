@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthProvider';
-import type { User } from '../../entities/user/userStore';
+import type { User } from '../../entities/user/model/types';
 
 const MOCK_USER: User = {
   id: '123e4567-e89b-12d3-a456-426614174000',

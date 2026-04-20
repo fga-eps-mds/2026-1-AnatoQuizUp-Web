@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState} from 'react';
 import type { ReactNode } from 'react';
-import type { User, AuthState } from '../../entities/user/userStore.ts';
+import type { User, AuthState } from '../../entities/user/model/types.ts';
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
