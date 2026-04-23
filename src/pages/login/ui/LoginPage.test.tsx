@@ -1,26 +1,20 @@
-import { render, screen } from '@testing-library/react';
-import { LoginPage } from './LoginPage';
-import { BrowserRouter } from 'react-router-dom'; 
-
 jest.mock('../../../features/auth-by-credencials/ui/LoginForm', () => ({
-  LoginForm: () => <div data-testid="mock-login-form">Mock do Formulário</div>
+  LoginForm: () => <form aria-label="login form" />,
 }));
 
-jest.mock('../../../shared/assets/image/logo.png', () => 'imagem-falsa');
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { LoginPage } from './LoginPage';
 
-describe('Pages/LoginPage', () => {
-  it('deve renderizar o layout da página com mascote e formulário', () => {
-    
+describe('LoginPage', () => {
+  it('renders the mascot and login form', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter>
         <LoginPage />
-      </BrowserRouter>
+      </MemoryRouter>,
     );
 
-    const imageElement = screen.getByAltText(/mascote cérebro/i);
-    expect(imageElement).toBeInTheDocument();
-
-    const formElement = screen.getByTestId('mock-login-form');
-    expect(formElement).toBeInTheDocument();
+    expect(screen.getByAltText(/Mascote Cérebro/i)).toBeInTheDocument();
+    expect(screen.getByRole('form', { name: /login form/i })).toBeInTheDocument();
   });
 });

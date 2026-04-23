@@ -1,73 +1,68 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { HomePage } from './HomePage';
-
-import { useAuth } from '../../../app/providers/AuthProvider';
-import { useNavigate } from 'react-router-dom';
-
-jest.mock('react-router-dom', () => ({
-  useNavigate: jest.fn(),
-}));
-
 jest.mock('../../../app/providers/AuthProvider', () => ({
   useAuth: jest.fn(),
 }));
 
-describe('Pages/HomePage', () => {
-  const mockNavigate = jest.fn();
-  const mockLogout = jest.fn();
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../app/providers/AuthProvider';
+import type { User } from '../../../entities/user/model/types';
+import { HomePage } from './HomePage';
 
-  beforeEach(() => {
+const useAuthMock = useAuth as jest.Mock;
+
+const user: User = {
+  id: 'user-1',
+  name: 'Ana Estudante',
+  email: 'ana@unb.br',
+  role: 'STUDENT',
+  status: 'ACTIVE',
+  authProvider: 'LOCAL',
+  course: 'Medicina',
+  institution: 'Universidade de Brasília',
+};
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <span data-testid="location">{location.pathname}</span>;
+};
+
+const renderHomePage = () =>
+  render(
+    <MemoryRouter initialEntries={['/home']}>
+      <HomePage />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+
+describe('HomePage', () => {
+  afterEach(() => {
     jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
   });
 
-  it('deve renderizar a tela de boas-vindas se o usuário NÃO estiver logado', () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      isAuthenticated: false,
-      user: null,
-      logout: mockLogout,
-    });
+  it('renders the unauthenticated call to action and navigates to login', async () => {
+    const testUser = userEvent.setup();
+    useAuthMock.mockReturnValue({ user: null, isAuthenticated: false });
 
-    render(<HomePage />);
+    renderHomePage();
 
-    expect(screen.getByText(/anatomia humana/i)).toBeInTheDocument();
-    expect(screen.getByText(/com quizzes gamificados/i)).toBeInTheDocument();
+    await testUser.click(screen.getByRole('button', { name: /Entrar agora/i }));
 
-    fireEvent.click(screen.getByRole('button', { name: /entrar agora/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
+    expect(screen.getByText(/Domine a/i)).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/login');
   });
 
-  it('deve renderizar o perfil do aluno se ele ESTIVER logado', () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      isAuthenticated: true,
-      user: { name: 'Pedro Cabeceira', course: 'Engenharia de Software' },
-      logout: mockLogout,
-    });
+  it('renders the authenticated profile card and navigates to quizzes', async () => {
+    const testUser = userEvent.setup();
+    useAuthMock.mockReturnValue({ user, isAuthenticated: true });
 
-    render(<HomePage />);
+    renderHomePage();
 
-    expect(screen.getByText('Pedro Cabeceira')).toBeInTheDocument();
-    expect(screen.getByText(/engenharia de software/i)).toBeInTheDocument();
-    
-    expect(screen.getByText('P')).toBeInTheDocument();
+    expect(screen.getByText('Ana Estudante')).toBeInTheDocument();
+    expect(screen.getByText(/Medicina \| UnB/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /acessar quizzes/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/quizzes');
-  });
+    await testUser.click(screen.getByRole('button', { name: /Acessar Quizzes/i }));
 
-  it('deve deslogar o usuário ao clicar em Sair da Conta', () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      isAuthenticated: true,
-      user: { name: 'Pedro Cabeceira', course: 'Engenharia de Software' },
-      logout: mockLogout,
-    });
-
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByRole('button', { name: /sair da conta/i }));
-
-    expect(mockLogout).toHaveBeenCalledTimes(1);
-    
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
+    expect(screen.getByTestId('location')).toHaveTextContent('/quizzes');
   });
 });

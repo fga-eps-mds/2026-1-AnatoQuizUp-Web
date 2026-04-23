@@ -1,57 +1,121 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { LoginForm } from './LoginForm';
-import { BrowserRouter } from 'react-router-dom';
-import { loginWithCredencials } from '../model/authService';
-
-const mockLogin = jest.fn();
 jest.mock('../../../app/providers/AuthProvider', () => ({
-  useAuth: () => ({
-    login: mockLogin,
-  }),
+  useAuth: jest.fn(),
 }));
 
 jest.mock('../model/authService', () => ({
-  loginWithCredencials: jest.fn().mockResolvedValue({
-    token: 'fake-token',
-    user: { name: 'Pedro', course: 'Engenharia de Software' }
-  }),
+  loginWithCredencials: jest.fn(),
 }));
 
-describe('Features/LoginForm', () => {
-  it('deve mostrar erro se os campos estiverem vazios ao submeter', async () => {
-    render(<LoginForm />, { wrapper: BrowserRouter });
-    
-    fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
-    
-    expect(await screen.findByText(/campos obrigatórios/i)).toBeInTheDocument();
+jest.mock('../../../shared/config/env', () => ({
+  API_BASE_URL: 'https://api.test',
+}));
+
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../app/providers/AuthProvider';
+import type { User } from '../../../entities/user/model/types';
+import { loginWithCredencials } from '../model/authService';
+import { LoginForm } from './LoginForm';
+
+const useAuthMock = useAuth as jest.Mock;
+const loginWithCredencialsMock = loginWithCredencials as jest.Mock;
+
+const user: User = {
+  id: 'user-1',
+  name: 'Ana Estudante',
+  email: 'ana@unb.br',
+  role: 'STUDENT',
+  status: 'ACTIVE',
+  authProvider: 'LOCAL',
+};
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <span data-testid="location">{location.pathname}</span>;
+};
+
+const renderLoginForm = () => {
+  const login = jest.fn();
+  useAuthMock.mockReturnValue({ login });
+
+  const view = render(
+    <MemoryRouter initialEntries={['/login']}>
+      <LoginForm />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+
+  const passwordInput = view.container.querySelector('input[type="password"]') as HTMLInputElement;
+
+  return { ...view, login, passwordInput };
+};
+
+describe('LoginForm', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('deve realizar o fluxo de login com sucesso', async () => {
-    render(<LoginForm />, { wrapper: BrowserRouter });
+  it('shows a validation error when required fields are empty', async () => {
+    const testUser = userEvent.setup();
 
-    fireEvent.change(screen.getByPlaceholderText('Aluno@UnB'), { target: { value: 'aluno@unb.br' } });
-    fireEvent.change(screen.getByPlaceholderText('••••••••••••'), { target: { value: '123456' } });
+    renderLoginForm();
 
-    fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
 
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('fake-token', expect.any(Object));
+    expect(screen.getByText(/Campos obrigatórios/i)).toBeInTheDocument();
+    expect(loginWithCredencialsMock).not.toHaveBeenCalled();
+  });
+
+  it('authenticates with credentials and redirects to home', async () => {
+    const testUser = userEvent.setup();
+    loginWithCredencialsMock.mockResolvedValueOnce({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user,
     });
+
+    const { login, passwordInput } = renderLoginForm();
+
+    await testUser.type(screen.getByPlaceholderText('Aluno@UnB'), 'ana@unb.br');
+    await testUser.type(passwordInput, 'secret');
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
+
+    expect(loginWithCredencialsMock).toHaveBeenCalledWith('ana@unb.br', 'secret');
+    expect(login).toHaveBeenCalledWith('access-token', 'refresh-token', user);
+    expect(screen.getByTestId('location')).toHaveTextContent('/home');
   });
 
-  it('deve exibir mensagem de erro se a API falhar', async () => {
-    (loginWithCredencials as jest.Mock).mockRejectedValueOnce(new Error('Credenciais inválidas'));
+  it('shows the service error when authentication fails', async () => {
+    const testUser = userEvent.setup();
+    loginWithCredencialsMock.mockRejectedValueOnce(new Error('Email ou senha inválidos'));
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    const { passwordInput } = renderLoginForm();
 
-    fireEvent.change(screen.getByPlaceholderText('Aluno@UnB'), { target: { value: 'errado@unb.br' } });
-    fireEvent.change(screen.getByPlaceholderText('••••••••••••'), { target: { value: '000000' } });
-    fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+    await testUser.type(screen.getByPlaceholderText('Aluno@UnB'), 'ana@unb.br');
+    await testUser.type(passwordInput, 'wrong');
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
 
-    expect(await screen.findByText(/ocorreu um erro inesperado/i)).toBeInTheDocument();
+    expect(await screen.findByText('Email ou senha inválidos')).toBeInTheDocument();
+  });
+
+  it('navigates to the admin login route', async () => {
+    const testUser = userEvent.setup();
+
+    renderLoginForm();
+
+    await testUser.click(screen.getByRole('button', { name: /Entrar como Administrador/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/admin/login');
+  });
+
+  it('starts the Microsoft login flow', async () => {
+    const testUser = userEvent.setup();
+
+    renderLoginForm();
+
+    await testUser.click(screen.getByRole('button', { name: /Entrar como Professor/i }));
+
+    expect(screen.getByRole('button', { name: /Entrar como Professor/i })).toBeInTheDocument();
   });
 });

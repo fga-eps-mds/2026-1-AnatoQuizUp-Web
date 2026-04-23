@@ -4,7 +4,7 @@ import { Eye, Home, LogOut, Menu, Users, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import logo from '../../../shared/assets/image/logo.png';
-import type { Role } from '../../../entities/user/userStore';
+import type { Role } from '../../../entities/user/model/types';
 
 type NavItem = {
   key: string;
@@ -42,7 +42,6 @@ export const Header = () => {
   };
 
   const handleToggleStudentView = () => {
-    // TODO US07: integrar com estado global de visão
     setIsViewingAsStudent((prev) => !prev);
   };
 

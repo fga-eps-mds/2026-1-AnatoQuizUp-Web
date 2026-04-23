@@ -1,11 +1,9 @@
 import axios from 'axios';
-import { API_CONFIG } from './config';
+import { API_BASE_URL } from '../config/env';
 
 export const httpClient = axios.create({
-  baseURL: API_CONFIG.baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
 });
 
 httpClient.interceptors.request.use((config) => {

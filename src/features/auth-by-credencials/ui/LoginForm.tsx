@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { API_CONFIG } from '../../../shared/api/config';
+import { API_BASE_URL } from '../../../shared/config/env';
 import { Button } from '../../../shared/ui/button/Button';
 import { Input } from '../../../shared/ui/input/Input';
 import { loginWithCredencials } from '../model/authService';
@@ -15,8 +15,7 @@ export const LoginForm = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setErrorMsg('');
     if (!email || !password) return setErrorMsg('Campos obrigatórios.');
     setIsLoading(true);
@@ -34,11 +33,11 @@ export const LoginForm = () => {
   };
 
   const handleMicrosoftLogin = () => {
-    window.location.href = `${API_CONFIG.baseURL}/api/auth/microsoft`;
+    globalThis.location.href = `${API_BASE_URL}/api/auth/microsoft`;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full max-w-[340px]">
+    <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }} className="flex flex-col gap-6 w-full max-w-[340px]">
       <Input
         label="Email"
         type="email"

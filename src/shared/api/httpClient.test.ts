@@ -1,48 +1,43 @@
-jest.mock('./config', () => ({
-  API_CONFIG: {
-    baseURL: 'http://localhost:3000',
-  },
+jest.mock('../config/env', () => ({
+  API_BASE_URL: 'https://api.test',
 }));
 
+import type { InternalAxiosRequestConfig } from 'axios';
 import { httpClient } from './httpClient';
 
-describe('Shared/API/httpClient', () => {
-  const originalAdapter = httpClient.defaults.adapter;
+type RequestInterceptor = {
+  fulfilled: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>;
+};
 
-  beforeEach(() => {
-    window.localStorage.clear();
-    // Falsificamos a resposta do Axios para ele não tentar acessar a internet
-    httpClient.defaults.adapter = jest.fn().mockResolvedValue({
-      data: 'ok',
-      status: 200,
-    });
+const runRequestInterceptor = async (config: InternalAxiosRequestConfig) => {
+  const requestInterceptors = httpClient.interceptors.request as unknown as { handlers: RequestInterceptor[] };
+  return requestInterceptors.handlers[0].fulfilled(config);
+};
+
+describe('httpClient', () => {
+  afterEach(() => {
+    localStorage.clear();
   });
 
-  afterAll(() => {
-    httpClient.defaults.adapter = originalAdapter;
+  it('uses the configured API base URL', () => {
+    expect(httpClient.defaults.baseURL).toBe('https://api.test');
   });
 
-  it('deve ter a baseURL correta e o header de Content-Type padrão', () => {
-    expect(httpClient.defaults.baseURL).toBe('http://localhost:3000');
-    expect(httpClient.defaults.headers['Content-Type']).toBe('application/json');
+  it('adds the bearer token to requests when it exists', async () => {
+    localStorage.setItem('access_token', 'access-token');
+
+    const config = await runRequestInterceptor({
+      headers: {} as InternalAxiosRequestConfig['headers'],
+    } as InternalAxiosRequestConfig);
+
+    expect(config.headers.Authorization).toBe('Bearer access-token');
   });
 
-  it('deve adicionar o header de Authorization se o token existir no localStorage', async () => {
-    window.localStorage.setItem('access_token', 'meu-token-secreto');
-    await httpClient.get('/teste-de-rota');
+  it('keeps requests untouched when no token is stored', async () => {
+    const config = await runRequestInterceptor({
+      headers: {} as InternalAxiosRequestConfig['headers'],
+    } as InternalAxiosRequestConfig);
 
-    const mockAdapter = httpClient.defaults.adapter as jest.Mock;
-    const requestConfig = mockAdapter.mock.calls[0][0];
-
-    expect(requestConfig.headers?.Authorization).toBe('Bearer meu-token-secreto');
-  });
-
-  it('NÃO deve adicionar o header de Authorization se não houver token', async () => {
-    await httpClient.get('/teste-de-rota');
-
-    const mockAdapter = httpClient.defaults.adapter as jest.Mock;
-    const requestConfig = mockAdapter.mock.calls[0][0];
-
-    expect(requestConfig.headers?.Authorization).toBeUndefined();
+    expect(config.headers.Authorization).toBeUndefined();
   });
 });

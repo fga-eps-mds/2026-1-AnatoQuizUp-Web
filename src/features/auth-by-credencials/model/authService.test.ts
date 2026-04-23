@@ -1,38 +1,107 @@
+jest.mock('../../../shared/api/httpClient', () => ({
+  httpClient: {
+    post: jest.fn(),
+  },
+}));
+
+import { httpClient } from '../../../shared/api/httpClient';
 import { loginWithCredencials } from './authService';
 
-describe('Features/authService', () => {
-  
-  it('deve retornar o token e o usuário em caso de sucesso', async () => {
-    const response = await loginWithCredencials('aluno@unb.br', '123456');
+const postMock = httpClient.post as jest.Mock;
 
-    expect(response).toHaveProperty('token', 'token');
-    expect(response.user).toHaveProperty('name', 'João José');
-    expect(response.user).toHaveProperty('role', 'STUDENT');
+describe('loginWithCredencials', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('deve lançar um erro 403 se o usuário estiver desativado', async () => {
-    await expect(loginWithCredencials('desativado@unb.br', 'qualquersenha'))
-      .rejects
-      .toEqual({ 
-        status: 403, 
-        message: 'Conta desativada. Entre em contato com o administrador.' 
-      });
+  it('returns the mock student without calling the API', async () => {
+    const result = await loginWithCredencials('aluno@unb.br', 'any-password');
+
+    expect(postMock).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+      user: {
+        email: 'aluno@unb.br',
+        role: 'STUDENT',
+        status: 'ACTIVE',
+        authProvider: 'LOCAL',
+      },
+    });
   });
 
-  it('deve lançar um erro 401 para email ou senha inválidos', async () => {
-    await expect(loginWithCredencials('errado@unb.br', '000000'))
-      .rejects
-      .toEqual({ 
-        status: 401, 
-        message: 'Email ou senha inválidos' 
-      });
-
-    await expect(loginWithCredencials('aluno@unb.br', 'senhaerrada'))
-      .rejects
-      .toEqual({ 
-        status: 401, 
-        message: 'Email ou senha inválidos' 
-      });
+  it('throws the disabled account message before calling the API', async () => {
+    await expect(loginWithCredencials('desativado@unb.br', 'secret')).rejects.toThrow(
+      'Conta desativada. Entre em contato com o administrador.',
+    );
+    expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('maps a successful backend login response to the auth user shape', async () => {
+    postMock.mockResolvedValueOnce({
+      data: {
+        accessToken: 'api-access',
+        refreshToken: 'api-refresh',
+        user: {
+          id: 'user-1',
+          name: 'Professor UnB',
+          email: 'professor@unb.br',
+          role: 'PROFESSOR',
+        },
+      },
+    });
+
+    const result = await loginWithCredencials('professor@unb.br', 'secret');
+
+    expect(postMock).toHaveBeenCalledWith('/api/auth/login', {
+      email: 'professor@unb.br',
+      password: 'secret',
+    });
+    expect(result).toEqual({
+      accessToken: 'api-access',
+      refreshToken: 'api-refresh',
+      user: {
+        id: 'user-1',
+        name: 'Professor UnB',
+        email: 'professor@unb.br',
+        role: 'PROFESSOR',
+        status: 'ACTIVE',
+        authProvider: 'LOCAL',
+      },
+    });
+  });
+
+  it('throws a friendly message when the backend is unreachable', async () => {
+    postMock.mockRejectedValueOnce({ isAxiosError: true });
+
+    await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
+      'Não foi possível conectar ao servidor. Tente novamente.',
+    );
+  });
+
+  it('throws the backend message for invalid credentials', async () => {
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { message: 'Credenciais inválidas' },
+      },
+    });
+
+    await expect(loginWithCredencials('professor@unb.br', 'wrong')).rejects.toThrow('Credenciais inválidas');
+  });
+
+  it('throws a generic message for unexpected errors', async () => {
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {},
+      },
+    });
+
+    await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
+      'Erro ao entrar. Tente novamente.',
+    );
+  });
 });
