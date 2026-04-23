@@ -3,7 +3,7 @@ import { useAuth } from '../../../app/providers/AuthProvider';
 import { Button } from '../../../shared/ui/button/Button';
 
 export const HomePage = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -41,13 +41,6 @@ export const HomePage = () => {
               <Button onClick={() => navigate('/quizzes')}>
                 Acessar Quizzes
               </Button>
-              
-              <button 
-                onClick={() => { logout(); navigate('/login'); }}
-                className="text-[#fffffe]/30 hover:text-red-400 text-[10px] font-bold transition-colors uppercase tracking-widest mt-2"
-              >
-                Sair da Conta
-              </button>
             </div>
           </div>
         ) : (
