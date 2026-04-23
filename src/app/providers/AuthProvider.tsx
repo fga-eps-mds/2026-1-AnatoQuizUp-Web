@@ -9,13 +9,15 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export const AuthProvider = ({children}:{children: ReactNode}) => {
     const [user, setUser] = useState<User | null>(null);
 
-    const login = (token: string, userData: User)=>{
-        localStorage.setItem('access_token', token);
+    const login = (accessToken: string, refreshToken: string, userData: User) => {
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
         setUser(userData);
     }
 
-    const logout = () =>{
-        localStorage.removeItem('acesse_token');
+    const logout = () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         setUser(null);
     }
 

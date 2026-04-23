@@ -18,6 +18,6 @@ export interface User {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  login: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
 }
