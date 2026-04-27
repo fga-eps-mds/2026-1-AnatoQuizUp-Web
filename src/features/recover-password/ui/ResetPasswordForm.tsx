@@ -9,6 +9,18 @@ type FieldErrors = {
   confirmPassword?: string;
 };
 
+type PasswordFieldsProps = {
+  confirmPassword: string;
+  fieldErrors: FieldErrors;
+  isLoading: boolean;
+  password: string;
+  onConfirmPasswordChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+};
+
+const INPUT_BASE_CLASS =
+  'h-10 w-full rounded-[7px] border bg-white px-3.5 text-sm text-[#0A1128] outline-none transition-colors placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] ';
+
 const validate = (password: string, confirmPassword: string): FieldErrors => {
   const errors: FieldErrors = {};
 
@@ -25,6 +37,78 @@ const validate = (password: string, confirmPassword: string): FieldErrors => {
   }
 
   return errors;
+};
+
+const getPasswordHintClass = (hasError: boolean) => {
+  if (hasError) {
+    return 'text-xs font-medium text-red-500';
+  }
+
+  return 'text-xs font-medium text-[#0A1128]/45';
+};
+
+const getErrorMessage = (err: unknown) => {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  return 'Link expirado ou invalido.';
+};
+
+const PasswordFields = ({
+  confirmPassword,
+  fieldErrors,
+  isLoading,
+  password,
+  onConfirmPasswordChange,
+  onPasswordChange,
+}: PasswordFieldsProps) => {
+  const passwordHasError = Boolean(fieldErrors.password);
+  const confirmPasswordHasError = Boolean(fieldErrors.confirmPassword);
+
+  return (
+    <>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-xs font-medium text-[#0A1128]">
+          Nova senha
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          aria-invalid={passwordHasError}
+          className={`${INPUT_BASE_CLASS}${passwordHasError ? 'border-red-400' : 'border-[#14D5C2]'}`}
+          onChange={(event) => onPasswordChange(event.target.value)}
+        />
+        <span className={getPasswordHintClass(passwordHasError)}>
+          {fieldErrors.password ?? 'Minimo de 8 caracteres.'}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="confirmPassword" className="text-xs font-medium text-[#0A1128]">
+          Confirme nova senha
+        </label>
+        <input
+          id="confirmPassword"
+          type="password"
+          value={confirmPassword}
+          aria-invalid={confirmPasswordHasError}
+          className={`${INPUT_BASE_CLASS}${confirmPasswordHasError ? 'border-red-400' : 'border-[#D7DEE8]'}`}
+          onChange={(event) => onConfirmPasswordChange(event.target.value)}
+        />
+        {fieldErrors.confirmPassword ? (
+          <span className="text-xs font-medium text-red-500">
+            {fieldErrors.confirmPassword}
+          </span>
+        ) : null}
+      </div>
+
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Redefinindo...' : 'Redefinir senha'}
+      </Button>
+    </>
+  );
 };
 
 export const ResetPasswordForm = () => {
@@ -59,11 +143,16 @@ export const ResetPasswordForm = () => {
       const message = await resetPassword(token, password);
       setSuccessMessage(message);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Link expirado ou invalido.');
+      setFormError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
+
+  const feedback = successMessage || formError;
+  const feedbackVariant = successMessage ? 'success' : 'error';
+  const feedbackLink = successMessage ? '/login' : '/esqueci-senha';
+  const feedbackLinkLabel = successMessage ? 'Ir para o login ->' : 'Recuperar senha ->';
 
   return (
     <form
@@ -81,74 +170,22 @@ export const ResetPasswordForm = () => {
         </p>
       </div>
 
-      {successMessage ? (
-        <FeedbackMessage variant="success">
-          {successMessage}{' '}
-          <Link to="/login" className="underline underline-offset-2">
-            Ir para o login -&gt;
-          </Link>
-        </FeedbackMessage>
-      ) : formError ? (
-        <FeedbackMessage variant="error">
-          {formError}{' '}
-          <Link to="/esqueci-senha" className="underline underline-offset-2">
-            Recuperar senha -&gt;
+      {feedback ? (
+        <FeedbackMessage variant={feedbackVariant}>
+          {feedback}{' '}
+          <Link to={feedbackLink} className="underline underline-offset-2">
+            {feedbackLinkLabel}
           </Link>
         </FeedbackMessage>
       ) : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-xs font-medium text-[#0A1128]">
-              Nova senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              aria-invalid={!!fieldErrors.password}
-              className={
-                'h-10 w-full rounded-[7px] border bg-white px-3.5 text-sm text-[#0A1128] outline-none transition-colors placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] ' +
-                (fieldErrors.password ? 'border-red-400' : 'border-[#14D5C2]')
-              }
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            <span
-              className={
-                fieldErrors.password
-                  ? 'text-xs font-medium text-red-500'
-                  : 'text-xs font-medium text-[#0A1128]/45'
-              }
-            >
-              {fieldErrors.password ?? 'Minimo de 8 caracteres.'}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="confirmPassword" className="text-xs font-medium text-[#0A1128]">
-              Confirme nova senha
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              aria-invalid={!!fieldErrors.confirmPassword}
-              className={
-                'h-10 w-full rounded-[7px] border bg-white px-3.5 text-sm text-[#0A1128] outline-none transition-colors placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] ' +
-                (fieldErrors.confirmPassword ? 'border-red-400' : 'border-[#D7DEE8]')
-              }
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-            {fieldErrors.confirmPassword ? (
-              <span className="text-xs font-medium text-red-500">
-                {fieldErrors.confirmPassword}
-              </span>
-            ) : null}
-          </div>
-
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Redefinindo...' : 'Redefinir senha'}
-          </Button>
-        </>
+        <PasswordFields
+          confirmPassword={confirmPassword}
+          fieldErrors={fieldErrors}
+          isLoading={isLoading}
+          password={password}
+          onConfirmPasswordChange={setConfirmPassword}
+          onPasswordChange={setPassword}
+        />
       )}
     </form>
   );

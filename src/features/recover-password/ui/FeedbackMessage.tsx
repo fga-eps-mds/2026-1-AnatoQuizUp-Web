@@ -11,8 +11,7 @@ export const FeedbackMessage = ({ children, variant }: FeedbackMessageProps) => 
   const Icon = isSuccess ? Check : TriangleAlert;
 
   return (
-    <div
-      role="status"
+    <output
       className={
         'flex w-full items-start gap-2 rounded-[7px] border px-3 py-2 text-xs font-bold leading-relaxed ' +
         (isSuccess
@@ -22,6 +21,6 @@ export const FeedbackMessage = ({ children, variant }: FeedbackMessageProps) => 
     >
       <Icon size={14} className="mt-0.5 shrink-0" />
       <div>{children}</div>
-    </div>
+    </output>
   );
 };
