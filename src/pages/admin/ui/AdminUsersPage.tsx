@@ -1,21 +1,9 @@
 import { useState } from "react";
 import { Search, ChevronRight, Check, X, User as UserIcon } from 'lucide-react';
 import { UserDetailsDrawer } from "./UserDetailsDrawer";
-import type { Role, UserStatus } from '../../../entities/user/model/types';
+import type { AdminUser, UserStatus } from '../../../entities/user/model/types';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  status: UserStatus;
-  createdAt: string;
-  codigo: string;
-  department: string;
-  course: string;
-}
-
-const mockUsers: User[] = [
+const mockUsers: AdminUser[] = [
   {
     id: "1",
     name: "Ana Beatriz Silva",
@@ -26,6 +14,7 @@ const mockUsers: User[] = [
     codigo: "123456",
     department: "Biologia",
     course: "Fisioterapia",
+    authProvider: "LOCAL",
   },
   {
     id: "2",
@@ -37,6 +26,7 @@ const mockUsers: User[] = [
     codigo: "654321",
     department: "Anatomia",
     course: "Medicina",
+    authProvider: "LOCAL",
   },
   {
     id: "3",
@@ -48,6 +38,7 @@ const mockUsers: User[] = [
     codigo: "987654",
     department: "Histologia",
     course: "Enfermagem",
+    authProvider: "LOCAL",
   },
   {
     id: "4",
@@ -59,6 +50,7 @@ const mockUsers: User[] = [
     codigo: "432198",
     department: "Anatomia",
     course: "Medicina",
+    authProvider: "LOCAL",
   },
   {
     id: "5",
@@ -70,6 +62,7 @@ const mockUsers: User[] = [
     codigo: "112233",
     department: "Administração",
     course: "Gestão",
+    authProvider: "LOCAL",
   },
   {
     id: "6",
@@ -81,12 +74,13 @@ const mockUsers: User[] = [
     codigo: "776655",
     department: "Fisiologia",
     course: "Fisioterapia",
+    authProvider: "LOCAL",
   },
 ];
 
 export const AdminUsersPage = () => {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>(mockUsers);
   const [statusFilter, setStatusFilter] = useState<'ALL' | UserStatus>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 

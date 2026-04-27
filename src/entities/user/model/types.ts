@@ -15,6 +15,14 @@ export interface User {
   period?: number | null;
 }
 
+export interface AdminUser extends User {
+  codigo: string;
+  department: string;
+  course: string;
+  createdAt: string;
+  lastAccess?: string;
+}
+
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
