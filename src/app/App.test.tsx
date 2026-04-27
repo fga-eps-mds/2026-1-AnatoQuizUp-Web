@@ -32,6 +32,14 @@ jest.mock('../pages/register/index', () => ({
   RegisterPage: () => <main>Register route</main>,
 }));
 
+jest.mock('../pages/forgot-password', () => ({
+  ForgotPasswordPage: () => <main>Forgot password route</main>,
+}));
+
+jest.mock('../pages/reset-password', () => ({
+  ResetPasswordPage: () => <main>Reset password route</main>,
+}));
+
 const renderAppAt = (path: string) => {
   window.history.pushState({}, '', path);
   return render(<App />);
@@ -52,6 +60,18 @@ describe('App', () => {
     renderAppAt('/cadastro');
 
     expect(screen.getByText('Register route')).toBeInTheDocument();
+  });
+
+  it('renders the forgot password route', () => {
+    renderAppAt('/esqueci-senha');
+
+    expect(screen.getByText('Forgot password route')).toBeInTheDocument();
+  });
+
+  it('renders the reset password route', () => {
+    renderAppAt('/redefinir-senha?token=token');
+
+    expect(screen.getByText('Reset password route')).toBeInTheDocument();
   });
 
   it('redirects unknown routes to home inside the authenticated layout', () => {
