@@ -1,18 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { getAuthenticatedUser } from '../../features/auth-by-credencials/model/authService.ts';
 import type { User, AuthState } from '../../entities/user/model/types.ts';
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-
-    const login = useCallback((accessToken: string, refreshToken: string, userData: User) => {
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('refresh_token', refreshToken);
-        setUser(userData);
-    }, []);
+    const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('access_token')));
 
     const logout = useCallback(() => {
         localStorage.removeItem('access_token');
@@ -20,9 +16,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
     }, []);
 
+    const loadAuthenticatedUser = useCallback(async () => {
+        const userData = await getAuthenticatedUser();
+        setUser(userData);
+    }, []);
+
+    useEffect(() => {
+        const accessToken = localStorage.getItem('access_token');
+
+        if (!accessToken) {
+            return;
+        }
+
+        let isMounted = true;
+
+        const restoreSession = async () => {
+            try {
+                const userData = await getAuthenticatedUser();
+
+                if (isMounted) {
+                    setUser(userData);
+                }
+            } catch {
+                if (isMounted) {
+                    logout();
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void restoreSession();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [logout]);
+
+    const login = useCallback(async (accessToken: string, refreshToken: string) => {
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
+        try {
+            await loadAuthenticatedUser();
+        } catch (error) {
+            logout();
+            throw error;
+        }
+    }, [loadAuthenticatedUser, logout]);
+
     const value = useMemo<AuthState>(
-        () => ({ user, isAuthenticated: !!user, login, logout }),
-        [user, login, logout],
+        () => ({ user, isAuthenticated: !!user, isLoading, login, logout }),
+        [user, isLoading, login, logout],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

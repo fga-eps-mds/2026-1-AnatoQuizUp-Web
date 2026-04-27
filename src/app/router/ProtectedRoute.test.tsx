@@ -27,7 +27,7 @@ describe('App/Router/ProtectedRoute', () => {
   };
 
   it('deve redirecionar para /login se o usuário NÃO estiver autenticado', () => {
-    (useAuth as jest.Mock).mockReturnValue({ isAuthenticated: false, user: null });
+    (useAuth as jest.Mock).mockReturnValue({ isAuthenticated: false, isLoading: false, user: null });
 
     renderWithRouter(
       <ProtectedRoute>
@@ -39,9 +39,23 @@ describe('App/Router/ProtectedRoute', () => {
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
   });
 
+  it('nao deve redirecionar enquanto a autenticacao estiver carregando', () => {
+    (useAuth as jest.Mock).mockReturnValue({ isAuthenticated: false, isLoading: true, user: null });
+
+    renderWithRouter(
+      <ProtectedRoute>
+        <div data-testid="conteudo-secreto">Conteúdo Secreto</div>
+      </ProtectedRoute>
+    );
+
+    expect(screen.queryByTestId('conteudo-secreto')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
+  });
+
   it('deve renderizar o conteúdo se o usuário estiver autenticado e não tiver restrição de Role', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: true,
+      isLoading: false,
       user: { role: 'STUDENT' },
     });
 
@@ -57,6 +71,7 @@ describe('App/Router/ProtectedRoute', () => {
   it('deve redirecionar para /home se o usuário estiver logado, mas não tiver a Role necessária', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: true,
+      isLoading: false,
       user: { role: 'STUDENT' },
     });
 
@@ -73,6 +88,7 @@ describe('App/Router/ProtectedRoute', () => {
   it('deve renderizar o conteúdo se o usuário logado tiver a Role necessária', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: true,
+      isLoading: false,
       user: { role: 'PROFESSOR' },
     });
 

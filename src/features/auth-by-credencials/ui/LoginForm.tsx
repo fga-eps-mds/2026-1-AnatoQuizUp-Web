@@ -22,7 +22,7 @@ export const LoginForm = () => {
 
     try {
       const response = await loginWithCredencials(email, password);
-      login(response.accessToken, response.refreshToken, response.user);
+      await login(response.accessToken, response.refreshToken);
       navigate('/home');
     } catch (err) {
       const error = err as Error;
