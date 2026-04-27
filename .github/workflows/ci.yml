@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [closed]
 
 jobs:
   ci:
@@ -43,7 +44,7 @@ jobs:
           fi
           TOTAL_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.total ?? 0")
           if [ "$TOTAL_LINES" -eq 0 ]; then
-            echo "::warning::Nenhuma linha instrumentada em cobertura. Pulando gate de 85% ate existirem testes executaveis."
+            echo "::warning::Nenhuma linha instrumentada em cobertura. Pulando gate de 85% até existirem testes executáveis."
             exit 0
           fi
           COVERAGE=$(node -p "Math.round(Number(require('./coverage/coverage-summary.json').total.lines.pct || 0))")
@@ -67,29 +68,42 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Exportar metrics.json do SonarCloud
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.base_ref == 'main'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PROJECT_KEY: fga-eps-mds_2026-1-AnatoQuizUp-Front
         run: |
-          mkdir -p metrics
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # ── Montar nome do arquivo conforme padrão exigido ──────────
+          SEMESTER="2026_1"
+          PROJECT_NAME="AnatoQuizUp"
+          REPO_NAME="Front"
+          DATE_HORA=$(date -u +"%m-%d-%Y-%H-%M-%S")
+          # Versão: tenta extrair do package.json; senão usa v0.1.0
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.1.0")
+          VERSAO_RELEASE="v${VERSION}"
+          FILENAME="fga-eps-mds-${SEMESTER}_UNB-${PROJECT_NAME}-${REPO_NAME}-${DATE_HORA}-${VERSAO_RELEASE}.json"
+
+          # ── Buscar métricas no SonarCloud ───────────────────────────
+          METRIC_LIST="files,functions,complexity,comment_lines_density,duplicated_lines_density,coverage,ncloc,tests,test_errors,test_failures,test_execution_time,security_rating"
           curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/measures/component?component=$PROJECT_KEY&metricKeys=coverage,code_smells,bugs,vulnerabilities,duplicated_lines_density,sqale_index,ncloc,reliability_rating,security_rating,sqale_rating" \
-            -o metrics/raw.json
-          echo "{\"timestamp\":\"$TIMESTAMP\",\"commit\":\"${{ github.sha }}\",\"data\":$(cat metrics/raw.json)}" > metrics.json
-          cat metrics.json
+            "https://sonarcloud.io/api/measures/component?component=${PROJECT_KEY}&metricKeys=${METRIC_LIST}" \
+            -o raw.json
+
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "{\"timestamp\":\"$TIMESTAMP\",\"commit\":\"${{ github.sha }}\",\"filename\":\"$FILENAME\",\"data\":$(cat raw.json)}" > "$FILENAME"
+          echo "METRICS_FILE=$FILENAME" >> $GITHUB_ENV
+          cat "$FILENAME"
 
       - name: Upload metrics.json (artefato)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.base_ref == 'main'
         uses: actions/upload-artifact@v4
         with:
-          name: metrics-${{ github.sha }}
-          path: metrics.json
+          name: metrics-front-${{ github.sha }}
+          path: ${{ env.METRICS_FILE }}
           retention-days: 90
 
-      - name: Commit metrics.json no repo de documentação
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Publicar metrics.json em analytics-raw-data no repo de Doc
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.base_ref == 'main'
         env:
           DOC_PUSH_TOKEN: ${{ secrets.DOC_PUSH_TOKEN }}
         run: |
@@ -99,13 +113,12 @@ jobs:
           fi
           git clone --depth 1 https://x-access-token:$DOC_PUSH_TOKEN@github.com/fga-eps-mds/2026-1-AnatoQuizUp-Doc.git doc-repo
           cd doc-repo
-          mkdir -p metrics/frontend
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
-          cp ../metrics.json "metrics/frontend/${TIMESTAMP}.json"
-          # mantém também um "latest"
-          cp ../metrics.json metrics/frontend/latest.json
+          mkdir -p analytics-raw-data/frontend
+          cp "../${{ env.METRICS_FILE }}" "analytics-raw-data/frontend/${{ env.METRICS_FILE }}"
+          # mantém também um "latest" para consulta rápida
+          cp "../${{ env.METRICS_FILE }}" analytics-raw-data/frontend/latest.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add metrics/
-          git commit -m "chore(metrics): atualiza métricas frontend ${TIMESTAMP} [skip ci]" || echo "Sem mudanças para commitar."
+          git add analytics-raw-data/
+          git commit -m "chore(metrics): atualiza métricas frontend ${{ env.METRICS_FILE }} [skip ci]" || echo "Sem mudanças para commitar."
           git push
