@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, ChevronRight, Check, X, User as UserIcon } from 'lucide-react';
+import { Search, ChevronRight, Check, X, User as UserIcon, ChevronDown, Menu, Home, Users, Settings } from 'lucide-react';
+import logo from '../../../shared/assets/image/logo.png';
 import { UserDetailsDrawer } from "./UserDetailsDrawer";
 import type { AdminUser, UserStatus } from '../../../entities/user/model/types';
 
@@ -45,7 +46,7 @@ const mockUsers: AdminUser[] = [
     name: "Lucas Oliveira",
     email: "lucas@email.com",
     role: "STUDENT",
-    status: "PENDING",
+    status: "ACTIVE",
     createdAt: "27/04/2026",
     codigo: "432198",
     department: "Anatomia",
@@ -117,29 +118,67 @@ export const AdminUsersPage = () => {
     }`;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#fffffe]">
       {/* Sidebar */}
-      <aside className="w-64 bg-blue-900 text-white p-4">
-        <h1 className="font-bold text-lg mb-6">AnatoQuizUp</h1>
-        <nav className="flex flex-col gap-3">
-          <button className="text-left">Dashboard</button>
-          <button className="text-left font-semibold">Usuários</button>
-          <button className="text-left">Configurações</button>
-        </nav>
+      <aside className="w-72 bg-slate-950 text-white h-screen flex flex-col justify-between">
+        <div className="py-10">
+          <div className="mb-10 flex justify-center">
+            <img src={logo} alt="AnatoQuizUp" className="h-20 w-auto object-contain" />
+          </div>
+
+          <nav className="flex flex-col gap-0">
+            <button className="flex w-full items-center gap-3 bg-[#304CDC] px-4 py-3 text-left text-white font-semibold">
+              <Home className="h-4 w-4" />
+              Início
+            </button>
+            <button className="flex w-full items-center gap-3 px-4 py-3 text-left text-slate-200 transition hover:bg-slate-700 cursor-pointer">
+              <Settings className="h-4 w-4" />
+              Configurações
+            </button>
+          </nav>
+        </div>
+
+        <div className="hidden m-6 border border-slate-800 bg-slate-900 px-4 py-4">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Modo Aluno</p>
+          <p className="mt-3 text-sm font-semibold text-white">Entrar como aluno</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500">Visualizar experiência do aluno</p>
+        </div>
       </aside>
 
       {/* Main */}
-      <main className="flex-1 p-6 overflow-y-auto">
-        <h1 className="text-2xl font-semibold mb-6">
-          Gerenciar usuários
-        </h1>
+      <main className="flex-1 overflow-y-auto bg-[#fffffe] px-6">
+        <div className="mb-6 border-b border-slate-200 bg-[#fffffe] px-6 py-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:bg-slate-100">
+                <Menu className="h-5 w-5" />
+              </button>
+              <div>
+                <p className="font-medium text-[#0B1840]">Painel de Administração</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 font-semibold">
+                A
+              </div>
+              <div className="flex items-center gap-2 text-slate-900">
+                <p className="text-sm font-medium">Administrador</p>
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6">
+          <h1 className="text-2xl font-semibold mb-6 text-[#1b2d45]">Gerenciar usuários</h1>
+        </div>
 
         {/* Pending Section */}
         {pendingUsers.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <span>🕒</span>
-              <h2 className="font-medium">Aguardando aprovação</h2>
+              <h2 className="font-medium text-[#00214D]">Aguardando aprovação</h2>
               <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">
                 {pendingUsers.length}
               </span>
@@ -149,7 +188,7 @@ export const AdminUsersPage = () => {
               {pendingUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="min-w-[260px] bg-gray-50 rounded-lg border border-gray-200 p-4"
+                  className="min-w-[260px] rounded-lg border border-gray-200 p-4"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
@@ -193,7 +232,7 @@ export const AdminUsersPage = () => {
         )}
 
         {/* Table Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 p-5 shadow-sm">
           {/* Filters */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex gap-3 text-sm">
@@ -276,7 +315,7 @@ export const AdminUsersPage = () => {
                       className="text-blue-600 hover:text-blue-800"
                       onClick={() => setSelectedUser(user)}
                     >
-                      <ChevronRight className="h-5 w-5 cursor-pointer" />
+                      <ChevronRight className="h-5 w-5 cursor-pointer text-[#00214D] hover:brightness-90" />
                     </button>
                   </td>
                 </tr>

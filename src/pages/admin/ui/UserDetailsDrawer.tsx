@@ -1,4 +1,5 @@
 import React from "react";
+import { Check, X, UserMinus, RefreshCw } from 'lucide-react';
 import type { AdminUser} from '../../../entities/user/model/types';
 
 interface Props {
@@ -92,39 +93,50 @@ export const UserDetailsDrawer: React.FC<Props> = ({
 
         {/* Actions */}
         <div className="flex flex-col gap-2 mt-4">
-          {user.status === "PENDING" && (
+          {user.status === "PENDING" ? (
             <>
               <button
                 onClick={onApprove}
-                className="w-full h-11 bg-green-500 text-white rounded-md"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00EBC7] px-4 py-2 text-[#00214D] font-medium shadow-sm transition hover:brightness-90 cursor-pointer"
               >
-                ✔ Aprovar usuário
+                <Check className="h-4 w-4 text-[#00214D]" />
+                Aprovar usuário
               </button>
               <button
                 onClick={onReject}
-                className="w-full h-11 border border-red-500 text-red-500 rounded-md"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500 bg-white px-4 py-2 text-[#FF5470] font-medium transition hover:bg-red-50 cursor-pointer"
               >
-                ✖ Rejeitar usuário
+                <X className="h-4 w-4" />
+                Rejeitar usuário
               </button>
             </>
-          )}
-
-          {user.status === "ACTIVE" && (
-            <button
-              onClick={onDeactivate}
-              className="w-full h-11 border border-gray-400 rounded-md"
-            >
-              Desativar usuário
-            </button>
-          )}
-
-          {user.status === "INACTIVE" && (
-            <button
-              onClick={onReactivate}
-              className="w-full h-11 bg-gray-200 rounded-md"
-            >
-              Reativar usuário
-            </button>
+          ) : (
+            <>
+              <button
+                onClick={onDeactivate}
+                disabled={user.status === "INACTIVE"}
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 font-medium transition ${
+                  user.status === "INACTIVE"
+                    ? 'border border-[#F5F5F5] bg-[#F5F5F5] text-[#6B7280] cursor-not-allowed'
+                    : 'border border-[#00214D] bg-transparent text-[#00214D] hover:bg-[#F5FAFF] hover:border-[#00214D] cursor-pointer'
+                }`}
+              >
+                <UserMinus className={`h-4 w-4 ${user.status === "INACTIVE" ? 'text-[#6B7280]' : ''}`} />
+                Desativar usuário
+              </button>
+              <button
+                onClick={onReactivate}
+                disabled={user.status === "ACTIVE"}
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 font-medium transition ${
+                  user.status === "ACTIVE"
+                    ? 'border border-[#F5F5F5] bg-[#F5F5F5] text-[#6B7280] cursor-not-allowed'
+                    : 'border border-[#00214D] bg-transparent text-[#00214D] hover:bg-[#F5FAFF] hover:border-[#00214D] cursor-pointer'
+                }`}
+              >
+                <RefreshCw className={`h-4 w-4 ${user.status === "ACTIVE" ? 'text-[#6B7280]' : ''}`} />
+                Reativar usuário
+              </button>
+            </>
           )}
         </div>
       </div>
