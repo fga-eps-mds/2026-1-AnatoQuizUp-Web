@@ -118,6 +118,68 @@ describe('loginWithCredencials', () => {
     });
   });
 
+  it.each([
+    ['ALUNO', 'STUDENT'],
+    ['ADMIN', 'ADMIN'],
+    ['ADMINISTRADOR', 'ADMIN'],
+  ])('maps backend role %s to frontend role %s', async (papel, role) => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockResolvedValueOnce({
+      data: {
+        dados: {
+          usuario: {
+            id: 'user-1',
+            nome: 'Usuario Teste',
+            email: 'usuario@unb.br',
+            papel,
+            status: 'ATIVO',
+            instituicao: null,
+            curso: null,
+            periodo: null,
+          },
+        },
+      },
+    });
+
+    const result = await getAuthenticatedUser();
+
+    expect(result).toMatchObject({
+      role,
+      status: 'ACTIVE',
+      institution: null,
+      course: null,
+      period: null,
+    });
+  });
+
+  it('maps blocked backend status and invalid period to inactive user with null period', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockResolvedValueOnce({
+      data: {
+        dados: {
+          usuario: {
+            id: 'user-1',
+            nome: 'Aluno Pendente',
+            email: 'aluno@unb.br',
+            papel: 'ALUNO',
+            status: 'PENDENTE',
+            periodo: 'periodo-invalido',
+          },
+        },
+      },
+    });
+
+    const result = await getAuthenticatedUser();
+
+    expect(result).toMatchObject({
+      role: 'STUDENT',
+      status: 'INACTIVE',
+      institution: null,
+      course: null,
+      period: null,
+    });
+  });
+
   it('throws a friendly message when the backend is unreachable', async () => {
     const { loginWithCredencials } = await loadService(false);
     postMock.mockRejectedValueOnce({ isAxiosError: true });
@@ -173,6 +235,67 @@ describe('loginWithCredencials', () => {
 
     await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
       'Erro ao entrar. Tente novamente.',
+    );
+  });
+
+  it('throws a generic message for non axios login errors', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce(new Error('erro inesperado'));
+
+    await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
+      'Erro ao entrar. Tente novamente.',
+    );
+  });
+
+  it('throws a friendly message when authenticated user endpoint is unreachable', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockRejectedValueOnce({ isAxiosError: true });
+
+    await expect(getAuthenticatedUser()).rejects.toThrow(
+      'Nao foi possivel conectar ao servidor. Tente novamente.',
+    );
+  });
+
+  it('throws the backend message when authenticated session is invalid', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { erro: { mensagem: 'Sessao expirada' } },
+      },
+    });
+
+    await expect(getAuthenticatedUser()).rejects.toThrow('Sessao expirada');
+  });
+
+  it('throws a fallback session message when authenticated session has no backend message', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {},
+      },
+    });
+
+    await expect(getAuthenticatedUser()).rejects.toThrow(
+      'Sessao expirada. Faca login novamente.',
+    );
+  });
+
+  it('throws a generic message for unexpected authenticated user errors', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {},
+      },
+    });
+
+    await expect(getAuthenticatedUser()).rejects.toThrow(
+      'Nao foi possivel carregar o usuario autenticado.',
     );
   });
 });

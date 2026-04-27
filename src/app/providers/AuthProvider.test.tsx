@@ -30,7 +30,10 @@ const AuthConsumer = () => {
       <span>{auth.isAuthenticated ? 'authenticated' : 'anonymous'}</span>
       <span>{auth.isLoading ? 'loading' : 'loaded'}</span>
       <span>{auth.user?.name ?? 'no-user'}</span>
-      <button type="button" onClick={() => void auth.login('access-token', 'refresh-token')}>
+      <button
+        type="button"
+        onClick={() => void auth.login('access-token', 'refresh-token').catch(() => undefined)}
+      >
         login
       </button>
       <button type="button" onClick={auth.logout}>
@@ -66,6 +69,36 @@ describe('AuthProvider', () => {
     expect(getAuthenticatedUserMock).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('access_token')).toBe('access-token');
     expect(localStorage.getItem('refresh_token')).toBe('refresh-token');
+  });
+
+  it('starts loaded when there is no stored token', () => {
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByText('loaded')).toBeInTheDocument();
+    expect(screen.getByText('anonymous')).toBeInTheDocument();
+    expect(getAuthenticatedUserMock).not.toHaveBeenCalled();
+  });
+
+  it('clears tokens and keeps login rejected when authenticated user load fails after login', async () => {
+    const testUser = userEvent.setup();
+    getAuthenticatedUserMock.mockRejectedValueOnce(new Error('Sessao invalida'));
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await testUser.click(screen.getByRole('button', { name: 'login' }));
+
+    expect(await screen.findByText('anonymous')).toBeInTheDocument();
+    expect(screen.getByText('no-user')).toBeInTheDocument();
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
   });
 
   it('clears tokens and user state on logout', async () => {
