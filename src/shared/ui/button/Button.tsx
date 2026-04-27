@@ -4,8 +4,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
 export const Button = ({ children, ...props }: ButtonProps) => {
   return (
-    <button 
-      className="bg-[#71edc8] text-[#00214d] rounded-lg px-4 py-2 text-sm font-bold transition-colors hover:brightness-95 w-full tracking-wide uppercase shadow-sm"
+    <button
+      className="w-full cursor-pointer rounded-lg bg-[#71edc8] px-4 py-2 text-sm font-bold uppercase tracking-wide text-[#00214d] shadow-sm transition-colors hover:brightness-95 disabled:cursor-not-allowed"
       {...props}
     >
       {children}
