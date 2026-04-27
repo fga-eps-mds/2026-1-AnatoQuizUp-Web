@@ -28,6 +28,10 @@ jest.mock('../pages/home/index', () => ({
   HomePage: () => <main>Home route</main>,
 }));
 
+jest.mock('../pages/register/index', () => ({
+  RegisterPage: () => <main>Register route</main>,
+}));
+
 const renderAppAt = (path: string) => {
   window.history.pushState({}, '', path);
   return render(<App />);
@@ -42,6 +46,12 @@ describe('App', () => {
     renderAppAt('/login');
 
     expect(screen.getByText('Login route')).toBeInTheDocument();
+  });
+
+  it('renders the register route', () => {
+    renderAppAt('/cadastro');
+
+    expect(screen.getByText('Register route')).toBeInTheDocument();
   });
 
   it('redirects unknown routes to home inside the authenticated layout', () => {

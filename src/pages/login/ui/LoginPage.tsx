@@ -18,7 +18,7 @@ export const LoginPage = () => {
               <Link to="/login" className="text-[#0A1128] border-b-[5px] border-[#0A1128] pb-1.5 focus:outline-none">
                 Logar
               </Link>
-              <Link to="/home" className="text-[#0A1128]/50 focus:outline-none hover:text-[#0A1128] transition-colors">
+              <Link to="/cadastro" className="text-[#0A1128]/50 focus:outline-none hover:text-[#0A1128] transition-colors">
                 Cadastre-se
               </Link>
             </div>

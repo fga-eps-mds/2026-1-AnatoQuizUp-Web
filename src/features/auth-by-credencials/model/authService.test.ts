@@ -1,20 +1,30 @@
-jest.mock('../../../shared/api/httpClient', () => ({
-  httpClient: {
-    post: jest.fn(),
-  },
-}));
+const postMock = jest.fn();
 
-import { httpClient } from '../../../shared/api/httpClient';
-import { loginWithCredencials } from './authService';
+const loadService = async (useMocks: boolean) => {
+  jest.resetModules();
+  postMock.mockReset();
 
-const postMock = httpClient.post as jest.Mock;
+  jest.doMock('../../../shared/api/httpClient', () => ({
+    httpClient: {
+      post: postMock,
+    },
+  }));
+
+  jest.doMock('../../../shared/config/env', () => ({
+    USE_MOCKS: useMocks,
+  }));
+
+  return import('./authService');
+};
 
 describe('loginWithCredencials', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns the mock student without calling the API', async () => {
+  it('returns the mock student without calling the API when mocks are enabled', async () => {
+    const { loginWithCredencials } = await loadService(true);
+
     const result = await loginWithCredencials('aluno@unb.br', 'any-password');
 
     expect(postMock).not.toHaveBeenCalled();
@@ -30,14 +40,17 @@ describe('loginWithCredencials', () => {
     });
   });
 
-  it('throws the disabled account message before calling the API', async () => {
+  it('throws the disabled account message before calling the API when mocks are enabled', async () => {
+    const { loginWithCredencials } = await loadService(true);
+
     await expect(loginWithCredencials('desativado@unb.br', 'secret')).rejects.toThrow(
       'Conta desativada. Entre em contato com o administrador.',
     );
     expect(postMock).not.toHaveBeenCalled();
   });
 
-  it('maps a successful backend login response to the auth user shape', async () => {
+  it('maps a successful backend login response to the auth user shape when mocks are disabled', async () => {
+    const { loginWithCredencials } = await loadService(false);
     postMock.mockResolvedValueOnce({
       data: {
         accessToken: 'api-access',
@@ -53,7 +66,7 @@ describe('loginWithCredencials', () => {
 
     const result = await loginWithCredencials('professor@unb.br', 'secret');
 
-    expect(postMock).toHaveBeenCalledWith('/api/auth/login', {
+    expect(postMock).toHaveBeenCalledWith('/auth/login', {
       email: 'professor@unb.br',
       password: 'secret',
     });
@@ -72,26 +85,31 @@ describe('loginWithCredencials', () => {
   });
 
   it('throws a friendly message when the backend is unreachable', async () => {
+    const { loginWithCredencials } = await loadService(false);
     postMock.mockRejectedValueOnce({ isAxiosError: true });
 
     await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
-      'Não foi possível conectar ao servidor. Tente novamente.',
+      'Nao foi possivel conectar ao servidor. Tente novamente.',
     );
   });
 
   it('throws the backend message for invalid credentials', async () => {
+    const { loginWithCredencials } = await loadService(false);
     postMock.mockRejectedValueOnce({
       isAxiosError: true,
       response: {
         status: 401,
-        data: { message: 'Credenciais inválidas' },
+        data: { erro: { mensagem: 'Credenciais invalidas' } },
       },
     });
 
-    await expect(loginWithCredencials('professor@unb.br', 'wrong')).rejects.toThrow('Credenciais inválidas');
+    await expect(loginWithCredencials('professor@unb.br', 'wrong')).rejects.toThrow(
+      'Credenciais invalidas',
+    );
   });
 
   it('throws a generic message for unexpected errors', async () => {
+    const { loginWithCredencials } = await loadService(false);
     postMock.mockRejectedValueOnce({
       isAxiosError: true,
       response: {

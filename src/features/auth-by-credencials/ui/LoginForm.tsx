@@ -33,7 +33,7 @@ export const LoginForm = () => {
   };
 
   const handleMicrosoftLogin = () => {
-    globalThis.location.href = `${API_BASE_URL}/api/auth/microsoft`;
+    globalThis.location.href = `${API_BASE_URL}/auth/microsoft`;
   };
 
   return (
