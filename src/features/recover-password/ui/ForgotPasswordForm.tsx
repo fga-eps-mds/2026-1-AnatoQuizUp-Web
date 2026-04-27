@@ -4,8 +4,6 @@ import { Button } from '../../../shared/ui/button/Button';
 import { requestPasswordRecovery } from '../model/recoverPasswordService';
 import { FeedbackMessage } from './FeedbackMessage';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export const ForgotPasswordForm = () => {
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState('');
@@ -25,7 +23,7 @@ export const ForgotPasswordForm = () => {
       return;
     }
 
-    if (!EMAIL_REGEX.test(trimmedEmail)) {
+    if (!trimmedEmail.includes('@')) {
       setFieldError('Informe um email valido.');
       return;
     }
