@@ -142,6 +142,25 @@ describe('loginWithCredencials', () => {
     );
   });
 
+  it('throws the backend message when login is blocked by user status', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {
+          erro: {
+            mensagem: 'Conta desativada. Entre em contato com o administrador.',
+          },
+        },
+      },
+    });
+
+    await expect(loginWithCredencials('professor@unb.br', 'secret')).rejects.toThrow(
+      'Conta desativada. Entre em contato com o administrador.',
+    );
+  });
+
   it('throws a generic message for unexpected errors', async () => {
     const { loginWithCredencials } = await loadService(false);
     postMock.mockRejectedValueOnce({
