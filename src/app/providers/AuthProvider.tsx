@@ -8,7 +8,7 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('access_token')));
 
     const logout = useCallback(() => {
         localStorage.removeItem('access_token');
@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const accessToken = localStorage.getItem('access_token');
 
         if (!accessToken) {
-            setIsLoading(false);
             return;
         }
 
