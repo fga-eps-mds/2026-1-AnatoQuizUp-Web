@@ -177,10 +177,14 @@ describe('httpClient', () => {
     expect(axiosMock.__mockMainClientRequest).toHaveBeenCalledTimes(2);
   });
 
-  it('does not try to refresh login or refresh requests', async () => {
+  it('does not try to refresh auth requests', async () => {
     const loginError = {
       response: { status: 401 },
       config: { url: '/auth/login', headers: {} },
+    };
+    const logoutError = {
+      response: { status: 401 },
+      config: { url: '/auth/logout', headers: {} },
     };
     const refreshError = {
       response: { status: 401 },
@@ -188,6 +192,7 @@ describe('httpClient', () => {
     };
 
     await expect(getResponseErrorInterceptor()(loginError)).rejects.toBe(loginError);
+    await expect(getResponseErrorInterceptor()(logoutError)).rejects.toBe(logoutError);
     await expect(getResponseErrorInterceptor()(refreshError)).rejects.toBe(refreshError);
     expect(axiosMock.__mockPost).not.toHaveBeenCalled();
   });

@@ -30,7 +30,7 @@ const renderHeader = (auth: Partial<AuthState>, route = '/home') => {
     user: null,
     isAuthenticated: false,
     login: jest.fn(),
-    logout: jest.fn(),
+    logout: jest.fn().mockResolvedValue(undefined),
     ...auth,
   });
 
@@ -55,14 +55,16 @@ describe('Header', () => {
 
   it('renders student navigation and logs out to the login route', async () => {
     const testUser = userEvent.setup();
-    const logout = jest.fn();
+    const logout = jest.fn().mockResolvedValue(undefined);
 
     renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true, logout });
 
     await testUser.click(screen.getByRole('button', { name: /Sair da conta/i }));
 
     expect(logout).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('location')).toHaveTextContent('/login');
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/login');
+    });
   });
 
   it('toggles professor student-view navigation state', async () => {

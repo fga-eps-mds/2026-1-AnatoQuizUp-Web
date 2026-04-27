@@ -20,5 +20,5 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (accessToken: string, refreshToken: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }

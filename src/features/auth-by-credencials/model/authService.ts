@@ -141,3 +141,13 @@ export const getAuthenticatedUser = async (): Promise<User> => {
     throw new Error('Nao foi possivel carregar o usuario autenticado.');
   }
 };
+
+export const logoutSession = async (refreshToken: string): Promise<void> => {
+  if (USE_MOCKS) {
+    return;
+  }
+
+  await httpClient.post('/auth/logout', {
+    refreshToken,
+  });
+};
