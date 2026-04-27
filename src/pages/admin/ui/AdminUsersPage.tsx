@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search } from 'lucide-react';
+import { Search, ChevronRight, Check, X, User as UserIcon } from 'lucide-react';
 import { UserDetailsDrawer } from "./UserDetailsDrawer";
 import type { Role, UserStatus } from '../../../entities/user/model/types';
 
@@ -10,7 +10,7 @@ interface User {
   role: Role;
   status: UserStatus;
   createdAt: string;
-  siape: string;
+  codigo: string;
   department: string;
   course: string;
 }
@@ -20,10 +20,10 @@ const mockUsers: User[] = [
     id: "1",
     name: "Ana Beatriz Silva",
     email: "ana@email.com",
-    role: "PROFESSOR",
+    role: "STUDENT",
     status: "ACTIVE",
     createdAt: "25/04/2026",
-    siape: "123456",
+    codigo: "123456",
     department: "Biologia",
     course: "Fisioterapia",
   },
@@ -34,20 +34,65 @@ const mockUsers: User[] = [
     role: "PROFESSOR",
     status: "PENDING",
     createdAt: "25/04/2026",
-    siape: "654321",
+    codigo: "654321",
     department: "Anatomia",
     course: "Medicina",
+  },
+  {
+    id: "3",
+    name: "Beatriz Alves",
+    email: "beatriz@email.com",
+    role: "PROFESSOR",
+    status: "PENDING",
+    createdAt: "26/04/2026",
+    codigo: "987654",
+    department: "Histologia",
+    course: "Enfermagem",
+  },
+  {
+    id: "4",
+    name: "Lucas Oliveira",
+    email: "lucas@email.com",
+    role: "STUDENT",
+    status: "PENDING",
+    createdAt: "27/04/2026",
+    codigo: "432198",
+    department: "Anatomia",
+    course: "Medicina",
+  },
+  {
+    id: "5",
+    name: "Mariana Costa",
+    email: "mariana@email.com",
+    role: "ADMIN",
+    status: "ACTIVE",
+    createdAt: "22/04/2026",
+    codigo: "112233",
+    department: "Administração",
+    course: "Gestão",
+  },
+  {
+    id: "6",
+    name: "Rafael Sousa",
+    email: "rafael@email.com",
+    role: "PROFESSOR",
+    status: "INACTIVE",
+    createdAt: "20/04/2026",
+    codigo: "776655",
+    department: "Fisiologia",
+    course: "Fisioterapia",
   },
 ];
 
 export const AdminUsersPage = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [statusFilter, setStatusFilter] = useState<'ALL' | UserStatus>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const pendingUsers = mockUsers.filter((u) => u.status === 'PENDING');
+  const pendingUsers = users.filter((u) => u.status === 'PENDING');
 
-  const filteredUsers = mockUsers
+  const filteredUsers = users
     .filter((user) =>
       statusFilter === 'ALL' ? true : user.status === statusFilter,
     )
@@ -55,6 +100,20 @@ export const AdminUsersPage = () => {
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
     );
+
+  const handleUserStatusChange = (userId: string, newStatus: UserStatus) => {
+    setUsers((currentUsers) =>
+      currentUsers.map((user) =>
+        user.id === userId ? { ...user, status: newStatus } : user,
+      ),
+    );
+
+    if (selectedUser?.id === userId) {
+      setSelectedUser((currentUser) =>
+        currentUser ? { ...currentUser, status: newStatus } : currentUser,
+      );
+    }
+  };
 
   const getFilterButtonClass = (filter: 'ALL' | UserStatus) =>
     `px-3 py-2 rounded-full text-sm font-medium transition ${
@@ -98,22 +157,39 @@ export const AdminUsersPage = () => {
                   key={user.id}
                   className="min-w-[260px] bg-gray-50 rounded-lg border border-gray-200 p-4"
                 >
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                      <UserIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
 
                   <div className="mt-3 text-xs text-gray-600 space-y-1">
-                    <p>SIAPE: {user.siape}</p>
+                    <p>Cod. Professor: {user.codigo}</p>
                     <p>Departamento: {user.department}</p>
                     <p>Curso: {user.course}</p>
                     <p>Data: {user.createdAt}</p>
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    <button className="flex-1 bg-green-500 text-white rounded-md py-1">
-                      ✔ Aprovar
+                    <button
+                      type="button"
+                      onClick={() => handleUserStatusChange(user.id, 'ACTIVE')}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00EBC7] px-4 py-2 text-[#00214D] font-medium shadow-sm transition hover:brightness-90 cursor-pointer"
+                    >
+                      <Check className="h-4 w-4 text-[#00214D]" />
+                      Aprovar
                     </button>
-                    <button className="flex-1 border border-red-500 text-red-500 rounded-md py-1">
-                      ✖ Rejeitar
+                    <button
+                      type="button"
+                      onClick={() => handleUserStatusChange(user.id, 'INACTIVE')}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500 bg-white px-4 py-2 text-[#FF5470] font-medium transition hover:bg-red-50 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                      Rejeitar
                     </button>
                   </div>
                 </div>
@@ -183,8 +259,15 @@ export const AdminUsersPage = () => {
             <tbody>
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3">{user.name}</td>
-                  <td>{user.email}</td>
+                  <td className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                        <UserIcon className="h-5 w-5" />
+                      </div>
+                      <span>{user.name}</span>
+                    </div>
+                  </td>
+                  <td className="text-gray-500">{user.email}</td>
                   <td>
                     <Badge type="role" value={user.role} />
                   </td>
@@ -192,14 +275,14 @@ export const AdminUsersPage = () => {
                     <Badge type="status" value={user.status} />
                   </td>
                   <td>{user.createdAt}</td>
-                  <td className="py-3 text-right">
+                  <td className="py-3 text-left">
                     <button
                       type="button"
                       aria-label={`Ver detalhes de ${user.name}`}
-                      className="text-blue-600 font-bold hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800"
                       onClick={() => setSelectedUser(user)}
                     >
-                      &gt;
+                      <ChevronRight className="h-5 w-5 cursor-pointer" />
                     </button>
                   </td>
                 </tr>
@@ -209,7 +292,7 @@ export const AdminUsersPage = () => {
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-4 text-sm">
-            <span>Mostrando {filteredUsers.length} de {mockUsers.length}</span>
+            <span className="text-gray-500">Mostrando {filteredUsers.length} de {users.length}</span>
             <div className="flex gap-2">
               <button className="px-2">{"<"}</button>
               <button className="px-2 bg-blue-600 text-white rounded">
@@ -240,8 +323,8 @@ const Badge = ({
 }) => {
   const styles: any = {
     STUDENT: "bg-blue-100 text-blue-700",
-    TEACHER: "bg-green-100 text-green-700",
-    ADMIN: "bg-orange-100 text-orange-700",
+    PROFESSOR: "bg-green-100 text-green-700",
+    ADMIN: "bg-red-100 text-red-700",
     ACTIVE: "bg-green-100 text-green-700",
     PENDING: "bg-yellow-100 text-yellow-700",
     INACTIVE: "bg-gray-200 text-gray-600",
@@ -249,7 +332,7 @@ const Badge = ({
 
   return (
     <span
-      className={`px-2 py-0.5 rounded-full text-xs ${styles[value]}`}
+      className={`px-3 py-1 rounded-full text-xs ${styles[value]}`}
     >
       {value}
     </span>
