@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/login/index'; 
 import { HomePage } from '../pages/home/index';  
 import { RegisterPage } from '../pages/register/index';
+import { AdminUsersPage } from '../pages/admin/ui/AdminUsersPage';
 import { AuthenticatedLayout } from './layouts/AuthenticatedLayout';
 import { ProtectedRoute } from './router/ProtectedRoute';
 
@@ -22,6 +23,8 @@ export const AppRouter = () => {
           } 
         />*/}
       </Route>
+      <Route path="admin" element={<Navigate to="/admin/usuarios" replace />} />
+      <Route path="admin/usuarios" element={<AdminUsersPage />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );

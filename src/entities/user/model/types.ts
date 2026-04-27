@@ -1,5 +1,5 @@
 export type Role = 'STUDENT' | 'PROFESSOR' | 'ADMIN';
-export type UserStatus = 'ACTIVE' | 'INACTIVE';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
 export type AuthProviderType = 'LOCAL' | 'MICROSOFT';
 
 export interface User {
