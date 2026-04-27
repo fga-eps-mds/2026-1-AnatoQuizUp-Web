@@ -132,7 +132,7 @@ export const Header = () => {
         </div>
         <button
           onClick={() => void handleLogout()}
-          className="flex items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"
+          className="flex cursor-pointer items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"
           aria-label="Sair da conta"
         >
           <LogOut size={16} />
