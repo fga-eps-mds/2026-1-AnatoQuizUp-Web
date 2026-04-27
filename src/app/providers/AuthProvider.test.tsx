@@ -1,14 +1,19 @@
 jest.mock('../../features/auth-by-credencials/model/authService.ts', () => ({
   getAuthenticatedUser: jest.fn(),
+  logoutSession: jest.fn(),
 }));
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthProvider';
 import type { User } from '../../entities/user/model/types';
-import { getAuthenticatedUser } from '../../features/auth-by-credencials/model/authService.ts';
+import {
+  getAuthenticatedUser,
+  logoutSession,
+} from '../../features/auth-by-credencials/model/authService.ts';
 
 const getAuthenticatedUserMock = getAuthenticatedUser as jest.Mock;
+const logoutSessionMock = logoutSession as jest.Mock;
 
 const user: User = {
   id: 'user-1',
@@ -36,7 +41,7 @@ const AuthConsumer = () => {
       >
         login
       </button>
-      <button type="button" onClick={auth.logout}>
+      <button type="button" onClick={() => void auth.logout()}>
         logout
       </button>
     </div>
@@ -47,6 +52,7 @@ describe('AuthProvider', () => {
   afterEach(() => {
     localStorage.clear();
     getAuthenticatedUserMock.mockReset();
+    logoutSessionMock.mockReset();
     jest.restoreAllMocks();
   });
 
@@ -104,6 +110,29 @@ describe('AuthProvider', () => {
   it('clears tokens and user state on logout', async () => {
     const testUser = userEvent.setup();
     getAuthenticatedUserMock.mockResolvedValueOnce(user);
+    logoutSessionMock.mockResolvedValueOnce(undefined);
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await testUser.click(screen.getByRole('button', { name: 'login' }));
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+    await testUser.click(screen.getByRole('button', { name: 'logout' }));
+
+    expect(screen.getByText('anonymous')).toBeInTheDocument();
+    expect(screen.getByText('no-user')).toBeInTheDocument();
+    expect(logoutSessionMock).toHaveBeenCalledWith('refresh-token');
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
+  it('clears local session even when backend logout fails', async () => {
+    const testUser = userEvent.setup();
+    getAuthenticatedUserMock.mockResolvedValueOnce(user);
+    logoutSessionMock.mockRejectedValueOnce(new Error('erro no logout'));
 
     render(
       <AuthProvider>
@@ -119,6 +148,21 @@ describe('AuthProvider', () => {
     expect(screen.getByText('no-user')).toBeInTheDocument();
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
+  it('does not call backend logout when there is no refresh token', async () => {
+    const testUser = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await testUser.click(screen.getByRole('button', { name: 'logout' }));
+
+    expect(logoutSessionMock).not.toHaveBeenCalled();
+    expect(screen.getByText('anonymous')).toBeInTheDocument();
   });
 
   it('restores the authenticated user when there is a stored token', async () => {

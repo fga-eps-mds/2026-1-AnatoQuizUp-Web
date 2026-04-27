@@ -35,8 +35,8 @@ export const Header = () => {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
     setIsDrawerOpen(false);
   };
@@ -131,8 +131,8 @@ export const Header = () => {
           </div>
         </div>
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"
+          onClick={() => void handleLogout()}
+          className="flex cursor-pointer items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"
           aria-label="Sair da conta"
         >
           <LogOut size={16} />

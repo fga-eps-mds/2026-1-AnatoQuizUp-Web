@@ -83,6 +83,25 @@ describe('loginWithCredencials', () => {
     });
   });
 
+  it('does not call the API on logout when mocks are enabled', async () => {
+    const { logoutSession } = await loadService(true);
+
+    await expect(logoutSession('refresh-token')).resolves.toBeUndefined();
+
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('calls backend logout with refresh token when mocks are disabled', async () => {
+    const { logoutSession } = await loadService(false);
+    postMock.mockResolvedValueOnce({});
+
+    await expect(logoutSession('refresh-token')).resolves.toBeUndefined();
+
+    expect(postMock).toHaveBeenCalledWith('/auth/logout', {
+      refreshToken: 'refresh-token',
+    });
+  });
+
   it('maps the authenticated backend user to the auth user shape when mocks are disabled', async () => {
     const { getAuthenticatedUser } = await loadService(false);
     getMock.mockResolvedValueOnce({

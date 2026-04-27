@@ -40,7 +40,9 @@ const redirectToLogin = () => {
 };
 
 const isAuthEndpoint = (url?: string) => (
-  url?.includes('/auth/login') || url?.includes('/auth/refresh')
+  url?.includes('/auth/login') ||
+  url?.includes('/auth/logout') ||
+  url?.includes('/auth/refresh')
 );
 
 const refreshTokens = async () => {

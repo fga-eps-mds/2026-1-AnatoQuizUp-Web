@@ -1,7 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { getAuthenticatedUser } from '../../features/auth-by-credencials/model/authService.ts';
+import {
+    getAuthenticatedUser,
+    logoutSession,
+} from '../../features/auth-by-credencials/model/authService.ts';
 import type { User, AuthState } from '../../entities/user/model/types.ts';
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -10,11 +13,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('access_token')));
 
-    const logout = useCallback(() => {
+    const clearSession = useCallback(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
     }, []);
+
+    const logout = useCallback(async () => {
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        try {
+            if (refreshToken) {
+                await logoutSession(refreshToken);
+            }
+        } catch {
+            // O logout local deve acontecer mesmo se a revogacao remota falhar.
+        } finally {
+            clearSession();
+        }
+    }, [clearSession]);
 
     const loadAuthenticatedUser = useCallback(async () => {
         const userData = await getAuthenticatedUser();
@@ -39,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             } catch {
                 if (isMounted) {
-                    logout();
+                    clearSession();
                 }
             } finally {
                 if (isMounted) {
@@ -53,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             isMounted = false;
         };
-    }, [logout]);
+    }, [clearSession]);
 
     const login = useCallback(async (accessToken: string, refreshToken: string) => {
         localStorage.setItem('access_token', accessToken);
@@ -61,10 +78,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await loadAuthenticatedUser();
         } catch (error) {
-            logout();
+            clearSession();
             throw error;
         }
-    }, [loadAuthenticatedUser, logout]);
+    }, [clearSession, loadAuthenticatedUser]);
 
     const value = useMemo<AuthState>(
         () => ({ user, isAuthenticated: !!user, isLoading, login, logout }),
