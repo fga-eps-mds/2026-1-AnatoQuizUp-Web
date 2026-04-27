@@ -32,9 +32,10 @@ export const loginWithMockCredencials = async (
     return {
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
-      user: MOCK_USER,
     };
   }
 
   throw new Error('Email ou senha invalidos');
 };
+
+export const getAuthenticatedUserMock = async (): Promise<User> => MOCK_USER;

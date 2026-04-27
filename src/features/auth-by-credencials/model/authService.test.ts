@@ -1,12 +1,15 @@
 const postMock = jest.fn();
+const getMock = jest.fn();
 
 const loadService = async (useMocks: boolean) => {
   jest.resetModules();
   postMock.mockReset();
+  getMock.mockReset();
 
   jest.doMock('../../../shared/api/httpClient', () => ({
     httpClient: {
       post: postMock,
+      get: getMock,
     },
   }));
 
@@ -31,12 +34,6 @@ describe('loginWithCredencials', () => {
     expect(result).toMatchObject({
       accessToken: 'mock-access-token',
       refreshToken: 'mock-refresh-token',
-      user: {
-        email: 'aluno@unb.br',
-        role: 'STUDENT',
-        status: 'ACTIVE',
-        authProvider: 'LOCAL',
-      },
     });
   });
 
@@ -49,17 +46,13 @@ describe('loginWithCredencials', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
-  it('maps a successful backend login response to the auth user shape when mocks are disabled', async () => {
+  it('returns tokens from backend login response when mocks are disabled', async () => {
     const { loginWithCredencials } = await loadService(false);
     postMock.mockResolvedValueOnce({
       data: {
-        accessToken: 'api-access',
-        refreshToken: 'api-refresh',
-        user: {
-          id: 'user-1',
-          name: 'Professor UnB',
-          email: 'professor@unb.br',
-          role: 'PROFESSOR',
+        dados: {
+          accessToken: 'api-access',
+          refreshToken: 'api-refresh',
         },
       },
     });
@@ -68,19 +61,60 @@ describe('loginWithCredencials', () => {
 
     expect(postMock).toHaveBeenCalledWith('/auth/login', {
       email: 'professor@unb.br',
-      password: 'secret',
+      senha: 'secret',
     });
     expect(result).toEqual({
       accessToken: 'api-access',
       refreshToken: 'api-refresh',
-      user: {
-        id: 'user-1',
-        name: 'Professor UnB',
-        email: 'professor@unb.br',
-        role: 'PROFESSOR',
-        status: 'ACTIVE',
-        authProvider: 'LOCAL',
+    });
+  });
+
+  it('returns the mock authenticated user without calling the API when mocks are enabled', async () => {
+    const { getAuthenticatedUser } = await loadService(true);
+
+    const result = await getAuthenticatedUser();
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      email: 'aluno@unb.br',
+      role: 'STUDENT',
+      status: 'ACTIVE',
+      authProvider: 'LOCAL',
+    });
+  });
+
+  it('maps the authenticated backend user to the auth user shape when mocks are disabled', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockResolvedValueOnce({
+      data: {
+        dados: {
+          usuario: {
+            id: 'user-1',
+            nome: 'Professor UnB',
+            email: 'professor@unb.br',
+            papel: 'PROFESSOR',
+            status: 'ATIVO',
+            instituicao: 'Universidade de Brasilia',
+            curso: 'Medicina',
+            periodo: '3',
+          },
+        },
       },
+    });
+
+    const result = await getAuthenticatedUser();
+
+    expect(getMock).toHaveBeenCalledWith('/auth/me');
+    expect(result).toEqual({
+      id: 'user-1',
+      name: 'Professor UnB',
+      email: 'professor@unb.br',
+      role: 'PROFESSOR',
+      status: 'ACTIVE',
+      authProvider: 'LOCAL',
+      institution: 'Universidade de Brasilia',
+      course: 'Medicina',
+      period: 3,
     });
   });
 

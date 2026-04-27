@@ -14,21 +14,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import type { User } from '../../../entities/user/model/types';
 import { loginWithCredencials } from '../model/authService';
 import { LoginForm } from './LoginForm';
 
 const useAuthMock = useAuth as jest.Mock;
 const loginWithCredencialsMock = loginWithCredencials as jest.Mock;
-
-const user: User = {
-  id: 'user-1',
-  name: 'Ana Estudante',
-  email: 'ana@unb.br',
-  role: 'STUDENT',
-  status: 'ACTIVE',
-  authProvider: 'LOCAL',
-};
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -36,7 +26,7 @@ const LocationProbe = () => {
 };
 
 const renderLoginForm = () => {
-  const login = jest.fn();
+  const login = jest.fn().mockResolvedValue(undefined);
   useAuthMock.mockReturnValue({ login });
 
   const view = render(
@@ -72,7 +62,6 @@ describe('LoginForm', () => {
     loginWithCredencialsMock.mockResolvedValueOnce({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
-      user,
     });
 
     const { login, passwordInput } = renderLoginForm();
@@ -82,7 +71,7 @@ describe('LoginForm', () => {
     await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
 
     expect(loginWithCredencialsMock).toHaveBeenCalledWith('ana@unb.br', 'secret');
-    expect(login).toHaveBeenCalledWith('access-token', 'refresh-token', user);
+    expect(login).toHaveBeenCalledWith('access-token', 'refresh-token');
     expect(screen.getByTestId('location')).toHaveTextContent('/home');
   });
 
