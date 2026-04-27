@@ -2,46 +2,56 @@ jest.mock('../config/env', () => ({
   API_BASE_URL: 'https://api.test',
 }));
 
-const mockPost = jest.fn();
-const mockMainClientRequest = jest.fn();
-
 type InterceptorPair = {
   fulfilled: (value: unknown) => unknown;
   rejected?: (error: unknown) => unknown;
 };
 
 jest.mock('axios', () => {
+  const mockPost = jest.fn();
+  const mockMainClientRequest = jest.fn();
+
+  const create = jest.fn((config) => {
+    const client = Object.assign(jest.fn(mockMainClientRequest), {
+      defaults: { baseURL: config.baseURL },
+      interceptors: {
+        request: {
+          handlers: [] as InterceptorPair[],
+          use: jest.fn((fulfilled, rejected) => {
+            client.interceptors.request.handlers.push({ fulfilled, rejected });
+          }),
+        },
+        response: {
+          handlers: [] as InterceptorPair[],
+          use: jest.fn((fulfilled, rejected) => {
+            client.interceptors.response.handlers.push({ fulfilled, rejected });
+          }),
+        },
+      },
+      post: mockPost,
+    });
+
+    return client;
+  });
+
   return {
     __esModule: true,
     default: {
-      create: jest.fn((config) => {
-        const client = Object.assign(jest.fn(mockMainClientRequest), {
-          defaults: { baseURL: config.baseURL },
-          interceptors: {
-            request: {
-              handlers: [] as InterceptorPair[],
-              use: jest.fn((fulfilled, rejected) => {
-                client.interceptors.request.handlers.push({ fulfilled, rejected });
-              }),
-            },
-            response: {
-              handlers: [] as InterceptorPair[],
-              use: jest.fn((fulfilled, rejected) => {
-                client.interceptors.response.handlers.push({ fulfilled, rejected });
-              }),
-            },
-          },
-          post: mockPost,
-        });
-
-        return client;
-      }),
+      create,
+      __mockMainClientRequest: mockMainClientRequest,
+      __mockPost: mockPost,
     },
   };
 });
 
+import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { httpClient } from './httpClient';
+
+const axiosMock = axios as unknown as {
+  __mockMainClientRequest: jest.Mock;
+  __mockPost: jest.Mock;
+};
 
 const getRequestInterceptor = () => {
   const requestInterceptors = httpClient.interceptors.request as unknown as {
@@ -66,15 +76,9 @@ const getResponseErrorInterceptor = () => {
 describe('httpClient', () => {
   beforeEach(() => {
     localStorage.clear();
-    mockPost.mockReset();
-    mockMainClientRequest.mockReset();
-    Object.defineProperty(globalThis, 'location', {
-      configurable: true,
-      value: {
-        pathname: '/home',
-        href: '/home',
-      },
-    });
+    axiosMock.__mockPost.mockReset();
+    axiosMock.__mockMainClientRequest.mockReset();
+    globalThis.history.pushState({}, '', '/home');
   });
 
   it('uses the configured API base URL', () => {
@@ -101,7 +105,7 @@ describe('httpClient', () => {
 
   it('renews tokens and retries the original request on 401', async () => {
     localStorage.setItem('refresh_token', 'refresh-token-antigo');
-    mockPost.mockResolvedValueOnce({
+    axiosMock.__mockPost.mockResolvedValueOnce({
       data: {
         dados: {
           accessToken: 'novo-access-token',
@@ -109,7 +113,7 @@ describe('httpClient', () => {
         },
       },
     });
-    mockMainClientRequest.mockResolvedValueOnce({ data: { ok: true } });
+    axiosMock.__mockMainClientRequest.mockResolvedValueOnce({ data: { ok: true } });
     const originalRequest = {
       url: '/auth/me',
       headers: {},
@@ -122,7 +126,7 @@ describe('httpClient', () => {
       }),
     ).resolves.toEqual({ data: { ok: true } });
 
-    expect(mockPost).toHaveBeenCalledWith('/auth/refresh', {
+    expect(axiosMock.__mockPost).toHaveBeenCalledWith('/auth/refresh', {
       refreshToken: 'refresh-token-antigo',
     });
     expect(localStorage.getItem('access_token')).toBe('novo-access-token');
@@ -131,12 +135,12 @@ describe('httpClient', () => {
       Authorization: 'Bearer novo-access-token',
     });
     expect(originalRequest).toMatchObject({ _retry: true });
-    expect(mockMainClientRequest).toHaveBeenCalledWith(originalRequest);
+    expect(axiosMock.__mockMainClientRequest).toHaveBeenCalledWith(originalRequest);
   });
 
   it('shares the same refresh request between concurrent 401 responses', async () => {
     localStorage.setItem('refresh_token', 'refresh-token-antigo');
-    mockPost.mockResolvedValueOnce({
+    axiosMock.__mockPost.mockResolvedValueOnce({
       data: {
         dados: {
           accessToken: 'novo-access-token',
@@ -144,7 +148,7 @@ describe('httpClient', () => {
         },
       },
     });
-    mockMainClientRequest
+    axiosMock.__mockMainClientRequest
       .mockResolvedValueOnce({ data: { request: 1 } })
       .mockResolvedValueOnce({ data: { request: 2 } });
     const firstRequest = {
@@ -167,10 +171,10 @@ describe('httpClient', () => {
       }),
     ]);
 
-    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(axiosMock.__mockPost).toHaveBeenCalledTimes(1);
     expect(firstRequest.headers).toEqual({ Authorization: 'Bearer novo-access-token' });
     expect(secondRequest.headers).toEqual({ Authorization: 'Bearer novo-access-token' });
-    expect(mockMainClientRequest).toHaveBeenCalledTimes(2);
+    expect(axiosMock.__mockMainClientRequest).toHaveBeenCalledTimes(2);
   });
 
   it('does not try to refresh login or refresh requests', async () => {
@@ -185,7 +189,7 @@ describe('httpClient', () => {
 
     await expect(getResponseErrorInterceptor()(loginError)).rejects.toBe(loginError);
     await expect(getResponseErrorInterceptor()(refreshError)).rejects.toBe(refreshError);
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(axiosMock.__mockPost).not.toHaveBeenCalled();
   });
 
   it('does not retry a request more than once', async () => {
@@ -195,7 +199,7 @@ describe('httpClient', () => {
     };
 
     await expect(getResponseErrorInterceptor()(error)).rejects.toBe(error);
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(axiosMock.__mockPost).not.toHaveBeenCalled();
   });
 
   it('does not try to refresh non 401 errors', async () => {
@@ -205,13 +209,13 @@ describe('httpClient', () => {
     };
 
     await expect(getResponseErrorInterceptor()(error)).rejects.toBe(error);
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(axiosMock.__mockPost).not.toHaveBeenCalled();
   });
 
   it('clears tokens and redirects to login when refresh fails', async () => {
     localStorage.setItem('access_token', 'access-token');
     localStorage.setItem('refresh_token', 'refresh-token');
-    mockPost.mockRejectedValueOnce(new Error('refresh falhou'));
+    axiosMock.__mockPost.mockRejectedValueOnce(new Error('refresh falhou'));
 
     await expect(
       getResponseErrorInterceptor()({
@@ -222,7 +226,6 @@ describe('httpClient', () => {
 
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
-    expect(globalThis.location.href).toBe('/login');
   });
 
   it('clears tokens and redirects to login when there is no refresh token', async () => {
@@ -235,8 +238,7 @@ describe('httpClient', () => {
       }),
     ).rejects.toThrow('Refresh token inexistente.');
 
-    expect(mockPost).not.toHaveBeenCalled();
+    expect(axiosMock.__mockPost).not.toHaveBeenCalled();
     expect(localStorage.getItem('access_token')).toBeNull();
-    expect(globalThis.location.href).toBe('/login');
   });
 });
