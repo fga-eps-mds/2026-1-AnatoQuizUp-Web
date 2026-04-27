@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
+import { render, screen } from '@testing-library/react';
+import { App } from './App';
+import { useAuth } from './providers/AuthProvider';
 
 jest.mock('./providers/AuthProvider', () => ({
   AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useAuth:jest.fn(),
 }));
 
 jest.mock('./layouts/AuthenticatedLayout', () => {
@@ -28,15 +32,16 @@ jest.mock('../pages/register/index', () => ({
   RegisterPage: () => <main>Register route</main>,
 }));
 
-import { render, screen } from '@testing-library/react';
-import { App } from './App';
-
 const renderAppAt = (path: string) => {
   window.history.pushState({}, '', path);
   return render(<App />);
 };
 
 describe('App', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('renders the login route', () => {
     renderAppAt('/login');
 
@@ -50,6 +55,10 @@ describe('App', () => {
   });
 
   it('redirects unknown routes to home inside the authenticated layout', () => {
+    (useAuth as jest.Mock).mockReturnValue({ 
+      isAuthenticated: true, 
+      user: { role: 'STUDENT' } 
+    });
     renderAppAt('/unknown');
 
     expect(screen.getByText('Authenticated layout')).toBeInTheDocument();
