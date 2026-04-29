@@ -70,22 +70,21 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.base_ref == 'main'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          PROJECT_KEY: fga-eps-mds_2026-1-AnatoQuizUp-Front
+          PROJECT_KEY: fga-eps-mds_2026-1-AnatoQuizUp-WEB
         run: |
-          # ── Montar nome do arquivo conforme padrão exigido ──────────
+          # Nome: fga-eps-mds-2026_1_UNB-AnatoQuizUp-WEB-MM-DD-YYYY-HH-MM-SS-vX.Y.Z.json
           SEMESTER="2026_1"
           PROJECT_NAME="AnatoQuizUp"
-          REPO_NAME="Front"
+          REPO_NAME="WEB"
           DATE_HORA=$(date -u +"%m-%d-%Y-%H-%M-%S")
-          # Versão: tenta extrair do package.json; senão usa v0.1.0
-          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.1.0")
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
           VERSAO_RELEASE="v${VERSION}"
           FILENAME="fga-eps-mds-${SEMESTER}_UNB-${PROJECT_NAME}-${REPO_NAME}-${DATE_HORA}-${VERSAO_RELEASE}.json"
 
-          # ── Buscar métricas no SonarCloud ───────────────────────────
+          # component_tree retorna métricas por arquivo/diretório — necessário para o notebook
           METRIC_LIST="files,functions,complexity,comment_lines_density,duplicated_lines_density,coverage,ncloc,tests,test_errors,test_failures,test_execution_time,security_rating"
           curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/measures/component?component=${PROJECT_KEY}&metricKeys=${METRIC_LIST}" \
+            "https://sonarcloud.io/api/measures/component_tree?component=${PROJECT_KEY}&metricKeys=${METRIC_LIST}&qualifiers=FIL,DIR,UTS&ps=500&strategy=leaves" \
             -o raw.json
 
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -114,7 +113,6 @@ jobs:
           cd doc-repo
           mkdir -p analytics-raw-data/frontend
           cp "../${{ env.METRICS_FILE }}" "analytics-raw-data/frontend/${{ env.METRICS_FILE }}"
-          # mantém também um "latest" para consulta rápida
           cp "../${{ env.METRICS_FILE }}" analytics-raw-data/frontend/latest.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
