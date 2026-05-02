@@ -1,3 +1,5 @@
+import { trimTrailingSlash } from "../utils/url";
+
 const DEFAULT_API_BASE_URL = 'http://localhost:3333/api/v1';
 
 const parseBooleanEnv = (value: string | undefined, defaultValue: boolean) => {
@@ -6,13 +8,11 @@ const parseBooleanEnv = (value: string | undefined, defaultValue: boolean) => {
   return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
 };
 
-const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
-
 const apiBaseUrlFromEnv = import.meta.env?.VITE_API_URL as string | undefined;
 
 export const API_BASE_URL: string = trimTrailingSlash(
   apiBaseUrlFromEnv && apiBaseUrlFromEnv.trim() !== ''
-    ? apiBaseUrlFromEnv
+    ? apiBaseUrlFromEnv.trim()
     : DEFAULT_API_BASE_URL,
 );
 
