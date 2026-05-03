@@ -44,7 +44,7 @@ describe("QuestionsPage", () => {
     expect(screen.getByLabelText(/Usuário Joana Batista/i)).toHaveTextContent(
       "JB",
     );
-    expect(screen.getByText(/11 questões cadastradas/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 questões cadastradas/i)).toBeInTheDocument();
     expect(screen.queryByText(/geradas por IA/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Filtrar por origem/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: /Origem/i })).not.toBeInTheDocument();
@@ -56,13 +56,13 @@ describe("QuestionsPage", () => {
     render(<QuestionsPage />);
 
     const search = screen.getByRole("textbox", { name: /Buscar questão/i });
-    expect(screen.getByText(/silhueta/i)).toBeInTheDocument();
+    expect(screen.getByText(/atelectasia/i)).toBeInTheDocument();
 
     await testUser.clear(search);
-    await testUser.type(search, "gadolínio");
+    await testUser.type(search, "ecocardiografia");
 
-    expect(screen.getByText(/injeção de gadolínio/i)).toBeInTheDocument();
-    expect(screen.queryByText(/silhueta/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/janela acústica/i)).toBeInTheDocument();
+    expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
     expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
   });
 });

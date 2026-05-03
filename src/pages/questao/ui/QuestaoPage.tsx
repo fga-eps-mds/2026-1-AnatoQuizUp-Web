@@ -13,70 +13,6 @@ type Question = {
 };
 
 const questions: Question[] = [
-
-  {
-    id: 'question-5',
-    topic: 'Imagem',
-    statement: 'Em uma radiografia de tórax em perfil, qual estrutura anatômica forma a "silhueta" da borda anterior do coração?',
-    difficulty: 'Médio',
-    createdAt: '12/04/2025',
-  },
-  {
-    id: 'question-6',
-    topic: 'Imagem',
-    statement: 'Na ressonância magnética cardíaca, como diferenciar miocárdio viável de fibrose em sequências com injeção de gadolínio?',
-    difficulty: 'Difícil',
-    createdAt: '10/04/2025',
-  },
-  {
-    id: 'question-7',
-    topic: 'Imagem',
-    statement: 'Em uma mamografia de rotina, qual o posicionamento correto para visualizar a cauda de Spence?',
-    difficulty: 'Médio',
-    createdAt: '09/04/2025',
-  },
-  {
-    id: 'question-8',
-    topic: 'Imagem',
-    statement: 'Na ecografia abdominal, qual sinal ultrassonográfico indica a presença de líquido livre na vesícula biliar?',
-    difficulty: 'Fácil',
-    createdAt: '07/04/2025',
-  },
-  {
-    id: 'question-9',
-    topic: 'Imagem',
-    statement: 'Em uma tomografia computadorizada de tórax, quais os achados típicos de uma dissecção de aorta do tipo A de Stanford?',
-    difficulty: 'Difícil',
-    createdAt: '06/04/2025',
-  },
-  {
-    id: 'question-10',
-    topic: 'Imagem',
-    statement: 'Na radiografia de abdome agudo, quais são os critérios para diagnóstico de obstrução intestinal em alça fechada?',
-    difficulty: 'Médio',
-    createdAt: '05/04/2025',
-  },
-  {
-    id: 'question-11',
-    topic: 'Imagem',
-    statement: 'Na ultrassonografia obstétrica, com qual idade gestacional o saco gestacional se torna visível por via transvaginal?',
-    difficulty: 'Fácil',
-    createdAt: '03/04/2025',
-  },
-  {
-    id: 'question-12',
-    topic: 'Imagem',
-    statement: 'Em uma ressonância magnética de joelho, qual a sequência mais sensível para detectar lesão do ligamento cruzado anterior?',
-    difficulty: 'Médio',
-    createdAt: '02/04/2025',
-  },
-  {
-    id: 'question-13',
-    topic: 'Imagem',
-    statement: 'Na mamografia digital, descreva a diferença entre microcalcificações benignas e malignas em sua morfologia e distribuição.',
-    difficulty: 'Difícil',
-    createdAt: '01/04/2025',
-  },
   {
     id: 'question-14',
     topic: 'Imagem',
@@ -88,7 +24,7 @@ const questions: Question[] = [
     id: 'question-15',
     topic: 'Imagem',
     statement: 'Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?',
-    difficulty: 'Médio',
+    difficulty: 'Difícil',
     createdAt: '30/03/2025',
   }
 ];
