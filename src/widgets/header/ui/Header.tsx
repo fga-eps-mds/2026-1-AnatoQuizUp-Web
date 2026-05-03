@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { Eye, Home, LogOut, Menu, Users, X } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../app/providers/AuthProvider';
-import logo from '../../../shared/assets/image/logo.png';
-import type { Role } from '../../../entities/user/model/types';
+import { useEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { Eye, Home, LogOut, Menu, Users, X, Newspaper } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../app/providers/AuthProvider";
+import logo from "../../../shared/assets/image/logo.png";
+import type { Role } from "../../../entities/user/model/types";
 
 type NavItem = {
   key: string;
@@ -25,19 +25,22 @@ export const Header = () => {
   useEffect(() => {
     if (!isDrawerOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+      if (
+        drawerRef.current &&
+        !drawerRef.current.contains(event.target as Node)
+      ) {
         setIsDrawerOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDrawerOpen]);
 
   if (!user) return null;
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
     setIsDrawerOpen(false);
   };
 
@@ -49,43 +52,52 @@ export const Header = () => {
 
   const buildNavItems = (role: Role): NavItem[] => {
     const homeItem: NavItem = {
-      key: 'home',
-      label: 'Início',
+      key: "home",
+      label: "Início",
       icon: Home,
-      onSelect: () => navigate('/home'),
-      isActive: isRouteActive('/home') || isRouteActive('/'),
+      onSelect: () => navigate("/home"),
+      isActive: isRouteActive("/home") || isRouteActive("/"),
     };
     switch (role) {
-      case 'PROFESSOR':
+      case "PROFESSOR":
         return [
           homeItem,
           {
-            key: 'view-as-student',
-            label: isViewingAsStudent ? 'Sair da visão de aluno' : 'Ver como aluno',
+            key: "view-as-student",
+            label: isViewingAsStudent
+              ? "Sair da visão de aluno"
+              : "Ver como aluno",
             icon: Eye,
             onSelect: handleToggleStudentView,
             isActive: isViewingAsStudent,
           },
+          {
+            key: "questoes",
+            label: "Questões",
+            icon: Newspaper,
+            onSelect: () => navigate("/professor/questoes"),
+            isActive: location.pathname.startsWith("/professor/questoes"),
+          },
         ];
-      case 'ADMIN':
+      case "ADMIN":
         return [
           homeItem,
           {
-            key: 'admin-users',
-            label: 'Gerenciar Usuários',
+            key: "admin-users",
+            label: "Gerenciar Usuários",
             icon: Users,
-            onSelect: () => navigate('/admin/usuarios'),
-            isActive: isRouteActive('/admin/usuarios'),
+            onSelect: () => navigate("/admin/usuarios"),
+            isActive: isRouteActive("/admin/usuarios"),
           },
         ];
-      case 'STUDENT':
+      case "STUDENT":
       default:
         return [homeItem];
     }
   };
 
   const navItems = buildNavItems(user.role);
-  const initial = user.name?.charAt(0).toUpperCase() || 'U';
+  const initial = user.name?.charAt(0).toUpperCase() || "U";
 
   const handleSelect = (item: NavItem) => {
     item.onSelect();
@@ -105,12 +117,12 @@ export const Header = () => {
             <button
               key={item.key}
               onClick={() => handleSelect(item)}
-              aria-current={item.isActive ? 'page' : undefined}
+              aria-current={item.isActive ? "page" : undefined}
               className={
-                'flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ' +
+                "flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left " +
                 (item.isActive
-                  ? 'bg-[#F97316] text-white shadow-md'
-                  : 'text-[#fffffe]/80 hover:bg-[#00214d] hover:text-[#71edc8]')
+                  ? "bg-[#F97316] text-white shadow-md"
+                  : "text-[#fffffe]/80 hover:bg-[#00214d] hover:text-[#71edc8]")
               }
             >
               <Icon size={22} />
@@ -126,8 +138,12 @@ export const Header = () => {
             {initial}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-[#fffffe] truncate">{user.name}</span>
-            <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">{user.role}</span>
+            <span className="text-sm font-bold text-[#fffffe] truncate">
+              {user.name}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
+              {user.role}
+            </span>
           </div>
         </div>
         <button
@@ -145,7 +161,7 @@ export const Header = () => {
   return (
     <>
       <div className="md:hidden sticky top-0 z-40 bg-[#0A1128] h-16 flex items-center justify-between px-4 border-b border-[#00214d]">
-        <button onClick={() => navigate('/home')} className="flex items-center">
+        <button onClick={() => navigate("/home")} className="flex items-center">
           <img src={logo} alt="AnatoQuizUp" className="h-10" />
         </button>
         <button

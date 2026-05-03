@@ -7,6 +7,7 @@ import { ResetPasswordPage } from "../pages/reset-password";
 import { AuthenticatedLayout } from "./layouts/AuthenticatedLayout";
 import { ProtectedRoute } from "./router/ProtectedRoute";
 import { HomeProfessorPage } from "../pages/homeProfessor";
+import { QuestionsPage } from "../pages/questao";
 
 export const AppRouter = () => {
   return (
@@ -34,6 +35,14 @@ export const AppRouter = () => {
             </ProtectedRoute>
           } 
         />}
+        <Route
+          path="/professor/questoes"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR']}>
+              <QuestionsPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>

@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import type { User } from '../../../entities/user/model/types';
-import { HomePage } from './HomeProfessorPage';
+import { HomeProfessorPage as HomePage } from './HomeProfessorPage';
 
 const useAuthMock = useAuth as jest.Mock;
 
