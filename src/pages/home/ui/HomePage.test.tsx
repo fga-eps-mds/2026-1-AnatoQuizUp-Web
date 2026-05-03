@@ -7,20 +7,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import type { User } from '../../../entities/user/model/types';
-import { HomePage } from './HomePage';
+import { HomePage } from './HomePage'; 
 
 const useAuthMock = useAuth as jest.Mock;
-
-const user: User = {
-  id: 'user-1',
-  name: 'Ana Estudante',
-  email: 'ana@unb.br',
-  role: 'STUDENT',
-  status: 'ACTIVE',
-  authProvider: 'LOCAL',
-  course: 'Medicina',
-  institution: 'Universidade de Brasília',
-};
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -46,23 +35,31 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    await testUser.click(screen.getByRole('button', { name: /Entrar agora/i }));
-
     expect(screen.getByText(/Domine a/i)).toBeInTheDocument();
+
+    await testUser.click(screen.getByRole('button', { name: /Entrar agora/i }));
     expect(screen.getByTestId('location')).toHaveTextContent('/login');
   });
 
-  it('renders the authenticated profile card and navigates to quizzes', async () => {
-    const testUser = userEvent.setup();
-    useAuthMock.mockReturnValue({ user, isAuthenticated: true });
+  it('redirects to /professor/home when the user is a PROFESSOR', () => {
+    useAuthMock.mockReturnValue({ 
+      user: { role: 'PROFESSOR' } as User, 
+      isAuthenticated: true 
+    });
 
     renderHomePage();
 
-    expect(screen.getByText('Ana Estudante')).toBeInTheDocument();
-    expect(screen.getByText(/Medicina \| UnB/i)).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/professor/home');
+  });
 
-    await testUser.click(screen.getByRole('button', { name: /Acessar Quizzes/i }));
+  it('redirects to /aluno/home when the user is a STUDENT', () => {
+    useAuthMock.mockReturnValue({ 
+      user: { role: 'STUDENT' } as User, 
+      isAuthenticated: true 
+    });
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/quizzes');
+    renderHomePage();
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/home');
   });
 });

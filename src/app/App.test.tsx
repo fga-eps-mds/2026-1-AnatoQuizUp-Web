@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
-import { useAuth } from './providers/AuthProvider';
 
 jest.mock('./providers/AuthProvider', () => ({
   AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -74,14 +73,9 @@ describe('App', () => {
     expect(screen.getByText('Reset password route')).toBeInTheDocument();
   });
 
-  it('redirects unknown routes to home inside the authenticated layout', () => {
-    (useAuth as jest.Mock).mockReturnValue({ 
-      isAuthenticated: true, 
-      user: { role: 'STUDENT' } 
-    });
+  it('redirects unknown routes to the public home route', () => {
     renderAppAt('/unknown');
 
-    expect(screen.getByText('Authenticated layout')).toBeInTheDocument();
     expect(screen.getByText('Home route')).toBeInTheDocument();
   });
 });
