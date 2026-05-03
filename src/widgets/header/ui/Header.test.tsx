@@ -77,6 +77,16 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: /Sair da visão de aluno/i })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('navigates professors to the question bank', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Questões/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/professor/questoes');
+  });
+
   it('renders the active admin users item', () => {
     renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/admin/usuarios');
 
