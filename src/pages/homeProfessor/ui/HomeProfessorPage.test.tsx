@@ -7,18 +7,17 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import type { User } from '../../../entities/user/model/types';
-import { HomeProfessorPage as HomePage } from './HomeProfessorPage';
+import { HomeProfessorPage } from './HomeProfessorPage';
 
 const useAuthMock = useAuth as jest.Mock;
 
-const user: User = {
-  id: 'user-1',
-  name: 'Ana Estudante',
-  email: 'ana@unb.br',
-  role: 'STUDENT',
+const professor: User = {
+  id: 'professor-1',
+  name: 'Joana Professora',
+  email: 'joana.professora@unb.br',
+  role: 'PROFESSOR',
   status: 'ACTIVE',
   authProvider: 'LOCAL',
-  course: 'Medicina',
   institution: 'Universidade de Brasília',
 };
 
@@ -29,13 +28,13 @@ const LocationProbe = () => {
 
 const renderHomePage = () =>
   render(
-    <MemoryRouter initialEntries={['/home']}>
-      <HomePage />
+    <MemoryRouter initialEntries={['/professor/home']}>
+      <HomeProfessorPage />
       <LocationProbe />
     </MemoryRouter>,
   );
 
-describe('HomePage', () => {
+describe('HomeProfessorPage', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -52,17 +51,14 @@ describe('HomePage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/login');
   });
 
-  it('renders the authenticated profile card and navigates to quizzes', async () => {
-    const testUser = userEvent.setup();
-    useAuthMock.mockReturnValue({ user, isAuthenticated: true });
+  it('renders the authenticated professor profile card', () => {
+    useAuthMock.mockReturnValue({ user: professor, isAuthenticated: true });
 
     renderHomePage();
 
-    expect(screen.getByText('Ana Estudante')).toBeInTheDocument();
-    expect(screen.getByText(/Medicina \| UnB/i)).toBeInTheDocument();
-
-    await testUser.click(screen.getByRole('button', { name: /Acessar Quizzes/i }));
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/quizzes');
+    expect(screen.getByText('Perfil do Professor')).toBeInTheDocument();
+    expect(screen.getByText('Joana Professora')).toBeInTheDocument();
+    expect(screen.getByText('joana.professora@unb.br')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Acessar Quizzes/i })).not.toBeInTheDocument();
   });
 });
