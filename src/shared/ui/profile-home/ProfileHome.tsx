@@ -8,6 +8,7 @@ type ProfileHomeProps = {
   metadata?: string | null;
   action?: ReactNode;
   onLogin: () => void;
+  children?: ReactNode;
 };
 
 export const ProfileHome = ({
@@ -17,6 +18,7 @@ export const ProfileHome = ({
   metadata,
   action,
   onLogin,
+  children,
 }: ProfileHomeProps) => {
   const initial = name?.charAt(0).toUpperCase() || 'U';
 
@@ -50,6 +52,12 @@ export const ProfileHome = ({
                   <p className="text-[#00E5FF] text-[10px] font-black uppercase">
                     {metadata}
                   </p>
+                </div>
+              )}
+
+              {children && (
+                <div className="w-full mt-2">
+                  {children}
                 </div>
               )}
             </div>
