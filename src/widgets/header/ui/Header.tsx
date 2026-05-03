@@ -57,11 +57,24 @@ export const Header = () => {
       icon: Home,
       onSelect: () => navigate("/home"),
       isActive: isRouteActive("/home") || isRouteActive("/"),
+      // se role==professor -> ir para /professor/home, se role==student -> ir para /home
     };
+    const homeProfessorItem: NavItem = {
+      key: "home",
+      label: "Início",
+      icon: Home,
+      onSelect: () => navigate("/professor/home"),
+      isActive:
+        isRouteActive("/professor/home") ||
+        isRouteActive("/home") ||
+        isRouteActive("/"),
+    };
+    // se role==professor -> ir para /professor/home, se role==student -> ir para /home
+
     switch (role) {
       case "PROFESSOR":
         return [
-          homeItem,
+          homeProfessorItem,
           {
             key: "view-as-student",
             label: isViewingAsStudent

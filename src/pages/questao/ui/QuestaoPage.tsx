@@ -1,52 +1,96 @@
-import { Edit2, GraduationCap, Plus, Search, Sparkles, Trash2 } from 'lucide-react';
+import { Edit2, GraduationCap, Plus, Search, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
 
 type QuestionDifficulty = 'Fácil' | 'Médio' | 'Difícil';
-type QuestionSource = 'Manual' | 'IA';
 
 type Question = {
   id: string;
   topic: string;
   statement: string;
   difficulty: QuestionDifficulty;
-  source: QuestionSource;
   createdAt: string;
 };
 
 const questions: Question[] = [
+
   {
-    id: 'question-1',
-    topic: 'Tórax',
-    statement: 'Qual estrutura forma a parede anterior do mediastino superior?',
+    id: 'question-5',
+    topic: 'Imagem',
+    statement: 'Em uma radiografia de tórax em perfil, qual estrutura anatômica forma a "silhueta" da borda anterior do coração?',
     difficulty: 'Médio',
-    source: 'IA',
     createdAt: '12/04/2025',
   },
   {
-    id: 'question-2',
-    topic: 'Tórax',
-    statement: 'Cite os ramos do arco aórtico e suas relações anatômicas com o coração.',
+    id: 'question-6',
+    topic: 'Imagem',
+    statement: 'Na ressonância magnética cardíaca, como diferenciar miocárdio viável de fibrose em sequências com injeção de gadolínio?',
     difficulty: 'Difícil',
-    source: 'Manual',
-    createdAt: '08/04/2025',
+    createdAt: '10/04/2025',
   },
   {
-    id: 'question-3',
-    topic: 'Tórax',
-    statement: 'Quais são os limites do triângulo cardíaco na projeção anterior?',
+    id: 'question-7',
+    topic: 'Imagem',
+    statement: 'Em uma mamografia de rotina, qual o posicionamento correto para visualizar a cauda de Spence?',
+    difficulty: 'Médio',
+    createdAt: '09/04/2025',
+  },
+  {
+    id: 'question-8',
+    topic: 'Imagem',
+    statement: 'Na ecografia abdominal, qual sinal ultrassonográfico indica a presença de líquido livre na vesícula biliar?',
     difficulty: 'Fácil',
-    source: 'IA',
+    createdAt: '07/04/2025',
+  },
+  {
+    id: 'question-9',
+    topic: 'Imagem',
+    statement: 'Em uma tomografia computadorizada de tórax, quais os achados típicos de uma dissecção de aorta do tipo A de Stanford?',
+    difficulty: 'Difícil',
+    createdAt: '06/04/2025',
+  },
+  {
+    id: 'question-10',
+    topic: 'Imagem',
+    statement: 'Na radiografia de abdome agudo, quais são os critérios para diagnóstico de obstrução intestinal em alça fechada?',
+    difficulty: 'Médio',
     createdAt: '05/04/2025',
   },
   {
-    id: 'question-4',
+    id: 'question-11',
     topic: 'Imagem',
-    statement: 'Na radiografia apresentada, identifique o ventrículo direito e sua borda.',
+    statement: 'Na ultrassonografia obstétrica, com qual idade gestacional o saco gestacional se torna visível por via transvaginal?',
+    difficulty: 'Fácil',
+    createdAt: '03/04/2025',
+  },
+  {
+    id: 'question-12',
+    topic: 'Imagem',
+    statement: 'Em uma ressonância magnética de joelho, qual a sequência mais sensível para detectar lesão do ligamento cruzado anterior?',
+    difficulty: 'Médio',
+    createdAt: '02/04/2025',
+  },
+  {
+    id: 'question-13',
+    topic: 'Imagem',
+    statement: 'Na mamografia digital, descreva a diferença entre microcalcificações benignas e malignas em sua morfologia e distribuição.',
     difficulty: 'Difícil',
-    source: 'Manual',
     createdAt: '01/04/2025',
   },
+  {
+    id: 'question-14',
+    topic: 'Imagem',
+    statement: 'Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?',
+    difficulty: 'Médio',
+    createdAt: '31/03/2025',
+  },
+  {
+    id: 'question-15',
+    topic: 'Imagem',
+    statement: 'Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?',
+    difficulty: 'Médio',
+    createdAt: '30/03/2025',
+  }
 ];
 
 const getInitials = (name?: string | null) => {
@@ -95,13 +139,13 @@ const PageHeader = () => {
   );
 };
 
-const QuestionsSummary = ({ total, aiTotal }: { total: number; aiTotal: number }) => (
+const QuestionsSummary = ({ total }: { total: number }) => (
   <section className="flex w-full flex-col gap-4 rounded-xl border border-[#e0e5ef] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 className="text-base font-bold text-[#0b1840]">Suas questões</h2>
       <p className="text-xs text-[#8a9ab8]">
         {total > 0
-          ? `${total} questões cadastradas · ${aiTotal} geradas por IA`
+          ? `${total} questões cadastradas`
           : 'Nenhuma questão cadastrada ainda'}
       </p>
     </div>
@@ -162,16 +206,6 @@ const QuestionsFilters = ({
       <option value="dificil">Difícil</option>
     </select>
 
-    <select
-      className="rounded-lg border border-[#e0e5ef] bg-white px-4 py-2 text-xs text-[#4a5578] outline-none focus:border-[#00e5cc]"
-      aria-label="Filtrar por origem"
-      defaultValue="all"
-    >
-      <option value="all">Origem</option>
-      <option value="manual">Manual</option>
-      <option value="ia">IA</option>
-    </select>
-
     <span className="text-[11px] text-[#8a9ab8]">{resultCount} resultado(s)</span>
   </section>
 );
@@ -182,26 +216,13 @@ const Badge = ({ children, className }: { children: string; className: string })
   </span>
 );
 
-const SourceBadge = ({ source }: { source: QuestionSource }) => {
-  if (source === 'Manual') {
-    return <span className="text-[10px] text-[#8a9ab8]">Manual</span>;
-  }
-
-  return (
-    <span className="inline-flex w-fit items-center gap-1 rounded bg-[#f2f4f8] px-1.5 py-1 text-[9px] font-bold text-[#3c3489]">
-      <Sparkles size={10} aria-hidden="true" />
-      IA
-    </span>
-  );
-};
-
 const QuestionsTable = ({ items }: { items: Question[] }) => (
   <section className="w-full overflow-hidden rounded-xl border border-[#e0e5ef] bg-white">
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] border-collapse text-left">
+      <table className="w-full min-w-[680px] border-collapse text-left">
         <thead className="bg-[#f8f9fc]">
           <tr className="border-b border-[#e8eaf2]">
-            {['Tema', 'Enunciado', 'Dific.', 'Origem', 'Criada em', 'Ações'].map((heading) => (
+            {['Tema', 'Enunciado', 'Dific.', 'Criada em', 'Ações'].map((heading) => (
               <th
                 key={heading}
                 scope="col"
@@ -221,9 +242,6 @@ const QuestionsTable = ({ items }: { items: Question[] }) => (
               <td className="max-w-[320px] px-4 py-4 text-xs text-[#4a5578]">{question.statement}</td>
               <td className="px-4 py-4 align-top">
                 <Badge className={difficultyStyles[question.difficulty]}>{question.difficulty}</Badge>
-              </td>
-              <td className="px-4 py-4 align-top">
-                <SourceBadge source={question.source} />
               </td>
               <td className="whitespace-nowrap px-4 py-4 text-[11px] text-[#8a9ab8]">{question.createdAt}</td>
               <td className="px-4 py-3">
@@ -260,7 +278,7 @@ const EmptyQuestionsState = () => (
       </div>
       <h2 className="text-base font-bold text-[#0b1840]">Nenhuma questão cadastrada</h2>
       <p className="mt-3 text-xs leading-5 text-[#8a9ab8]">
-        Você ainda não criou nenhuma questão. Comece criando manualmente ou use a IA para gerar questões por tema.
+        Você ainda não criou nenhuma questão. Comece criando sua primeira questão para organizar o banco da disciplina.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button
@@ -270,20 +288,13 @@ const EmptyQuestionsState = () => (
           <Plus size={15} aria-hidden="true" />
           Nova questão
         </button>
-        <button
-          type="button"
-          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#f2f4f8] px-5 py-3 text-xs font-bold text-[#3c3489] transition-colors hover:bg-[#e0e8ff]"
-        >
-          <Sparkles size={15} aria-hidden="true" />
-          Gerar com IA
-        </button>
       </div>
     </div>
   </section>
 );
 
 export const QuestionsPage = () => {
-  const [searchTerm, setSearchTerm] = useState('coração');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
@@ -291,20 +302,18 @@ export const QuestionsPage = () => {
     if (!normalizedSearch) return questions;
 
     return questions.filter((question) =>
-      [question.topic, question.statement, question.difficulty, question.source]
+      [question.topic, question.statement, question.difficulty]
         .join(' ')
         .toLocaleLowerCase('pt-BR')
         .includes(normalizedSearch),
     );
   }, [searchTerm]);
 
-  const aiTotal = questions.filter((question) => question.source === 'IA').length;
-
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#f3f6fb]">
       <PageHeader />
       <main className="flex w-full flex-1 flex-col gap-4 overflow-auto px-5 py-4">
-        <QuestionsSummary total={questions.length} aiTotal={aiTotal} />
+        <QuestionsSummary total={questions.length} />
         {questions.length > 0 ? (
           <>
             <QuestionsFilters

@@ -30,17 +30,11 @@ export const HomeProfessorPage = () => {
             </div>
 
             <div className="text-center">
-              <p className="text-[#fffffe]/50 text-[10px] uppercase tracking-widest font-bold mb-1">Perfil do Estudante</p>
+              <p className="text-[#fffffe]/50 text-[10px] uppercase tracking-widest font-bold mb-1">Perfil do Professor</p>
               <h2 className="text-[#fffffe] text-3xl font-bold">{user?.name}</h2>
               <div className="mt-3 inline-block px-4 py-1 bg-[#00E5FF]/10 rounded-full border border-[#00E5FF]/20">
-                <p className="text-[#00E5FF] text-[10px] font-black uppercase">{user?.course} | UnB</p>
+                <p className="text-[#00E5FF] text-[10px] font-black uppercase">{user?.email}</p>
               </div>
-            </div>
-
-            <div className="w-full flex flex-col gap-3 mt-4">
-              <Button onClick={() => navigate('/quizzes')}>
-                Acessar Quizzes
-              </Button>
             </div>
           </div>
         ) : (

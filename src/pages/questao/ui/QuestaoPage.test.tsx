@@ -44,9 +44,10 @@ describe("QuestionsPage", () => {
     expect(screen.getByLabelText(/Usuário Joana Batista/i)).toHaveTextContent(
       "JB",
     );
-    expect(
-      screen.getByText(/4 questões cadastradas · 2 geradas por IA/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/11 questões cadastradas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/geradas por IA/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Filtrar por origem/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /Origem/i })).not.toBeInTheDocument();
   });
 
   it("filters questions by search term", async () => {
@@ -55,13 +56,13 @@ describe("QuestionsPage", () => {
     render(<QuestionsPage />);
 
     const search = screen.getByRole("textbox", { name: /Buscar questão/i });
-    expect(screen.getByText(/arco aórtico/i)).toBeInTheDocument();
+    expect(screen.getByText(/silhueta/i)).toBeInTheDocument();
 
     await testUser.clear(search);
-    await testUser.type(search, "radiografia");
+    await testUser.type(search, "gadolínio");
 
-    expect(screen.getByText(/Na radiografia apresentada/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Qual estrutura forma/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/injeção de gadolínio/i)).toBeInTheDocument();
+    expect(screen.queryByText(/silhueta/i)).not.toBeInTheDocument();
     expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
   });
 });
