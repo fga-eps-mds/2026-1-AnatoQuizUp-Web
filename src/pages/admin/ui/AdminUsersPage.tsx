@@ -1,112 +1,96 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronRight, Check, X, User as UserIcon, ChevronDown, Menu, Home, Users, Settings } from 'lucide-react';
 import logo from '../../../shared/assets/image/logo.png';
-import { UserDetailsDrawer } from "./UserDetailsDrawer";
+import { UserDetailsDrawer } from './UserDetailsDrawer';
 import type { AdminUser, UserStatus } from '../../../entities/user/model/types';
-
-const mockUsers: AdminUser[] = [
-  {
-    id: "1",
-    name: "Ana Beatriz Silva",
-    email: "ana@email.com",
-    role: "STUDENT",
-    status: "ACTIVE",
-    createdAt: "25/04/2026",
-    codigo: "123456",
-    department: "Biologia",
-    course: "Fisioterapia",
-    authProvider: "LOCAL",
-  },
-  {
-    id: "2",
-    name: "Carlos Eduardo",
-    email: "carlos@email.com",
-    role: "PROFESSOR",
-    status: "PENDING",
-    createdAt: "25/04/2026",
-    codigo: "654321",
-    department: "Anatomia",
-    course: "Medicina",
-    authProvider: "LOCAL",
-  },
-  {
-    id: "3",
-    name: "Beatriz Alves",
-    email: "beatriz@email.com",
-    role: "PROFESSOR",
-    status: "PENDING",
-    createdAt: "26/04/2026",
-    codigo: "987654",
-    department: "Histologia",
-    course: "Enfermagem",
-    authProvider: "LOCAL",
-  },
-  {
-    id: "4",
-    name: "Lucas Oliveira",
-    email: "lucas@email.com",
-    role: "STUDENT",
-    status: "ACTIVE",
-    createdAt: "27/04/2026",
-    codigo: "432198",
-    department: "Anatomia",
-    course: "Medicina",
-    authProvider: "LOCAL",
-  },
-  {
-    id: "5",
-    name: "Mariana Costa",
-    email: "mariana@email.com",
-    role: "ADMIN",
-    status: "ACTIVE",
-    createdAt: "22/04/2026",
-    codigo: "112233",
-    department: "Administração",
-    course: "Gestão",
-    authProvider: "LOCAL",
-  },
-  {
-    id: "6",
-    name: "Rafael Sousa",
-    email: "rafael@email.com",
-    role: "PROFESSOR",
-    status: "INACTIVE",
-    createdAt: "20/04/2026",
-    codigo: "776655",
-    department: "Fisiologia",
-    course: "Fisioterapia",
-    authProvider: "LOCAL",
-  },
-];
+import {
+  fetchAdminUserById,
+  fetchAdminUsers,
+  updateAdminUserStatus,
+} from '../model/adminUsersService';
 
 export const AdminUsersPage = () => {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [users, setUsers] = useState<AdminUser[]>(mockUsers);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | UserStatus>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
-  const pendingUsers = users.filter((u) => u.status === 'PENDING');
+  const PAGE_LIMIT = 10;
 
-  const filteredUsers = users
-    .filter((user) =>
-      statusFilter === 'ALL' ? true : user.status === statusFilter,
-    )
-    .filter((user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+  const loadUsers = async (page: number) => {
+    setIsLoading(true);
+    setErrorMsg('');
 
-  const handleUserStatusChange = (userId: string, newStatus: UserStatus) => {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId ? { ...user, status: newStatus } : user,
-      ),
-    );
+    try {
+      const response = await fetchAdminUsers(page, PAGE_LIMIT);
+      setUsers(response.users);
+      setTotalUsers(response.total);
+      setCurrentPage(response.page);
+    } catch (error) {
+      const parsedError = error as Error;
+      setErrorMsg(parsedError.message || 'Nao foi possivel carregar usuarios.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    if (selectedUser?.id === userId) {
-      setSelectedUser((currentUser) =>
-        currentUser ? { ...currentUser, status: newStatus } : currentUser,
-      );
+  useEffect(() => {
+    void loadUsers(1);
+  }, []);
+
+  const pendingUsers = useMemo(
+    () => users.filter((user) => user.status === 'PENDING'),
+    [users],
+  );
+
+  const filteredUsers = useMemo(
+    () => users
+      .filter((user) => (statusFilter === 'ALL' ? true : user.status === statusFilter))
+      .filter((user) => (
+        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        || user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )),
+    [users, searchTerm, statusFilter],
+  );
+
+  const handleUserStatusChange = async (userId: string, newStatus: UserStatus) => {
+    setIsUpdatingStatus(true);
+    setErrorMsg('');
+
+    try {
+      await updateAdminUserStatus(userId, newStatus);
+
+      setUsers((currentUsers) => (
+        currentUsers.map((user) => (user.id === userId ? { ...user, status: newStatus } : user))
+      ));
+
+      if (selectedUser?.id === userId) {
+        setSelectedUser((currentUser) => (
+          currentUser ? { ...currentUser, status: newStatus } : currentUser
+        ));
+      }
+    } catch (error) {
+      const parsedError = error as Error;
+      setErrorMsg(parsedError.message || 'Nao foi possivel atualizar o status do usuario.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const openUserDetails = async (user: AdminUser) => {
+    setErrorMsg('');
+
+    try {
+      const userDetails = await fetchAdminUserById(user.id);
+      setSelectedUser(userDetails);
+    } catch {
+      // Fallback para os dados da listagem quando o endpoint de detalhe falhar.
+      setSelectedUser(user);
     }
   };
 
@@ -173,6 +157,12 @@ export const AdminUsersPage = () => {
           <h1 className="text-2xl font-semibold mb-6 text-[#1b2d45]">Gerenciar usuários</h1>
         </div>
 
+        {errorMsg && (
+          <div className="mx-6 mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Pending Section */}
         {pendingUsers.length > 0 && (
           <div className="rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
@@ -210,6 +200,7 @@ export const AdminUsersPage = () => {
                   <div className="flex gap-2 mt-4">
                     <button
                       type="button"
+                      disabled={isUpdatingStatus}
                       onClick={() => handleUserStatusChange(user.id, 'ACTIVE')}
                       className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#00EBC7] px-4 py-2 text-[#00214D] font-medium shadow-sm transition hover:brightness-90 cursor-pointer"
                     >
@@ -218,6 +209,7 @@ export const AdminUsersPage = () => {
                     </button>
                     <button
                       type="button"
+                      disabled={isUpdatingStatus}
                       onClick={() => handleUserStatusChange(user.id, 'INACTIVE')}
                       className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500 bg-white px-4 py-2 text-[#FF5470] font-medium transition hover:bg-red-50 cursor-pointer"
                     >
@@ -290,49 +282,66 @@ export const AdminUsersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                        <UserIcon className="h-5 w-5" />
-                      </div>
-                      <span>{user.name}</span>
-                    </div>
-                  </td>
-                  <td className="text-gray-500">{user.email}</td>
-                  <td>
-                    <Badge type="role" value={user.role} />
-                  </td>
-                  <td>
-                    <Badge type="status" value={user.status} />
-                  </td>
-                  <td>{user.createdAt}</td>
-                  <td className="py-3 text-left">
-                    <button
-                      type="button"
-                      aria-label={`Ver detalhes de ${user.name}`}
-                      className="text-blue-600 hover:text-blue-800"
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      <ChevronRight className="h-5 w-5 cursor-pointer text-[#00214D] hover:brightness-90" />
-                    </button>
-                  </td>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">Carregando usuarios...</td>
                 </tr>
-              ))}
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                          <UserIcon className="h-5 w-5" />
+                        </div>
+                        <span>{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="text-gray-500">{user.email}</td>
+                    <td>
+                      <Badge type="role" value={user.role} />
+                    </td>
+                    <td>
+                      <Badge type="status" value={user.status} />
+                    </td>
+                    <td>{user.createdAt}</td>
+                    <td className="py-3 text-left">
+                      <button
+                        type="button"
+                        aria-label={`Ver detalhes de ${user.name}`}
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => void openUserDetails(user)}
+                      >
+                        <ChevronRight className="h-5 w-5 cursor-pointer text-[#00214D] hover:brightness-90" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
 
           {/* Pagination */}
           <div className="flex justify-between items-center mt-4 text-sm">
-            <span className="text-gray-500">Mostrando {filteredUsers.length} de {users.length}</span>
+            <span className="text-gray-500">Mostrando {filteredUsers.length} de {totalUsers || users.length}</span>
             <div className="flex gap-2">
-              <button className="px-2">{"<"}</button>
-              <button className="px-2 bg-blue-600 text-white rounded">
-                1
+              <button
+                className="px-2"
+                disabled={currentPage <= 1 || isLoading}
+                onClick={() => void loadUsers(currentPage - 1)}
+              >
+                {'<'}
               </button>
-              <button className="px-2">2</button>
-              <button className="px-2">{">"}</button>
+              <button className="px-2 bg-blue-600 text-white rounded">
+                {currentPage}
+              </button>
+              <button
+                className="px-2"
+                disabled={currentPage * PAGE_LIMIT >= totalUsers || isLoading}
+                onClick={() => void loadUsers(currentPage + 1)}
+              >
+                {'>'}
+              </button>
             </div>
           </div>
         </div>
@@ -343,6 +352,10 @@ export const AdminUsersPage = () => {
         user={selectedUser}
         isOpen={!!selectedUser}
         onClose={() => setSelectedUser(null)}
+        onApprove={() => selectedUser && void handleUserStatusChange(selectedUser.id, 'ACTIVE')}
+        onReject={() => selectedUser && void handleUserStatusChange(selectedUser.id, 'INACTIVE')}
+        onDeactivate={() => selectedUser && void handleUserStatusChange(selectedUser.id, 'INACTIVE')}
+        onReactivate={() => selectedUser && void handleUserStatusChange(selectedUser.id, 'ACTIVE')}
       />
     </div>
   );
