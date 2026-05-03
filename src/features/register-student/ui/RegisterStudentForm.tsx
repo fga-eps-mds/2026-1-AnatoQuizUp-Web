@@ -85,7 +85,7 @@ const STEP_FIELDS: Record<number, RegisterStudentField[]> = {
   3: ['education', 'institution', 'course', 'period'],
 };
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,7}$/;
 const NICKNAME_REGEX = /^[a-z][a-z0-9_]*$/;
 
 const EMPTY_ACADEMIC_OPTIONS: OpcoesAcademicas = {
