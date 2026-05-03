@@ -1,0 +1,1 @@
+export { HomeProfessorPage } from './ui/HomeProfessorPage';
