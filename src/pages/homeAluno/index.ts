@@ -1,0 +1,1 @@
+export { HomeAlunoPage } from './ui/HomeAlunoPage';
