@@ -115,7 +115,7 @@ describe('httpClient', () => {
     });
     axiosMock.__mockMainClientRequest.mockResolvedValueOnce({ data: { ok: true } });
     const originalRequest = {
-      url: '/auth/me',
+      url: '/autenticacao/usuario-atual',
       headers: {},
     };
 
@@ -126,7 +126,7 @@ describe('httpClient', () => {
       }),
     ).resolves.toEqual({ data: { ok: true } });
 
-    expect(axiosMock.__mockPost).toHaveBeenCalledWith('/auth/refresh', {
+    expect(axiosMock.__mockPost).toHaveBeenCalledWith('/autenticacao/atualizar-token', {
       refreshToken: 'refresh-token-antigo',
     });
     expect(localStorage.getItem('access_token')).toBe('novo-access-token');
@@ -152,7 +152,7 @@ describe('httpClient', () => {
       .mockResolvedValueOnce({ data: { request: 1 } })
       .mockResolvedValueOnce({ data: { request: 2 } });
     const firstRequest = {
-      url: '/auth/me',
+      url: '/autenticacao/usuario-atual',
       headers: {},
     };
     const secondRequest = {
@@ -180,15 +180,15 @@ describe('httpClient', () => {
   it('does not try to refresh auth requests', async () => {
     const loginError = {
       response: { status: 401 },
-      config: { url: '/auth/login', headers: {} },
+      config: { url: '/autenticacao/login', headers: {} },
     };
     const logoutError = {
       response: { status: 401 },
-      config: { url: '/auth/logout', headers: {} },
+      config: { url: '/autenticacao/sair', headers: {} },
     };
     const refreshError = {
       response: { status: 401 },
-      config: { url: '/auth/refresh', headers: {} },
+      config: { url: '/autenticacao/atualizar-token', headers: {} },
     };
 
     await expect(getResponseErrorInterceptor()(loginError)).rejects.toBe(loginError);
@@ -200,7 +200,7 @@ describe('httpClient', () => {
   it('does not retry a request more than once', async () => {
     const error = {
       response: { status: 401 },
-      config: { url: '/auth/me', headers: {}, _retry: true },
+      config: { url: '/autenticacao/usuario-atual', headers: {}, _retry: true },
     };
 
     await expect(getResponseErrorInterceptor()(error)).rejects.toBe(error);
@@ -210,7 +210,7 @@ describe('httpClient', () => {
   it('does not try to refresh non 401 errors', async () => {
     const error = {
       response: { status: 500 },
-      config: { url: '/auth/me', headers: {} },
+      config: { url: '/autenticacao/usuario-atual', headers: {} },
     };
 
     await expect(getResponseErrorInterceptor()(error)).rejects.toBe(error);
@@ -225,7 +225,7 @@ describe('httpClient', () => {
     await expect(
       getResponseErrorInterceptor()({
         response: { status: 401 },
-        config: { url: '/auth/me', headers: {} },
+        config: { url: '/autenticacao/usuario-atual', headers: {} },
       }),
     ).rejects.toThrow('refresh falhou');
 
@@ -239,7 +239,7 @@ describe('httpClient', () => {
     await expect(
       getResponseErrorInterceptor()({
         response: { status: 401 },
-        config: { url: '/auth/me', headers: {} },
+        config: { url: '/autenticacao/usuario-atual', headers: {} },
       }),
     ).rejects.toThrow('Refresh token inexistente.');
 

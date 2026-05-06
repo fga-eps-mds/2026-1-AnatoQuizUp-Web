@@ -12,6 +12,6 @@ export const listarNacionalidades = async (): Promise<string[]> => {
     return NACIONALIDADES;
   }
 
-  const { data } = await httpClient.get<ApiSuccessResponse<string[]>>('/auth/alunos/nacionalidades');
+  const { data } = await httpClient.get<ApiSuccessResponse<string[]>>('/autenticacao/alunos/nacionalidades');
   return Array.isArray(data.dados) ? data.dados : [];
 };

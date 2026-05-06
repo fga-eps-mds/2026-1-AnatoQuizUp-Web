@@ -46,7 +46,7 @@ export const listarOpcoesAcademicas = async (): Promise<OpcoesAcademicas> => {
   }
 
   const { data } = await httpClient.get<ApiSuccessResponse<OpcoesAcademicas>>(
-    '/auth/alunos/opcoes-academicas',
+    '/autenticacao/alunos/opcoes-academicas',
   );
   return normalizarOpcoesAcademicas(data.dados ?? OPCOES_ACADEMICAS_VAZIAS);
 };

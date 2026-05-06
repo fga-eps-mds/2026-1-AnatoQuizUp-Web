@@ -1,6 +1,6 @@
 import { trimTrailingSlash } from "../utils/url";
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3333/api/v1';
+const DEFAULT_API_BASE_URL = 'http://localhost:4000/api/v1';
 
 const parseBooleanEnv = (value: string | undefined, defaultValue: boolean) => {
   if (value === undefined || value === '') return defaultValue;

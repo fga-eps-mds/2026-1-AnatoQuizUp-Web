@@ -6,10 +6,6 @@ jest.mock('../model/authService', () => ({
   loginWithCredencials: jest.fn(),
 }));
 
-jest.mock('../../../shared/config/env', () => ({
-  API_BASE_URL: 'https://api.test',
-}));
-
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
@@ -98,13 +94,13 @@ describe('LoginForm', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/admin/login');
   });
 
-  it('starts the Microsoft login flow', async () => {
+  it('navigates to the professor login route', async () => {
     const testUser = userEvent.setup();
 
     renderLoginForm();
 
     await testUser.click(screen.getByRole('button', { name: /Entrar como Professor/i }));
 
-    expect(screen.getByRole('button', { name: /Entrar como Professor/i })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/professor/login');
   });
 });

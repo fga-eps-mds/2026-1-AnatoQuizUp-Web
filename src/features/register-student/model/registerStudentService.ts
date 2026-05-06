@@ -124,7 +124,7 @@ export const registerStudent = async (values: RegisterStudentFormValues): Promis
   }
 
   try {
-    await httpClient.post('/auth/register', mapValuesToPayload(values));
+    await httpClient.post('/autenticacao/cadastro', mapValuesToPayload(values));
   } catch (error) {
     if (!axios.isAxiosError(error)) {
       throw new RegisterStudentError('Nao foi possivel concluir o cadastro. Tente novamente.');
@@ -163,11 +163,11 @@ export const validateRegisterStudentIdentity = async (
     const nickname = values.nickname.trim().toLowerCase();
     const [{ data: emailData }, { data: nicknameData }] = await Promise.all([
       httpClient.get<ApiSuccessResponse<AvailabilityResponse & { email: string }>>(
-        '/auth/alunos/email-disponivel',
+        '/autenticacao/alunos/email-disponivel',
         { params: { email } },
       ),
       httpClient.get<ApiSuccessResponse<AvailabilityResponse & { nickname: string }>>(
-        '/auth/alunos/nickname-disponivel',
+        '/autenticacao/alunos/nickname-disponivel',
         { params: { nickname } },
       ),
     ]);

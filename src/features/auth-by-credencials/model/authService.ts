@@ -86,7 +86,7 @@ export const loginWithCredencials = async (
   }
 
   try {
-    const { data } = await httpClient.post<BackendLoginResponse>('/auth/login', {
+    const { data } = await httpClient.post<BackendLoginResponse>('/autenticacao/login', {
       email,
       senha: password,
     });
@@ -122,7 +122,7 @@ export const getAuthenticatedUser = async (): Promise<User> => {
   }
 
   try {
-    const { data } = await httpClient.get<BackendMeResponse>('/auth/me');
+    const { data } = await httpClient.get<BackendMeResponse>('/autenticacao/usuario-atual');
 
     return mapUsuarioAutenticado(data.dados.usuario);
   } catch (err) {
@@ -147,7 +147,7 @@ export const logoutSession = async (refreshToken: string): Promise<void> => {
     return;
   }
 
-  await httpClient.post('/auth/logout', {
+  await httpClient.post('/autenticacao/sair', {
     refreshToken,
   });
 };

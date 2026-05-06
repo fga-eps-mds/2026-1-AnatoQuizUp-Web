@@ -1,2 +1,138 @@
-# 2026-1-AnatoQuizUp-Web
-Repositório destinado ao Frontend do projeto AnatoQuizUp no 1º semestre de 2026.
+# AnatoQuizUp Web
+
+Frontend do projeto **AnatoQuizUp** — SPA em React + Vite + Tailwind. Consome **somente o BFF** (não acessa o Backend diretamente).
+
+## Stack
+
+- React 19 + TypeScript
+- Vite 8
+- Tailwind CSS 4
+- React Router 7
+- Axios
+- Zustand (estado global; AuthProvider em Context API + localStorage atualmente)
+- Jest + Testing Library + jest-dom
+
+## Pré-requisitos
+
+| Ferramenta | Versão | Como instalar |
+|---|---|---|
+| Node.js | ≥ 20 (CI roda em 20; LTS) | https://nodejs.org/ |
+| npm | vem com o Node | — |
+| Git | qualquer recente | https://git-scm.com/ |
+| GNU Make | opcional | Windows: `choco install make` |
+| BFF rodando em `localhost:4000` | — | siga o README de `2026-1-AnatoQuizUp-BFF` antes |
+
+> O Frontend **não fala** com o Backend diretamente. Você precisa do **BFF** rodando para fluxos autenticados funcionarem.
+
+## Setup local — passo a passo
+
+### 1. Clonar e entrar no repo
+
+```powershell
+git clone https://github.com/fga-eps-mds/2026-1-AnatoQuizUp-Web.git
+cd 2026-1-AnatoQuizUp-Web
+```
+
+### 2. Criar e preencher o `.env`
+
+```powershell
+Copy-Item .env.example .env
+```
+
+O `.env` deve apontar para o **BFF** (porta 4000), não para o Backend:
+
+```dotenv
+VITE_API_URL=http://localhost:4000/api/v1
+VITE_USE_MOCKS=false
+```
+
+> `VITE_USE_MOCKS=true` ativa mocks locais para `aluno@unb.br` e `desativado@unb.br` (sem rede). Em dev real, mantenha `false`.
+
+### 3. Instalar e rodar
+
+```bash
+npm ci
+npm run dev   # vite em http://localhost:5173
+```
+
+## Stack completa de desenvolvimento
+
+Para rodar a aplicação fim-a-fim, você precisa de **três processos** em três terminais:
+
+| Terminal | Repo | Porta | Comando |
+|---|---|---|---|
+| 1 | `2026-1-AnatoQuizUp-Backend` | 3333 | `npm run dev` (com Postgres no Docker) |
+| 2 | `2026-1-AnatoQuizUp-BFF` | 4000 | `npm run dev` |
+| 3 | `2026-1-AnatoQuizUp-Web` (este) | 5173 | `npm run dev` |
+
+Atalho prático no Web:
+
+```bash
+make dev-stack    # imprime instruções pra subir os 3 (não orquestra; abre 3 terminais)
+```
+
+## Atalhos com Make
+
+```bash
+make help       # lista comandos
+make setup      # cp .env.example .env (se não existir) + npm ci
+make dev        # vite (porta 5173)
+make test       # jest
+make test-ci    # jest --coverage --runInBand
+make lint       # eslint
+make build      # tsc + vite build
+make preview    # vite preview (porta 4173)
+make clean      # apaga dist/ e coverage/
+```
+
+## Estrutura — Feature-Sliced Design
+
+```text
+src/
+├── app/                     # configuração global, providers, rotas, layouts, estilos
+├── pages/                   # telas acessadas por rota
+├── widgets/                 # blocos compostos de interface (header, sidebar, ...)
+├── features/                # funcionalidades orientadas ao usuário
+│   ├── auth-by-credencials/
+│   ├── recover-password/
+│   └── register-student/
+├── entities/                # modelos centrais do domínio
+│   └── user/
+├── shared/                  # genérico/técnico
+│   ├── api/                 # httpClient (axios), services
+│   ├── assets/
+│   ├── config/env.ts        # API_BASE_URL e USE_MOCKS
+│   ├── constants/
+│   ├── ui/                  # botões, inputs reutilizáveis
+│   └── utils/
+├── __mocks__/               # stubs Jest para assets
+├── main.tsx
+└── setupTests.ts
+```
+
+> Regra FSD: camada superior pode importar inferior; nunca o inverso.
+
+## Variáveis de ambiente
+
+| Variável | Padrão dev | Produção | Descrição |
+|---|---|---|---|
+| `VITE_API_URL` | `http://localhost:4000/api/v1` | URL pública do BFF | Base do `httpClient` |
+| `VITE_USE_MOCKS` | `false` | `false` | Liga mocks locais (`authService`) |
+
+## Troubleshooting
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| Network error ao tentar login | BFF não está rodando | Suba o BFF em `localhost:4000` |
+| Login devolve 401 mesmo com credenciais certas | `JWT_SECRET_KEY` divergente entre BFF e Backend | Confira que estão idênticos nos dois `.env` |
+| `VITE_API_URL` mudou mas o front continua chamando URL antiga | Vite cacheia a build | Stop `npm run dev`, apague `node_modules/.vite/` e suba de novo |
+| Erro 503 com `IA_INDISPONIVEL` em `/ia/...` | Esperado | AI Service ainda não foi implementado nesta release; mantenha placeholders |
+| CORS bloqueando localhost | `CORS_ORIGINS` do BFF não inclui `http://localhost:5173` | Editar `.env` do BFF |
+
+## Como contribuir
+
+- Branches: Git Flow (`feature/<id>-descricao` a partir de `develop`).
+- Commits: Conventional Commits.
+- Cobertura mínima: **85%**.
+- Componentes em `ui/`, lógica em `model/`. Testes ao lado do arquivo.
+- Tailwind para estilo. Tipos em PT-BR (decisão DP12).
