@@ -2,13 +2,30 @@ jest.mock("../../../app/providers/AuthProvider", () => ({
   useAuth: jest.fn(),
 }));
 
-import { render, screen } from "@testing-library/react";
+jest.mock("../../../features/manage-questions/model/questionService", () => ({
+  listProfessorQuestions: jest.fn(),
+  createQuestion: jest.fn(),
+  updateQuestion: jest.fn(),
+  deleteQuestion: jest.fn(),
+}));
+
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
+import {
+  createQuestion,
+  deleteQuestion,
+  listProfessorQuestions,
+} from "../../../features/manage-questions/model/questionService";
+import type { ProfessorQuestion } from "../../../features/manage-questions/model/types";
 import type { User } from "../../../entities/user/model/types";
 import { QuestionsPage } from "./QuestaoPage";
 
 const useAuthMock = useAuth as jest.Mock;
+const listProfessorQuestionsMock = listProfessorQuestions as jest.Mock;
+const createQuestionMock = createQuestion as jest.Mock;
+const deleteQuestionMock = deleteQuestion as jest.Mock;
 
 const professor: User = {
   id: "professor-1",
@@ -19,6 +36,45 @@ const professor: User = {
   authProvider: "LOCAL",
 };
 
+const questions: ProfessorQuestion[] = [
+  {
+    id: "question-14",
+    topic: "Imagem",
+    tags: ["radiografia"],
+    type: "Múltipla escolha",
+    statement: "Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?",
+    difficulty: "Médio",
+    origin: "Manual",
+    createdAt: "31/03/2025",
+    explanation: "",
+    alternatives: [
+      { id: "a", label: "A", text: "Broncograma aéreo", isCorrect: false },
+      { id: "b", label: "B", text: "Perda de volume pulmonar", isCorrect: true },
+    ],
+  },
+  {
+    id: "question-15",
+    topic: "Imagem",
+    tags: ["eco"],
+    type: "Múltipla escolha",
+    statement: "Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?",
+    difficulty: "Difícil",
+    origin: "Manual",
+    createdAt: "30/03/2025",
+    explanation: "",
+    alternatives: [
+      { id: "a", label: "A", text: "Paraesternal eixo curto", isCorrect: true },
+      { id: "b", label: "B", text: "Subcostal", isCorrect: false },
+    ],
+  },
+];
+
+const renderQuestionsPage = (openCreateModal = false) => render(
+  <MemoryRouter initialEntries={[openCreateModal ? "/professor/criar-questao" : "/professor/questoes"]}>
+    <QuestionsPage openCreateModal={openCreateModal} />
+  </MemoryRouter>,
+);
+
 describe("QuestionsPage", () => {
   beforeEach(() => {
     useAuthMock.mockReturnValue({
@@ -28,14 +84,21 @@ describe("QuestionsPage", () => {
       login: jest.fn(),
       logout: jest.fn(),
     });
+    listProfessorQuestionsMock.mockResolvedValue(questions);
+    createQuestionMock.mockImplementation(async (values) => ({
+      id: "question-16",
+      createdAt: "01/04/2025",
+      tags: [],
+      ...values,
+    }));
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders the question bank summary and professor identity", () => {
-    render(<QuestionsPage />);
+  it("renders the question bank summary and professor identity", async () => {
+    renderQuestionsPage();
 
     expect(
       screen.getByRole("heading", { name: /Banco de Questões/i }),
@@ -44,18 +107,16 @@ describe("QuestionsPage", () => {
     expect(screen.getByLabelText(/Usuário Joana Batista/i)).toHaveTextContent(
       "JB",
     );
-    expect(screen.getByText(/2 questões cadastradas/i)).toBeInTheDocument();
-    expect(screen.queryByText(/geradas por IA/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Filtrar por origem/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: /Origem/i })).not.toBeInTheDocument();
+    expect(await screen.findByText(/2 questões cadastradas/i)).toBeInTheDocument();
+    expect(listProfessorQuestionsMock).toHaveBeenCalledTimes(1);
   });
 
   it("filters questions by search term", async () => {
     const testUser = userEvent.setup();
 
-    render(<QuestionsPage />);
+    renderQuestionsPage();
 
-    const search = screen.getByRole("textbox", { name: /Buscar questão/i });
+    const search = await screen.findByRole("textbox", { name: /Buscar questão/i });
     expect(screen.getByText(/atelectasia/i)).toBeInTheDocument();
 
     await testUser.clear(search);
@@ -64,5 +125,60 @@ describe("QuestionsPage", () => {
     expect(screen.getByText(/janela acústica/i)).toBeInTheDocument();
     expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
     expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
+  });
+
+  it("keeps save disabled until required fields are filled and then creates a question", async () => {
+    const testUser = userEvent.setup();
+
+    renderQuestionsPage(true);
+
+    expect(await screen.findByRole("dialog", { name: /Nova questão/i })).toBeInTheDocument();
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const statement = screen.getByRole("textbox", { name: /Enunciado da questão/i });
+    expect(screen.getByRole("button", { name: /Próximo/i })).toBeDisabled();
+
+    await testUser.type(statement, "Pergunta obrigatória?");
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const saveButton = screen.getByRole("button", { name: /Salvar questão/i });
+    expect(saveButton).toBeDisabled();
+
+    await testUser.type(screen.getByRole("textbox", { name: /Texto da alternativa A/i }), "Esterno");
+    await testUser.type(screen.getByRole("textbox", { name: /Texto da alternativa B/i }), "Manúbrio");
+    await testUser.click(screen.getByRole("radio", { name: /Marcar alternativa B como correta/i }));
+
+    expect(saveButton).toBeEnabled();
+    await testUser.click(saveButton);
+
+    await waitFor(() => {
+      expect(createQuestionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          topic: "Tórax",
+          statement: "Pergunta obrigatória?",
+        }),
+      );
+    });
+    expect(await screen.findByText("Questão cadastrada com sucesso!")).toBeInTheDocument();
+  });
+
+  it("opens a confirmation modal before deleting a question", async () => {
+    const testUser = userEvent.setup();
+    deleteQuestionMock.mockResolvedValueOnce(undefined);
+
+    renderQuestionsPage();
+
+    const row = (await screen.findByText(/atelectasia/i)).closest("tr");
+    expect(row).not.toBeNull();
+
+    await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Excluir/i }));
+
+    expect(screen.getByRole("dialog", { name: /Excluir questão/i })).toBeInTheDocument();
+    await testUser.click(screen.getAllByRole("button", { name: /Excluir/i }).at(-1) as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(deleteQuestionMock).toHaveBeenCalledWith("question-14");
+    });
+    expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
   });
 });
