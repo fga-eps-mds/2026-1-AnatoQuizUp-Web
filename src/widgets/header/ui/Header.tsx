@@ -89,12 +89,23 @@ export const Header = () => {
             label: "Questões",
             icon: Newspaper,
             onSelect: () => navigate("/professor/questoes"),
-            isActive: location.pathname.startsWith("/professor/questoes"),
+            isActive:
+              location.pathname.startsWith("/professor/questoes") ||
+              location.pathname.startsWith("/professor/criar-questao"),
           },
         ];
       case "ADMIN":
         return [
           homeItem,
+          {
+            key: "questoes",
+            label: "Questões",
+            icon: Newspaper,
+            onSelect: () => navigate("/professor/questoes"),
+            isActive:
+              location.pathname.startsWith("/professor/questoes") ||
+              location.pathname.startsWith("/professor/criar-questao"),
+          },
           {
             key: "admin-users",
             label: "Gerenciar Usuários",
