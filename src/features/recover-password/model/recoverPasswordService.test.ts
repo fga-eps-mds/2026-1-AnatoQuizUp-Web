@@ -28,7 +28,7 @@ describe('recoverPasswordService', () => {
     await expect(requestPasswordRecovery('aluno@unb.br')).resolves.toBe(
       'Se o email existir no sistema, enviamos instrucoes.',
     );
-    expect(postMock).toHaveBeenCalledWith('/auth/forgot-password', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/recuperar-senha', {
       email: 'aluno@unb.br',
     });
   });
@@ -44,7 +44,7 @@ describe('recoverPasswordService', () => {
     await expect(resetPassword('token', 'senha1234')).resolves.toBe(
       'Senha redefinida com sucesso.',
     );
-    expect(postMock).toHaveBeenCalledWith('/auth/reset-password', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/redefinir-senha', {
       token: 'token',
       senha: 'senha1234',
     });

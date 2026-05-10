@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { API_BASE_URL } from '../../../shared/config/env';
 import { Button } from '../../../shared/ui/button/Button';
 import { Input } from '../../../shared/ui/input/Input';
 import { loginWithCredencials } from '../model/authService';
@@ -32,8 +31,8 @@ export const LoginForm = () => {
     }
   };
 
-  const handleMicrosoftLogin = () => {
-    globalThis.location.href = `${API_BASE_URL}/auth/microsoft`;
+  const handleProfessorLogin = () => {
+    navigate('/professor/login');
   };
 
   return (
@@ -79,7 +78,7 @@ export const LoginForm = () => {
 
       <button
         type="button"
-        onClick={handleMicrosoftLogin}
+        onClick={handleProfessorLogin}
         className="flex items-center justify-center gap-3 bg-white text-[#0A1128] rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-wide shadow-sm hover:brightness-95 transition-colors border border-[#0A1128]/10"
       >
         <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

@@ -40,9 +40,9 @@ const redirectToLogin = () => {
 };
 
 const isAuthEndpoint = (url?: string) => (
-  url?.includes('/auth/login') ||
-  url?.includes('/auth/logout') ||
-  url?.includes('/auth/refresh')
+  url?.includes('/autenticacao/login') ||
+  url?.includes('/autenticacao/sair') ||
+  url?.includes('/autenticacao/atualizar-token')
 );
 
 const refreshTokens = async () => {
@@ -52,7 +52,7 @@ const refreshTokens = async () => {
     throw new Error('Refresh token inexistente.');
   }
 
-  const { data } = await refreshClient.post<RefreshResponse>('/auth/refresh', {
+  const { data } = await refreshClient.post<RefreshResponse>('/autenticacao/atualizar-token', {
     refreshToken,
   });
 
