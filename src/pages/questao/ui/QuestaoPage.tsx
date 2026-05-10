@@ -1,6 +1,7 @@
 import { Edit2, GraduationCap, Plus, Search, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { listarQuestoesProfessor, type ProfessorQuestion } from '../../../features/manage-questions';
 
 type QuestionDifficulty = 'Fácil' | 'Médio' | 'Difícil';
 
@@ -11,8 +12,6 @@ type Question = {
   difficulty: QuestionDifficulty;
   createdAt: string;
 };
-
-const questions: Question[] = [];
 
 const getInitials = (name?: string | null) => {
   if (!name) return 'U';
@@ -33,6 +32,30 @@ const topicStyles: Record<string, string> = {
   Tórax: 'bg-[#e1f5ee] text-[#0b6b5a]',
   Imagem: 'bg-[#eef1f8] text-[#993556]',
 };
+
+const formatQuestionDate = (date: string): string => {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+  }).format(parsedDate);
+};
+
+const getQuestionDifficulty = (question: ProfessorQuestion): QuestionDifficulty => {
+  if (question.tipoQuestao === 'CERTO_ERRADO') return 'Difícil';
+
+  return 'Médio';
+};
+
+const mapProfessorQuestionToTableQuestion = (question: ProfessorQuestion): Question => ({
+  id: question.id,
+  topic: question.tema.nome,
+  statement: question.enunciado,
+  difficulty: getQuestionDifficulty(question),
+  createdAt: formatQuestionDate(question.criadoEm),
+});
 
 const PageHeader = () => {
   const { user } = useAuth();
@@ -215,7 +238,32 @@ const EmptyQuestionsState = () => (
 );
 
 export const QuestionsPage = () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadQuestions = async () => {
+      try {
+        const { questoes } = await listarQuestoesProfessor();
+
+        if (isMounted) {
+          setQuestions(questoes.map(mapProfessorQuestionToTableQuestion));
+        }
+      } catch {
+        if (isMounted) {
+          setQuestions([]);
+        }
+      }
+    };
+
+    void loadQuestions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
@@ -228,7 +276,7 @@ export const QuestionsPage = () => {
         .toLocaleLowerCase('pt-BR')
         .includes(normalizedSearch),
     );
-  }, [searchTerm]);
+  }, [questions, searchTerm]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#f3f6fb]">
