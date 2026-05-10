@@ -12,22 +12,7 @@ type Question = {
   createdAt: string;
 };
 
-const questions: Question[] = [
-  {
-    id: 'question-14',
-    topic: 'Imagem',
-    statement: 'Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?',
-    difficulty: 'Médio',
-    createdAt: '31/03/2025',
-  },
-  {
-    id: 'question-15',
-    topic: 'Imagem',
-    statement: 'Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?',
-    difficulty: 'Difícil',
-    createdAt: '30/03/2025',
-  }
-];
+const questions: Question[] = [];
 
 const getInitials = (name?: string | null) => {
   if (!name) return 'U';
