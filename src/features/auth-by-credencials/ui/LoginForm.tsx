@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { API_BASE_URL } from '../../../shared/config/env';
 import { Button } from '../../../shared/ui/button/Button';
 import { Input } from '../../../shared/ui/input/Input';
 import { loginWithCredencials } from '../model/authService';
@@ -30,10 +29,6 @@ export const LoginForm = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleMicrosoftLogin = () => {
-    globalThis.location.href = `${API_BASE_URL}/auth/microsoft`;
   };
 
   return (
@@ -77,20 +72,6 @@ export const LoginForm = () => {
         <div className="flex-1 h-px bg-[#00214d]/20 md:bg-[#fffffe]/20"></div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleMicrosoftLogin}
-        className="flex items-center justify-center gap-3 bg-white text-[#0A1128] rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-wide shadow-sm hover:brightness-95 transition-colors border border-[#0A1128]/10"
-      >
-        <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="0" y="0" width="10" height="10" fill="#F25022" />
-          <rect x="12" y="0" width="10" height="10" fill="#7FBA00" />
-          <rect x="0" y="12" width="10" height="10" fill="#00A4EF" />
-          <rect x="12" y="12" width="10" height="10" fill="#FFB900" />
-        </svg>
-        Entrar como Professor (UnB)
-      </button>
-
       <div className="text-center text-sm text-[#00214d] md:text-[#fffffe]/80 font-medium md:font-normal">
         Não tem uma conta?
         <Link
@@ -100,14 +81,6 @@ export const LoginForm = () => {
           Cadastrar-se
         </Link>
       </div>
-
-      <button
-        type="button"
-        onClick={() => navigate('/admin/login')}
-        className="border border-[#0A1128]/20 md:border-[#fffffe]/30 text-[#0A1128]/80 md:text-[#fffffe]/80 rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest hover:border-[#71edc8] hover:text-[#71edc8] transition-colors"
-      >
-        Entrar como Administrador
-      </button>
     </form>
   );
 };
