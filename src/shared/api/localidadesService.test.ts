@@ -43,8 +43,11 @@ describe('localidadesService', () => {
 
     await expect(listarEstados()).resolves.toEqual([{ sigla: 'DF', nome: 'Distrito Federal' }]);
     await expect(listarCidadesPorUf('df')).resolves.toEqual([{ nome: 'Brasilia', uf: 'DF' }]);
-    expect(getMock).toHaveBeenNthCalledWith(1, '/auth/alunos/localidades/estados');
-    expect(getMock).toHaveBeenNthCalledWith(2, '/auth/alunos/localidades/estados/DF/cidades');
+    expect(getMock).toHaveBeenNthCalledWith(1, '/autenticacao/alunos/localidades/estados');
+    expect(getMock).toHaveBeenNthCalledWith(
+      2,
+      '/autenticacao/alunos/localidades/estados/DF/cidades',
+    );
   });
 
   it('does not fall back to local states and cities when API data is empty', async () => {

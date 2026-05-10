@@ -51,7 +51,7 @@ describe('opcoesAcademicasService', () => {
     getMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: opcoes } });
 
     await expect(listarOpcoesAcademicas()).resolves.toEqual(opcoes);
-    expect(getMock).toHaveBeenCalledWith('/auth/alunos/opcoes-academicas');
+    expect(getMock).toHaveBeenCalledWith('/autenticacao/alunos/opcoes-academicas');
   });
 
   it('does not fall back to local academic options when API data is empty', async () => {

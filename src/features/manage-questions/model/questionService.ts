@@ -30,9 +30,13 @@ type BackendQuestionAlternative = {
   isCorrect?: boolean;
 };
 
+type BackendQuestionAlternatives =
+  | BackendQuestionAlternative[]
+  | Record<string, string | BackendQuestionAlternative | undefined>;
+
 type BackendQuestion = {
   id: string;
-  tema?: string;
+  tema?: string | { id?: string; nome?: string };
   topic?: string;
   tags?: string[] | string;
   tipo?: string;
@@ -45,24 +49,28 @@ type BackendQuestion = {
   statement?: string;
   explicacao?: string;
   explanation?: string;
-  alternativas?: BackendQuestionAlternative[];
-  alternatives?: BackendQuestionAlternative[];
+  alternativaCorreta?: string;
+  explicacaoPedagogica?: string;
+  alternativas?: BackendQuestionAlternatives;
+  alternatives?: BackendQuestionAlternatives;
   criadoEm?: string;
   createdAt?: string;
 };
 
 const QUESTION_ENDPOINT = '/questoes';
-const PROFESSOR_ACTIVE_QUESTIONS_ENDPOINT = '/questoes/professor/ativas';
+const DEFAULT_QUESTION_IMAGE_URL = 'https://placehold.co/600x400?text=AnatoQuizUp';
+const DEFAULT_PEDAGOGICAL_EXPLANATION = 'Explicação pedagógica não informada.';
 
 const mapTypeToApi = (type: QuestionType) => (
   type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'VERDADEIRO_FALSO'
 );
 
-const mapDifficultyToApi = (difficulty: QuestionDifficulty) => {
-  if (difficulty === 'Fácil') return 'FACIL';
-  if (difficulty === 'Difícil') return 'DIFICIL';
-  return 'MEDIO';
-};
+// Futuro: reativar quando o backend persistir dificuldade na tabela de questoes.
+// const mapDifficultyToApi = (difficulty: QuestionDifficulty) => {
+//   if (difficulty === 'Fácil') return 'FACIL';
+//   if (difficulty === 'Difícil') return 'DIFICIL';
+//   return 'MEDIO';
+// };
 
 const mapTypeFromApi = (type?: string): QuestionType => (
   /verdadeiro|falso|true_false|vf/i.test(type ?? '')
@@ -103,33 +111,83 @@ const normalizeAlternative = (
   isCorrect: Boolean(alternative.isCorrect ?? alternative.correta),
 });
 
+const normalizeTopic = (tema?: BackendQuestion['tema'], topic?: string): string => {
+  if (topic) return topic;
+  if (typeof tema === 'string') return tema;
+  return tema?.nome ?? '';
+};
+
+const normalizeAlternatives = (
+  alternatives: BackendQuestionAlternatives | undefined,
+  correctAlternative?: string,
+): QuestionAlternative[] => {
+  if (Array.isArray(alternatives)) {
+    return alternatives.map(normalizeAlternative);
+  }
+
+  if (!alternatives) return [];
+
+  return Object.entries(alternatives)
+    .filter(([, value]) => value !== undefined)
+    .map(([label, value], index) => {
+      if (typeof value === 'string') {
+        return {
+          id: label,
+          label,
+          text: value,
+          isCorrect: label === correctAlternative,
+        };
+      }
+
+      const alternative = value ?? {};
+      return normalizeAlternative({ ...alternative, letra: alternative.letra ?? label }, index);
+    });
+};
+
 const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   id: question.id,
-  topic: question.topic ?? question.tema ?? '',
+  topic: normalizeTopic(question.tema, question.topic),
   tags: normalizeTags(question.tags),
   type: mapTypeFromApi(question.type ?? question.tipo),
   difficulty: mapDifficultyFromApi(question.difficulty ?? question.dificuldade),
   origin: question.origin ?? question.origem ?? 'Manual',
   statement: question.statement ?? question.enunciado ?? '',
-  explanation: question.explanation ?? question.explicacao ?? '',
-  alternatives: (question.alternatives ?? question.alternativas ?? []).map(normalizeAlternative),
+  explanation: question.explanation ?? question.explicacao ?? question.explicacaoPedagogica ?? '',
+  alternatives: normalizeAlternatives(
+    question.alternatives ?? question.alternativas,
+    question.alternativaCorreta,
+  ),
   createdAt: formatDate(question.createdAt ?? question.criadoEm),
 });
 
-const mapValuesToPayload = (values: QuestionFormValues) => ({
-  tema: values.topic,
-  tags: values.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-  tipo: mapTypeToApi(values.type),
-  dificuldade: mapDifficultyToApi(values.difficulty),
-  origem: values.origin || 'Manual',
-  enunciado: values.statement.trim(),
-  explicacao: values.explanation.trim() || null,
-  alternativas: values.alternatives.map((alternative) => ({
-    letra: alternative.label,
-    texto: alternative.text.trim(),
-    correta: alternative.isCorrect,
-  })),
-});
+const mapAlternativeLabelToApi = (label: string) => {
+  if (label === 'V') return 'C';
+  if (label === 'F') return 'E';
+  return label;
+};
+
+const mapValuesToPayload = (values: QuestionFormValues) => {
+  const correctAlternative = values.alternatives.find((alternative) => alternative.isCorrect);
+
+  return {
+    tema: values.topic,
+    // Futuro: reativar quando o backend persistir tags, dificuldade e origem.
+    // tags: values.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+    // dificuldade: mapDifficultyToApi(values.difficulty),
+    // origem: values.origin || 'Manual',
+    tipo: mapTypeToApi(values.type),
+    imagem: DEFAULT_QUESTION_IMAGE_URL,
+    enunciado: values.statement.trim(),
+    alternativaCorreta: correctAlternative
+      ? mapAlternativeLabelToApi(correctAlternative.label)
+      : undefined,
+    explicacaoPedagogica: values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION,
+    alternativas: values.alternatives.reduce<Record<string, string>>((acc, alternative) => {
+      acc[mapAlternativeLabelToApi(alternative.label)] = alternative.text.trim();
+      return acc;
+    }, {}),
+  };
+};
 
 const extractErrorMessage = (error: unknown): string => {
   if (!axios.isAxiosError(error) || !error.response) {
@@ -149,9 +207,7 @@ export const listProfessorQuestions = async (): Promise<ProfessorQuestion[]> => 
   if (USE_MOCKS) return listProfessorQuestionsMock();
 
   try {
-    const { data } = await httpClient.get<ApiSuccessResponse<BackendQuestion[]>>(
-      PROFESSOR_ACTIVE_QUESTIONS_ENDPOINT,
-    );
+    const { data } = await httpClient.get<ApiSuccessResponse<BackendQuestion[]>>(QUESTION_ENDPOINT);
     return (data.dados ?? []).map(normalizeQuestion);
   } catch (error) {
     throw new Error(extractErrorMessage(error));

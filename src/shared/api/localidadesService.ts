@@ -14,7 +14,7 @@ export const listarEstados = async (): Promise<Estado[]> => {
   }
 
   const { data } = await httpClient.get<ApiSuccessResponse<Estado[]>>(
-    '/auth/alunos/localidades/estados',
+    '/autenticacao/alunos/localidades/estados',
   );
   return Array.isArray(data.dados) ? data.dados : [];
 };
@@ -28,7 +28,7 @@ export const listarCidadesPorUf = async (uf: string): Promise<Cidade[]> => {
   }
 
   const { data } = await httpClient.get<ApiSuccessResponse<Cidade[]>>(
-    `/auth/alunos/localidades/estados/${normalizedUf}/cidades`,
+    `/autenticacao/alunos/localidades/estados/${normalizedUf}/cidades`,
   );
   return Array.isArray(data.dados) ? data.dados : [];
 };

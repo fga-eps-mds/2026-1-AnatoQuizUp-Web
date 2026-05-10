@@ -38,7 +38,7 @@ describe('nacionalidadesService', () => {
     getMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: nacionalidades } });
 
     await expect(listarNacionalidades()).resolves.toEqual(nacionalidades);
-    expect(getMock).toHaveBeenCalledWith('/auth/alunos/nacionalidades');
+    expect(getMock).toHaveBeenCalledWith('/autenticacao/alunos/nacionalidades');
   });
 
   it('does not fall back to local nationalities when API data is empty', async () => {
