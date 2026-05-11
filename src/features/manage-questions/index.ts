@@ -1,10 +1,26 @@
-export { listarQuestoesProfessor } from './model/questionService';
+export {
+  atualizarQuestao,
+  buscarQuestaoPorFiltro,
+  buscarQuestaoPorId,
+  listarQuestoes,
+  listarQuestoesProfessor,
+  removerQuestao,
+} from './model/questionService';
 export type {
+  ApiPaginatedResponse,
+  ApiSuccessResponse,
   ListProfessorQuestionsPayload,
+  ListQuestionsResponse,
+  PaginationMetadata,
+  Question,
   ProfessorQuestion,
   QuestionAlternativeKey,
   QuestionAlternatives,
+  QuestionDifficulty,
+  QuestionListParams,
   QuestionStatus,
   QuestionTopic,
   QuestionType,
+  SearchQuestionsParams,
+  UpdateQuestionPayload,
 } from './model/types';

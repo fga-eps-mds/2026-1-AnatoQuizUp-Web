@@ -43,10 +43,14 @@ const formatQuestionDate = (date: string): string => {
   }).format(parsedDate);
 };
 
-const getQuestionDifficulty = (question: ProfessorQuestion): QuestionDifficulty => {
-  if (question.tipoQuestao === 'CERTO_ERRADO') return 'Difícil';
+const questionDifficultyLabels: Record<ProfessorQuestion['dificuldade'], QuestionDifficulty> = {
+  FACIL: 'Fácil',
+  MEDIA: 'Médio',
+  DIFICIL: 'Difícil',
+};
 
-  return 'Médio';
+const getQuestionDifficulty = (question: ProfessorQuestion): QuestionDifficulty => {
+  return questionDifficultyLabels[question.dificuldade] ?? 'Médio';
 };
 
 const mapProfessorQuestionToTableQuestion = (question: ProfessorQuestion): Question => ({

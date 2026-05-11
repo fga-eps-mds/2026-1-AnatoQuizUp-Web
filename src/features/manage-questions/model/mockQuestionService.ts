@@ -1,98 +1,248 @@
 import type {
   ApiSuccessResponse,
-  ListProfessorQuestionsPayload,
-  ProfessorQuestion,
+  ListQuestionsResponse,
+  Question,
+  QuestionListParams,
   QuestionTopic,
+  SearchQuestionsParams,
+  UpdateQuestionPayload,
 } from './types';
 
-const MOCK_PROFESSOR_ID = '123e4567-e89b-12d3-a456-426614174001';
+const MOCK_PROFESSOR_ID = 'cmozsfilw00034h52pm1r4ibs';
 
-const IMAGE_TOPIC: QuestionTopic = {
-  id: 'tema-imagem',
-  nome: 'Imagem',
-  criadoEm: '2025-03-01T12:00:00.000Z',
-  atualizadoEm: '2025-03-01T12:00:00.000Z',
-  excluidoEm: null,
+const CARDIOVASCULAR_TOPIC: QuestionTopic = {
+  id: 'cmozy4dxz00004h3xbjzw5vdv',
+  nome: 'Sistema Cardiovascular',
 };
 
-const CARDIO_TOPIC: QuestionTopic = {
-  id: 'tema-cardiologia',
-  nome: 'Cardiologia',
-  criadoEm: '2025-03-01T12:00:00.000Z',
-  atualizadoEm: '2025-03-01T12:00:00.000Z',
-  excluidoEm: null,
+const RESPIRATORY_TOPIC: QuestionTopic = {
+  id: 'tema-sistema-respiratorio',
+  nome: 'Sistema Respiratorio',
 };
 
-const MOCK_PROFESSOR_QUESTIONS: ProfessorQuestion[] = [
+const MOCK_QUESTIONS: Question[] = [
   {
-    id: 'questao-mock-001',
-    enunciado:
-      'Em uma radiografia de torax, qual sinal radiologico diferencia atelectasia de consolidacao pulmonar?',
-    tipoQuestao: 'MULTIPLA_ESCOLHA',
-    respostaCorreta: 'C',
-    saibaMais:
-      'Atelectasia costuma causar perda de volume, enquanto consolidacao preserva ou aumenta discretamente o volume local.',
-    status: 'ATIVO',
-    feitoPorIa: false,
-    urlImagem: 'https://example.com/mock/radiografia-torax.png',
-    criadoPorId: MOCK_PROFESSOR_ID,
-    temaId: IMAGE_TOPIC.id,
-    questaoOriginalId: null,
-    tema: IMAGE_TOPIC,
+    id: 'cmp00lkko00014hlq1ra3432j',
+    tema: CARDIOVASCULAR_TOPIC,
+    enunciado: 'Qual camara do coracao bombeia sangue para a aorta?',
+    tipo: 'MULTIPLA_ESCOLHA',
+    dificuldade: 'MEDIA',
+    imagem: 'https://exemplo.com/coracao.png',
+    alternativaCorreta: 'B',
+    explicacaoPedagogica: 'O ventriculo esquerdo e responsavel pela circulacao sistemica.',
     alternativas: {
-      id: 'alternativas-mock-001',
-      alternativaA: 'Broncograma aereo sem desvio das estruturas mediastinais',
-      alternativaB: 'Aumento difuso da transparencia pulmonar',
-      alternativaC: 'Perda de volume com desvio de fissuras, hilo ou mediastino',
-      alternativaD: 'Derrame pleural bilateral associado a cardiomegalia',
-      alternativaE: 'Presenca de nodulo calcificado isolado',
-      questaoId: 'questao-mock-001',
-      criadoEm: '2025-03-31T10:00:00.000Z',
-      atualizadoEm: '2025-03-31T10:00:00.000Z',
-      excluidoEm: null,
+      A: 'Atrio direito',
+      B: 'Ventriculo esquerdo',
+      C: 'Atrio esquerdo',
+      D: 'Ventriculo direito',
+      E: 'Veia cava',
     },
-    criadoEm: '2025-03-31T10:00:00.000Z',
-    atualizadoEm: '2025-03-31T10:00:00.000Z',
+    status: 'ATIVO',
+    criadoPorId: MOCK_PROFESSOR_ID,
+    criadoEm: '2026-05-10T16:56:14.952Z',
+    atualizadoEm: '2026-05-10T16:56:14.952Z',
     excluidoEm: null,
   },
   {
     id: 'questao-mock-002',
+    tema: RESPIRATORY_TOPIC,
     enunciado:
-      'Na ecocardiografia, a janela paraesternal eixo longo permite avaliar o septo interventricular em seu terco medio.',
-    tipoQuestao: 'CERTO_ERRADO',
-    respostaCorreta: 'C',
-    saibaMais:
-      'A janela paraesternal eixo longo e uma das incidencias usadas para avaliar ventriculo esquerdo e septo interventricular.',
+      'Em uma radiografia de torax, qual sinal radiologico sugere atelectasia?',
+    tipo: 'MULTIPLA_ESCOLHA',
+    dificuldade: 'DIFICIL',
+    imagem: 'https://exemplo.com/radiografia-torax.png',
+    alternativaCorreta: 'C',
+    explicacaoPedagogica:
+      'Atelectasia costuma causar perda de volume e deslocamento de estruturas adjacentes.',
+    alternativas: {
+      A: 'Broncograma aereo sem desvio mediastinal',
+      B: 'Aumento difuso da transparencia pulmonar',
+      C: 'Perda de volume com desvio de fissuras, hilo ou mediastino',
+      D: 'Derrame pleural bilateral associado a cardiomegalia',
+      E: 'Nodulo calcificado isolado',
+    },
     status: 'ATIVO',
-    feitoPorIa: true,
-    urlImagem: null,
     criadoPorId: MOCK_PROFESSOR_ID,
-    temaId: CARDIO_TOPIC.id,
-    questaoOriginalId: null,
-    tema: CARDIO_TOPIC,
-    alternativas: null,
-    criadoEm: '2025-03-30T14:30:00.000Z',
-    atualizadoEm: '2025-03-30T14:30:00.000Z',
+    criadoEm: '2026-05-09T14:30:00.000Z',
+    atualizadoEm: '2026-05-09T14:30:00.000Z',
     excluidoEm: null,
   },
 ];
 
-const cloneQuestion = (question: ProfessorQuestion): ProfessorQuestion => ({
+const cloneQuestion = (question: Question): Question => ({
   ...question,
   tema: { ...question.tema },
   alternativas: question.alternativas ? { ...question.alternativas } : null,
 });
 
-export const listarQuestoesProfessorMock = async (): Promise<
-  ApiSuccessResponse<ListProfessorQuestionsPayload>
-> => {
-  const questoes = MOCK_PROFESSOR_QUESTIONS.map(cloneQuestion);
+const getTopicFromName = (nome: string): QuestionTopic => {
+  const existingQuestion = MOCK_QUESTIONS.find(
+    (question) => question.tema.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'),
+  );
+
+  if (existingQuestion) {
+    return { ...existingQuestion.tema };
+  }
 
   return {
-    mensagem: 'Questoes listadas com sucesso.',
-    dados: {
-      questoes,
-      total: questoes.length,
+    id: `tema-mock-${nome.trim().toLocaleLowerCase('pt-BR').replace(/\s+/g, '-')}`,
+    nome,
+  };
+};
+
+const getSearchTerm = (params?: SearchQuestionsParams): string => (
+  params?.q ?? params?.busca ?? params?.termo ?? ''
+).trim().toLocaleLowerCase('pt-BR');
+
+const filterQuestions = (params?: SearchQuestionsParams): Question[] => {
+  const searchTerm = getSearchTerm(params);
+
+  return MOCK_QUESTIONS.filter((question) => {
+    const matchesStatus = params?.status ? question.status === params.status : question.status === 'ATIVO';
+    const matchesTopic = params?.tema
+      ? question.tema.nome.toLocaleLowerCase('pt-BR').includes(params.tema.toLocaleLowerCase('pt-BR'))
+      : true;
+    const matchesType = params?.tipo ? question.tipo === params.tipo : true;
+    const matchesDifficulty = params?.dificuldade
+      ? question.dificuldade === params.dificuldade
+      : true;
+    const matchesSearchTerm = searchTerm
+      ? [
+          question.tema.nome,
+          question.enunciado,
+          question.tipo,
+          question.dificuldade,
+          question.alternativaCorreta,
+          question.explicacaoPedagogica ?? '',
+          ...Object.values(question.alternativas ?? {}),
+        ]
+          .join(' ')
+          .toLocaleLowerCase('pt-BR')
+          .includes(searchTerm)
+      : true;
+
+    return matchesStatus && matchesTopic && matchesType && matchesDifficulty && matchesSearchTerm;
+  });
+};
+
+const paginateQuestions = (
+  questions: Question[],
+  params?: Pick<QuestionListParams, 'page' | 'limit'>,
+): ListQuestionsResponse => {
+  const page = params?.page && params.page > 0 ? params.page : 1;
+  const limit = params?.limit && params.limit > 0 ? params.limit : 10;
+  const start = (page - 1) * limit;
+  const paginatedQuestions = questions.slice(start, start + limit).map(cloneQuestion);
+
+  return {
+    dados: paginatedQuestions,
+    metadados: {
+      page,
+      limit,
+      total: questions.length,
+      totalPages: Math.max(1, Math.ceil(questions.length / limit)),
     },
+  };
+};
+
+const findQuestionIndexById = (id: string): number => (
+  MOCK_QUESTIONS.findIndex((question) => question.id === id)
+);
+
+const findQuestionById = (id: string): Question => {
+  const question = MOCK_QUESTIONS.find((item) => item.id === id);
+
+  if (!question) {
+    throw new Error('Questao nao encontrada.');
+  }
+
+  return question;
+};
+
+export const listarQuestoesMock = async (
+  params?: QuestionListParams,
+): Promise<ListQuestionsResponse> => paginateQuestions(filterQuestions(params), params);
+
+export const buscarQuestaoPorFiltroMock = async (
+  params?: SearchQuestionsParams,
+): Promise<ApiSuccessResponse<Question>> => {
+  const [question] = filterQuestions(params);
+
+  if (!question) {
+    throw new Error('Questao nao encontrada.');
+  }
+
+  return {
+    mensagem: 'Questao encontrada com sucesso.',
+    dados: cloneQuestion(question),
+  };
+};
+
+export const buscarQuestaoPorIdMock = async (
+  id: string,
+): Promise<ApiSuccessResponse<Question>> => ({
+  mensagem: 'Questao encontrada com sucesso.',
+  dados: cloneQuestion(findQuestionById(id)),
+});
+
+export const atualizarQuestaoMock = async (
+  id: string,
+  payload: UpdateQuestionPayload,
+): Promise<ApiSuccessResponse<Question>> => {
+  const questionIndex = findQuestionIndexById(id);
+
+  if (questionIndex < 0) {
+    throw new Error('Questao nao encontrada.');
+  }
+
+  const currentQuestion = MOCK_QUESTIONS[questionIndex];
+  const updatedQuestion: Question = {
+    ...currentQuestion,
+    tema: payload.tema ? getTopicFromName(payload.tema) : { ...currentQuestion.tema },
+    enunciado: payload.enunciado ?? currentQuestion.enunciado,
+    tipo: payload.tipo ?? currentQuestion.tipo,
+    dificuldade: payload.dificuldade ?? currentQuestion.dificuldade,
+    imagem: payload.imagem ?? currentQuestion.imagem,
+    alternativaCorreta: payload.alternativaCorreta ?? currentQuestion.alternativaCorreta,
+    explicacaoPedagogica:
+      payload.explicacaoPedagogica ?? currentQuestion.explicacaoPedagogica,
+    alternativas: payload.alternativas
+      ? { ...payload.alternativas }
+      : currentQuestion.alternativas
+        ? { ...currentQuestion.alternativas }
+        : null,
+    atualizadoEm: new Date().toISOString(),
+  };
+
+  MOCK_QUESTIONS[questionIndex] = updatedQuestion;
+
+  return {
+    mensagem: 'Questao atualizada com sucesso.',
+    dados: cloneQuestion(updatedQuestion),
+  };
+};
+
+export const removerQuestaoMock = async (
+  id: string,
+): Promise<ApiSuccessResponse<Question>> => {
+  const questionIndex = findQuestionIndexById(id);
+
+  if (questionIndex < 0) {
+    throw new Error('Questao nao encontrada.');
+  }
+
+  const now = new Date().toISOString();
+  const removedQuestion: Question = {
+    ...MOCK_QUESTIONS[questionIndex],
+    status: 'INATIVO',
+    atualizadoEm: now,
+    excluidoEm: now,
+  };
+
+  MOCK_QUESTIONS[questionIndex] = removedQuestion;
+
+  return {
+    mensagem: 'Questao removida com sucesso.',
+    dados: cloneQuestion(removedQuestion),
   };
 };
