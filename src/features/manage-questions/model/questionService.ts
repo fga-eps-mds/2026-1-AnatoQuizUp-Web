@@ -108,7 +108,7 @@ const toProfessorQuestionsPayload = (
 });
 
 const mapTypeToApi = (type: QuestionFormValues['type']): ApiQuestionType => (
-  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'CERTO_ERRADO'
+  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'VERDADEIRO_FALSO'
 );
 
 const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): ApiQuestionDifficulty => {
@@ -176,9 +176,15 @@ const normalizeAlternatives = (
     .filter(([, value]) => value !== undefined)
     .map(([label, value], index) => {
       if (typeof value === 'string') {
+        const normalizedLabel = label === 'C' && correctAlternative && Object.keys(alternatives).length === 2
+          ? 'V'
+          : label === 'E' && correctAlternative && Object.keys(alternatives).length === 2
+            ? 'F'
+            : label;
+
         return {
-          id: label,
-          label,
+          id: normalizedLabel,
+          label: normalizedLabel,
           text: value,
           isCorrect: label === correctAlternative,
         };
@@ -266,7 +272,7 @@ export const buscarQuestaoPorFiltro = async (
   }
 
   const { data } = await httpClient.get<ApiSuccessResponse<Question>>(`${QUESTION_ENDPOINT}/busca`, {
-    params,
+    params: mapQuestionFiltersToApiParams(params),
   });
 
   return data;
@@ -312,11 +318,42 @@ export const removerQuestao = async (
   return data;
 };
 
-export const listProfessorQuestions = async (): Promise<ProfessorQuestion[]> => {
+const mapQuestionFiltersToApiParams = (
+  params?: SearchQuestionsParams,
+): SearchQuestionsParams | undefined => {
+  if (!params) return undefined;
+
+  const normalizedParams: SearchQuestionsParams = {
+    ...params,
+    tipo: params.tipo,
+    dificuldade: params.dificuldade,
+  };
+
+  const searchText = params.tema ?? params.q ?? params.busca ?? params.termo;
+
+  if (searchText) {
+    normalizedParams.tema = searchText;
+  }
+
+  delete normalizedParams.q;
+  delete normalizedParams.busca;
+  delete normalizedParams.termo;
+
+  return normalizedParams;
+};
+
+export const listProfessorQuestions = async (
+  params?: SearchQuestionsParams,
+): Promise<ProfessorQuestion[]> => {
   if (USE_MOCKS) return listProfessorQuestionsMock();
 
   try {
-    const { data } = await httpClient.get<ListQuestionsResponse>(QUESTION_ENDPOINT);
+    const apiParams = mapQuestionFiltersToApiParams(params);
+    const hasFilters = apiParams && Object.keys(apiParams).length > 0;
+    const endpoint = hasFilters ? `${QUESTION_ENDPOINT}/busca` : QUESTION_ENDPOINT;
+    const { data } = hasFilters
+      ? await httpClient.get<ListQuestionsResponse>(endpoint, { params: apiParams })
+      : await httpClient.get<ListQuestionsResponse>(endpoint);
     return normalizeQuestionListResponse(data).dados.map((question) => normalizeQuestion(question));
   } catch (error) {
     throw new Error(extractErrorMessage(error));

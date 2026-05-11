@@ -174,7 +174,7 @@ describe('questionService', () => {
     await deleteQuestion('question-2');
 
     expect(getMock).toHaveBeenNthCalledWith(1, '/questoes/busca', {
-      params: { q: 'cardio' },
+      params: { tema: 'cardio' },
     });
     expect(getMock).toHaveBeenNthCalledWith(2, '/questoes/question-1');
     expect(putMock).toHaveBeenNthCalledWith(1, '/questoes/question-1', {
@@ -183,5 +183,26 @@ describe('questionService', () => {
     expect(putMock).toHaveBeenNthCalledWith(2, '/questoes/question-1', expect.any(Object));
     expect(deleteMock).toHaveBeenNthCalledWith(1, '/questoes/question-1');
     expect(deleteMock).toHaveBeenNthCalledWith(2, '/questoes/question-2');
+  });
+
+  it('lists questions using the backend search endpoint when filters are provided', async () => {
+    const { listProfessorQuestions } = await loadService(false);
+    getMock.mockResolvedValueOnce({
+      data: {
+        dados: [apiQuestion],
+        metadados: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      },
+    });
+
+    await listProfessorQuestions({ q: 'Tórax', dificuldade: 'MEDIA' });
+
+    expect(getMock).toHaveBeenCalledWith('/questoes/busca', {
+      params: { dificuldade: 'MEDIA', tema: 'Tórax' },
+    });
   });
 });

@@ -10,7 +10,7 @@ jest.mock('../../../shared/config/env', () => ({
   API_BASE_URL: 'https://api.test',
 }));
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
@@ -72,7 +72,9 @@ describe('LoginForm', () => {
 
     expect(loginWithCredencialsMock).toHaveBeenCalledWith('ana@unb.br', 'secret');
     expect(login).toHaveBeenCalledWith('access-token', 'refresh-token');
-    expect(screen.getByTestId('location')).toHaveTextContent('/home');
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/home');
+    });
   });
 
   it('shows the service error when authentication fails', async () => {

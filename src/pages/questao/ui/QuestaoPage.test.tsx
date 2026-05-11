@@ -9,7 +9,7 @@ jest.mock("../../../features/manage-questions/model/questionService", () => ({
   deleteQuestion: jest.fn(),
 }));
 
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -182,8 +182,21 @@ describe("QuestionsPage", () => {
     const saveButton = screen.getByRole("button", { name: /Salvar questão/i });
     expect(saveButton).toBeDisabled();
 
-    await testUser.type(screen.getByRole("textbox", { name: /Texto da alternativa A/i }), "Esterno");
-    await testUser.type(screen.getByRole("textbox", { name: /Texto da alternativa B/i }), "Manúbrio");
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa A/i }), {
+      target: { value: "Esterno" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa B/i }), {
+      target: { value: "Manúbrio" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa C/i }), {
+      target: { value: "Clavícula" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa D/i }), {
+      target: { value: "Escápula" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa E/i }), {
+      target: { value: "Primeira costela" },
+    });
     await testUser.click(screen.getByRole("radio", { name: /Marcar alternativa B como correta/i }));
 
     expect(saveButton).toBeEnabled();

@@ -20,6 +20,7 @@ import {
   updateQuestion,
 } from '../../../features/manage-questions/model/questionService';
 import type {
+  ApiQuestionDifficulty,
   ProfessorQuestion,
   QuestionAlternative,
   QuestionDifficulty,
@@ -30,7 +31,7 @@ import type {
 const TOPICS = ['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
 const TYPES: QuestionType[] = ['Múltipla escolha', 'Verdadeiro/Falso'];
 const DIFFICULTIES: QuestionDifficulty[] = ['Fácil', 'Médio', 'Difícil'];
-const EMPTY_ALTERNATIVES: QuestionAlternative[] = ['A', 'B', 'C', 'D'].map((label) => ({
+const EMPTY_ALTERNATIVES: QuestionAlternative[] = ['A', 'B', 'C', 'D', 'E'].map((label) => ({
   id: label.toLowerCase(),
   label,
   text: '',
@@ -40,6 +41,13 @@ const TRUE_FALSE_ALTERNATIVES: QuestionAlternative[] = [
   { id: 'true', label: 'V', text: 'Verdadeiro', isCorrect: false },
   { id: 'false', label: 'F', text: 'Falso', isCorrect: true },
 ];
+
+const mapDifficultyToApi = (difficulty: QuestionDifficulty | 'all'): ApiQuestionDifficulty | undefined => {
+  if (difficulty === 'Fácil') return 'FACIL';
+  if (difficulty === 'Médio') return 'MEDIA';
+  if (difficulty === 'Difícil') return 'DIFICIL';
+  return undefined;
+};
 
 const emptyFormValues: QuestionFormValues = {
   topic: 'Tórax',
@@ -98,7 +106,9 @@ const isStepValid = (values: QuestionFormValues, step: number) => {
   }
 
   const filledAlternatives = values.alternatives.filter((alternative) => alternative.text.trim());
-  return filledAlternatives.length >= 2 && filledAlternatives.some((alternative) => alternative.isCorrect);
+  const requiredAlternatives = values.type === 'Múltipla escolha' ? 5 : 2;
+
+  return filledAlternatives.length === requiredAlternatives && filledAlternatives.some((alternative) => alternative.isCorrect);
 };
 
 const isFormValid = (values: QuestionFormValues) => (
@@ -408,7 +418,8 @@ const QuestionModal = ({
   const showTypeError = touchedFields.type && !values.type;
   const showDifficultyError = touchedFields.difficulty && !values.difficulty;
   const showStatementError = touchedFields.statement && !values.statement.trim();
-  const hasEnoughAlternatives = values.alternatives.filter((alternative) => alternative.text.trim()).length >= 2;
+  const requiredAlternatives = values.type === 'Múltipla escolha' ? 5 : 2;
+  const hasEnoughAlternatives = values.alternatives.filter((alternative) => alternative.text.trim()).length === requiredAlternatives;
   const hasCorrectAlternative = values.alternatives.some((alternative) => alternative.isCorrect);
   const showAlternativesError = touchedFields.alternatives && (!hasEnoughAlternatives || !hasCorrectAlternative);
 
@@ -655,7 +666,7 @@ const QuestionModal = ({
                           (showAlternativesError && !alternative.text.trim() ? 'border-[#e14b4b]' : 'border-[#d8dee9]')
                         }
                       />
-                      {values.type === 'Múltipla escolha' && values.alternatives.length > 2 ? (
+                      {values.type === 'Múltipla escolha' && values.alternatives.length > 5 ? (
                         <button
                           type="button"
                           onClick={() => removeAlternative(alternative.id)}
@@ -668,7 +679,7 @@ const QuestionModal = ({
                     </div>
                   ))}
                 </div>
-                {values.type === 'Múltipla escolha' ? (
+                {values.type === 'Múltipla escolha' && values.alternatives.length < 5 ? (
                   <button
                     type="button"
                     onClick={addAlternative}
@@ -680,7 +691,7 @@ const QuestionModal = ({
                 ) : null}
                 {showAlternativesError ? (
                   <RequiredError>
-                    {!hasEnoughAlternatives ? 'Preencha pelo menos duas alternativas.' : 'Selecione o gabarito correto.'}
+                    {!hasEnoughAlternatives ? 'Preencha exatamente cinco alternativas.' : 'Selecione o gabarito correto.'}
                   </RequiredError>
                 ) : null}
               </div>
@@ -858,10 +869,24 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
 
   useEffect(() => {
     let isMounted = true;
+    const shouldUseSearchEndpoint =
+      searchTerm.trim() || selectedTopic !== 'all' || selectedDifficulty !== 'all';
 
     const loadQuestions = async () => {
+      if (isMounted) {
+        setIsLoading(true);
+        setError('');
+      }
+
       try {
-        const loadedQuestions = await listProfessorQuestions();
+        const loadedQuestions = await listProfessorQuestions(
+          shouldUseSearchEndpoint
+            ? {
+              tema: selectedTopic !== 'all' ? selectedTopic : searchTerm.trim() || undefined,
+              dificuldade: mapDifficultyToApi(selectedDifficulty),
+            }
+            : undefined,
+        );
         if (isMounted) setQuestions(loadedQuestions);
       } catch (loadError) {
         if (isMounted) setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar as questões.');
@@ -870,12 +895,15 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       }
     };
 
-    void loadQuestions();
+    const timeoutId = globalThis.setTimeout(() => {
+      void loadQuestions();
+    }, searchTerm.trim() ? 300 : 0);
 
     return () => {
       isMounted = false;
+      globalThis.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [searchTerm, selectedDifficulty, selectedTopic]);
 
   const topicOptions = useMemo(() => {
     const questionTopics = Array.from(
@@ -915,7 +943,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
 
       setQuestions((currentQuestions) => {
         if (!editingQuestion) return [savedQuestion, ...currentQuestions];
-        return currentQuestions.map((question) => question.id === savedQuestion.id ? savedQuestion : question);
+        return currentQuestions.map((question) => question.id === editingQuestion.id ? savedQuestion : question);
       });
       setToastMessage(editingQuestion ? 'Questão atualizada com sucesso!' : 'Questão cadastrada com sucesso!');
       closeQuestionModal();
