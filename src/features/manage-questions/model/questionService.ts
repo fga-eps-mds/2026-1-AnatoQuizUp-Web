@@ -167,7 +167,7 @@ const normalizeAlternatives = (
   correctAlternative?: string,
 ): QuestionAlternative[] => {
   if (Array.isArray(alternatives)) {
-    return alternatives.map(normalizeAlternative);
+    return alternatives.map((alternative, index) => normalizeAlternative(alternative, index));
   }
 
   if (!alternatives) return [];
