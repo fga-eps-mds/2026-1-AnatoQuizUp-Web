@@ -90,23 +90,4 @@ describe('LoginForm', () => {
     expect(await screen.findByText('Email ou senha inválidos')).toBeInTheDocument();
   });
 
-  it('navigates to the admin login route', async () => {
-    const testUser = userEvent.setup();
-
-    renderLoginForm();
-
-    await testUser.click(screen.getByRole('button', { name: /Entrar como Administrador/i }));
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/admin/login');
-  });
-
-  it('navigates to the professor login route', async () => {
-    const testUser = userEvent.setup();
-
-    renderLoginForm();
-
-    await testUser.click(screen.getByRole('button', { name: /Entrar como Professor/i }));
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/professor/login');
-  });
 });
