@@ -10,6 +10,7 @@ import { AuthenticatedLayout } from "./layouts/AuthenticatedLayout";
 import { ProtectedRoute } from "./router/ProtectedRoute";
 import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
+import { CreateQuestionPage } from "../pages/professor/criar-questao";
 
 export const AppRouter = () => {
   return (
@@ -50,8 +51,16 @@ export const AppRouter = () => {
         <Route
           path="/professor/questoes"
           element={
-            <ProtectedRoute allowedRoles={['PROFESSOR']}>
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <QuestionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/professor/criar-questao"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <CreateQuestionPage openCreateModal />
             </ProtectedRoute>
           }
         />

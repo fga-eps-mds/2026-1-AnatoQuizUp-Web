@@ -37,6 +37,26 @@ describe('loginWithCredencials', () => {
     });
   });
 
+  it('returns the mock professor without calling the API when mocks are enabled', async () => {
+    const { getAuthenticatedUser, loginWithCredencials } = await loadService(true);
+
+    const result = await loginWithCredencials('professor@unb.br', 'any-password');
+    const user = await getAuthenticatedUser();
+
+    expect(postMock).not.toHaveBeenCalled();
+    expect(getMock).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      accessToken: 'mock-professor-access-token',
+      refreshToken: 'mock-professor-refresh-token',
+    });
+    expect(user).toMatchObject({
+      email: 'professor@unb.br',
+      role: 'PROFESSOR',
+      status: 'ACTIVE',
+      authProvider: 'LOCAL',
+    });
+  });
+
   it('throws the disabled account message before calling the API when mocks are enabled', async () => {
     const { loginWithCredencials } = await loadService(true);
 

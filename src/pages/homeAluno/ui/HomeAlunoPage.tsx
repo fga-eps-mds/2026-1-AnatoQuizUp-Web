@@ -3,7 +3,6 @@ import { useAuth } from '../../../app/providers/AuthProvider';
 import { ProfileHome } from '../../../shared/ui/profile-home/index';
 import { Button } from '../../../shared/ui/button/Button';
 
-// Ação específica do aluno
 const StudentActions = () => {
   const navigate = useNavigate();
   return (
@@ -34,7 +33,7 @@ export const HomeAlunoPage = () => {
         <ul className="flex flex-col gap-5 text-[#0A1128]/70 font-medium">
           <li className="flex gap-3 items-start">
             <span className="text-[#00E5FF] text-xl">🧠</span>
-            <p><strong>Banco Compartilhado:</strong> Responda questões criadas e validadas por todos os professores de anatomia da UnB.</p>
+            <p><strong>Banco Compartilhado:</strong> Responda questões de anatomia radiológica criadas e validadas por professores da UnB.</p>
           </li>
           <li className="flex gap-3 items-start">
             <span className="text-[#00E5FF] text-xl">🎯</span>

@@ -11,7 +11,8 @@ export const listarNacionalidades = async (): Promise<string[]> => {
   if (USE_MOCKS) {
     return NACIONALIDADES;
   }
-
-  const { data } = await httpClient.get<ApiSuccessResponse<string[]>>('/autenticacao/alunos/nacionalidades');
+  const { data } = await httpClient.get<ApiSuccessResponse<string[]>>(
+    '/autenticacao/alunos/nacionalidades',
+  );
   return Array.isArray(data.dados) ? data.dados : [];
 };

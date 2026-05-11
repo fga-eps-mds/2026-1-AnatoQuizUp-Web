@@ -43,6 +43,22 @@ jest.mock('../pages/reset-password', () => ({
   ResetPasswordPage: () => <main>Reset password route</main>,
 }));
 
+jest.mock('../pages/homeAluno/index', () => ({
+  HomeAlunoPage: () => <main>Student home route</main>,
+}));
+
+jest.mock('../pages/homeProfessor', () => ({
+  HomeProfessorPage: () => <main>Professor home route</main>,
+}));
+
+jest.mock('../pages/questao', () => ({
+  QuestionsPage: () => <main>Questions route</main>,
+}));
+
+jest.mock('../pages/professor/criar-questao', () => ({
+  CreateQuestionPage: () => <main>Create question route</main>,
+}));
+
 const renderAppAt = (path: string) => {
   window.history.pushState({}, '', path);
   return render(<App />);
