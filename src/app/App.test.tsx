@@ -31,6 +31,10 @@ jest.mock('../pages/register/index', () => ({
   RegisterPage: () => <main>Register route</main>,
 }));
 
+jest.mock('../pages/professor-register', () => ({
+  ProfessorRegisterPage: () => <main>Professor register route</main>,
+}));
+
 jest.mock('../pages/forgot-password', () => ({
   ForgotPasswordPage: () => <main>Forgot password route</main>,
 }));
@@ -75,6 +79,12 @@ describe('App', () => {
     renderAppAt('/cadastro');
 
     expect(screen.getByText('Register route')).toBeInTheDocument();
+  });
+
+  it('renders the professor register route', () => {
+    renderAppAt('/professor/cadastro');
+
+    expect(screen.getByText('Professor register route')).toBeInTheDocument();
   });
 
   it('renders the forgot password route', () => {

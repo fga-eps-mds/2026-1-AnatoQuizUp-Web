@@ -31,6 +31,9 @@ export const LoginForm = () => {
     }
   };
 
+  const handleProfessorLogin = () => {
+    navigate('/professor/login');
+  };
   return (
     <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }} className="flex flex-col gap-6 w-full max-w-[340px]">
       <Input
