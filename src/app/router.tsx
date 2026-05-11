@@ -3,6 +3,7 @@ import { LoginPage } from "../pages/login/index";
 import { HomePage } from "../pages/home/index";
 import { HomeAlunoPage } from "../pages/homeAluno/index";
 import { RegisterPage } from "../pages/register/index";
+import { ProfessorRegisterPage } from "../pages/professor-register";
 import { ForgotPasswordPage } from "../pages/forgot-password";
 import { ResetPasswordPage } from "../pages/reset-password";
 import { AuthenticatedLayout } from "./layouts/AuthenticatedLayout";
@@ -15,6 +16,7 @@ export const AppRouter = () => {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
+      <Route path="/professor/cadastro" element={<ProfessorRegisterPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
     
