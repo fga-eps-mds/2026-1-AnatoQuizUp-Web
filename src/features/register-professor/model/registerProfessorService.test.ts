@@ -26,21 +26,27 @@ const loadService = async (useMocks: boolean) => {
   return import('./registerProfessorService');
 };
 
-import {
-  PROFESSOR_INSTITUTION,
-  type RegisterProfessorFormValues,
-} from './types';
+import { PROFESSOR_INSTITUTION, type RegisterProfessorFormValues } from './types';
 
+const VALID_PASSWORD = 'senhaValida123';
 const formValues: RegisterProfessorFormValues = {
   fullName: ' Hilmer Rodrigues Neri ',
   email: ' HILMER@UNB.BR ',
-  password: 'password123',
-  confirmPassword: 'password123',
+  password: VALID_PASSWORD,
+  confirmPassword: VALID_PASSWORD,
   institution: PROFESSOR_INSTITUTION,
   siape: '1234567',
   department: ' Anatomia ',
   course: ' Medicina ',
 };
+
+const axiosError = (data?: unknown) => ({
+  isAxiosError: true,
+  response: {
+    status: 400,
+    data,
+  },
+});
 
 describe('registerProfessor', () => {
   afterEach(() => {
@@ -70,25 +76,21 @@ describe('registerProfessor', () => {
       instituicao: 'UnB',
       departamento: 'Anatomia',
       curso: 'Medicina',
-      senha: 'password123',
-      confirmacaoSenha: 'password123',
+      senha: VALID_PASSWORD,
+      confirmacaoSenha: VALID_PASSWORD,
     });
   });
 
   it('retorna erro inline de email quando API informa email em uso', async () => {
     const { registerProfessor } = await loadService(false);
-    postMock.mockRejectedValueOnce({
-      isAxiosError: true,
-      response: {
-        status: 409,
-        data: {
-          erro: {
-            mensagem: 'Email ja cadastrado.',
-            detalhes: { email: 'hilmer@unb.br' },
-          },
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        erro: {
+          mensagem: 'Email ja cadastrado.',
+          detalhes: { email: 'hilmer@unb.br' },
         },
-      },
-    });
+      }),
+    );
 
     await expect(registerProfessor(formValues)).rejects.toEqual(
       expect.objectContaining({
@@ -98,25 +100,102 @@ describe('registerProfessor', () => {
     );
   });
 
-  it('retorna erro inline de SIAPE quando API informa SIAPE em uso', async () => {
+  it('retorna erro inline de email quando detalhes vem como lista', async () => {
     const { registerProfessor } = await loadService(false);
-    postMock.mockRejectedValueOnce({
-      isAxiosError: true,
-      response: {
-        status: 409,
-        data: {
-          erro: {
-            mensagem: 'SIAPE ja cadastrado.',
-            detalhes: { siape: '1234567' },
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        erro: {
+          mensagem: 'Validacao invalida.',
+          detalhes: [{ campo: 'email', mensagem: 'Email institucional UnB obrigatório.' }],
+        },
+      }),
+    );
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      expect.objectContaining({
+        message: 'Email institucional UnB obrigatório.',
+        fieldErrors: { email: 'Email institucional UnB obrigatório.' },
+      }),
+    );
+  });
+
+  it('retorna erro inline de email quando detalhes vem em estrutura de validacao aninhada', async () => {
+    const { registerProfessor } = await loadService(false);
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        erro: {
+          detalhes: {
+            email: {
+              errors: ['Email institucional UnB obrigatório.'],
+            },
           },
         },
-      },
-    });
+      }),
+    );
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      expect.objectContaining({
+        message: 'Email institucional UnB obrigatório.',
+        fieldErrors: { email: 'Email institucional UnB obrigatório.' },
+      }),
+    );
+  });
+
+  it('retorna erro inline de SIAPE quando API informa SIAPE em uso', async () => {
+    const { registerProfessor } = await loadService(false);
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        erro: {
+          mensagem: 'SIAPE ja cadastrado.',
+          detalhes: { siape: '1234567' },
+        },
+      }),
+    );
 
     await expect(registerProfessor(formValues)).rejects.toEqual(
       expect.objectContaining({
         message: 'SIAPE ja cadastrado.',
         fieldErrors: { siape: 'SIAPE ja cadastrado.' },
+      }),
+    );
+  });
+
+  it('retorna erro inline de SIAPE quando validacao vem em properties', async () => {
+    const { registerProfessor } = await loadService(false);
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        erro: {
+          detalhes: {
+            properties: {
+              siape: {
+                errors: ['SIAPE inválido.'],
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      expect.objectContaining({
+        message: 'SIAPE inválido.',
+        fieldErrors: { siape: 'SIAPE inválido.' },
+      }),
+    );
+  });
+
+  it('identifica campo duplicado pela mensagem geral do backend', async () => {
+    const { registerProfessor } = await loadService(false);
+    postMock.mockRejectedValueOnce(
+      axiosError({
+        mensagem: 'Email ja cadastrado.',
+      }),
+    );
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      expect.objectContaining({
+        message: 'Email ja cadastrado.',
+        fieldErrors: { email: 'Email ja cadastrado.' },
       }),
     );
   });
@@ -129,6 +208,33 @@ describe('registerProfessor', () => {
 
     await expect(registerProfessor(formValues)).rejects.toEqual(
       new RegisterProfessorError('Não foi possível conectar ao servidor. Tente novamente.'),
+    );
+  });
+
+  it('retorna mensagem amigavel quando erro nao vem do axios', async () => {
+    const { registerProfessor, RegisterProfessorError } = await loadService(false);
+    postMock.mockRejectedValueOnce(new Error('falha local'));
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      new RegisterProfessorError('Não foi possível concluir o cadastro. Tente novamente.'),
+    );
+  });
+
+  it('repassa mensagem geral do backend quando nao ha erro de campo', async () => {
+    const { registerProfessor, RegisterProfessorError } = await loadService(false);
+    postMock.mockRejectedValueOnce(axiosError({ message: 'Falha de cadastro.' }));
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      new RegisterProfessorError('Falha de cadastro.'),
+    );
+  });
+
+  it('usa mensagem generica quando backend nao retorna mensagem', async () => {
+    const { registerProfessor, RegisterProfessorError } = await loadService(false);
+    postMock.mockRejectedValueOnce(axiosError({}));
+
+    await expect(registerProfessor(formValues)).rejects.toEqual(
+      new RegisterProfessorError('Não foi possível concluir o cadastro. Tente novamente.'),
     );
   });
 });

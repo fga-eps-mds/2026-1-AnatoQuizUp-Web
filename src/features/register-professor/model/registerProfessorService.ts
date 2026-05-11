@@ -33,6 +33,17 @@ type ApiErroResponse = {
   message?: string;
 };
 
+type ProfessorUniqueField = Extract<RegisterProfessorField, 'email' | 'siape'>;
+
+const PROFESSOR_REGISTER_ENDPOINT = '/autenticacao/cadastro/professor';
+const GENERIC_REGISTER_ERROR = 'Não foi possível concluir o cadastro. Tente novamente.';
+const SERVER_UNAVAILABLE_ERROR = 'Não foi possível conectar ao servidor. Tente novamente.';
+const DUPLICATED_FIELD_MESSAGE_REGEX = /cadastrado|uso|existente|ja|já/i;
+const FIELD_MESSAGE_REGEX: Record<ProfessorUniqueField, RegExp> = {
+  email: /email/i,
+  siape: /siape/i,
+};
+
 const mapValuesToPayload = (
   values: RegisterProfessorFormValues,
 ): RegisterProfessorApiPayload => ({
@@ -60,42 +71,64 @@ const getNestedValidationMessage = (value: unknown): string | null => {
   return null;
 };
 
+const extractFieldErrorFromList = (
+  detalhes: ApiErroDetalhe[] | undefined,
+  field: ProfessorUniqueField,
+  backendMessage: string,
+): string | null => {
+  const fieldDetail = detalhes?.find((detalhe) => detalhe.campo === field);
+  return fieldDetail ? fieldDetail.mensagem ?? backendMessage : null;
+};
+
+const extractFieldErrorFromObject = (
+  detalhes: Record<string, unknown>,
+  field: ProfessorUniqueField,
+  backendMessage: string,
+): string | null => {
+  const fieldValue = detalhes[field];
+  const nestedMessage = getNestedValidationMessage(fieldValue);
+  if (nestedMessage) return nestedMessage;
+
+  if (typeof fieldValue === 'string') {
+    return DUPLICATED_FIELD_MESSAGE_REGEX.test(backendMessage)
+      ? backendMessage
+      : fieldValue;
+  }
+
+  const properties = (detalhes as { properties?: Record<string, unknown> }).properties;
+  return properties ? getNestedValidationMessage(properties[field]) : null;
+};
+
+const extractFieldErrorFromMessage = (
+  backendMessage: string,
+  field: ProfessorUniqueField,
+): string | null =>
+  FIELD_MESSAGE_REGEX[field].test(backendMessage) &&
+  DUPLICATED_FIELD_MESSAGE_REGEX.test(backendMessage)
+    ? backendMessage
+    : null;
+
 const extractFieldError = (
   response: ApiErroResponse,
-  field: Extract<RegisterProfessorField, 'email' | 'siape'>,
+  field: ProfessorUniqueField,
 ): string | null => {
   const detalhes = response.erro?.detalhes;
   const backendMessage = getBackendMessage(response);
 
   if (Array.isArray(detalhes)) {
-    const fieldDetail = detalhes.find((detalhe) => detalhe.campo === field);
-    if (fieldDetail) return fieldDetail.mensagem ?? backendMessage;
+    return extractFieldErrorFromList(detalhes, field, backendMessage);
   }
 
   if (detalhes && typeof detalhes === 'object') {
-    const fieldValue = (detalhes as Record<string, unknown>)[field];
-    const nestedMessage = getNestedValidationMessage(fieldValue);
-    if (nestedMessage) return nestedMessage;
-
-    if (typeof fieldValue === 'string') {
-      return /cadastrado|uso|existente|ja|já/i.test(backendMessage)
-        ? backendMessage
-        : fieldValue;
-    }
-
-    const properties = (detalhes as { properties?: Record<string, unknown> }).properties;
-    const propertyMessage = properties ? getNestedValidationMessage(properties[field]) : null;
-    if (propertyMessage) return propertyMessage;
+    const objectMessage = extractFieldErrorFromObject(
+      detalhes as Record<string, unknown>,
+      field,
+      backendMessage,
+    );
+    if (objectMessage) return objectMessage;
   }
 
-  if (
-    new RegExp(field, 'i').test(backendMessage) &&
-    /cadastrado|uso|existente|ja|já/i.test(backendMessage)
-  ) {
-    return backendMessage;
-  }
-
-  return null;
+  return extractFieldErrorFromMessage(backendMessage, field);
 };
 
 export const registerProfessor = async (
@@ -107,14 +140,14 @@ export const registerProfessor = async (
   }
 
   try {
-    await httpClient.post('/autenticacao/cadastro/professor', mapValuesToPayload(values));
+    await httpClient.post(PROFESSOR_REGISTER_ENDPOINT, mapValuesToPayload(values));
   } catch (error) {
     if (!axios.isAxiosError(error)) {
-      throw new RegisterProfessorError('Não foi possível concluir o cadastro. Tente novamente.');
+      throw new RegisterProfessorError(GENERIC_REGISTER_ERROR);
     }
 
     if (!error.response) {
-      throw new RegisterProfessorError('Não foi possível conectar ao servidor. Tente novamente.');
+      throw new RegisterProfessorError(SERVER_UNAVAILABLE_ERROR);
     }
 
     const responseData = (error.response.data ?? {}) as ApiErroResponse;
@@ -130,8 +163,6 @@ export const registerProfessor = async (
       throw new RegisterProfessorError(siapeError, { siape: siapeError });
     }
 
-    throw new RegisterProfessorError(
-      backendMessage || 'Não foi possível concluir o cadastro. Tente novamente.',
-    );
+    throw new RegisterProfessorError(backendMessage || GENERIC_REGISTER_ERROR);
   }
 };

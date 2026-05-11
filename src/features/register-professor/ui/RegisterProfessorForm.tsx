@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, LockKeyhole } from 'lucide-react';
+import { ArrowLeft, Clock3, LockKeyhole } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   RegisterProfessorError,
@@ -28,26 +28,125 @@ const STEP_FIELDS: Record<number, RegisterProfessorField[]> = {
   2: ['institution', 'siape', 'department', 'course'],
 };
 
-const INPUT_CLASS =
-  'h-10 w-full rounded-[7px] border px-3.5 text-sm text-[#0A1128] outline-none transition-colors ' +
-  'placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] bg-white';
-
+const PROFESSOR_LOGIN_ROUTE = '/professor/login';
+const SUBMIT_LABEL = 'Completar cadastro';
+const GENERIC_REGISTER_ERROR = 'Não foi possível concluir o cadastro. Tente novamente.';
 const EMAIL_UNB_REGEX = /^[^\s@]+@(?:[a-z0-9-]+\.)*unb\.br$/i;
 const SIAPE_REGEX = /^\d{7}$/;
 
-type TextFieldProps = {
+type FieldValidator = (values: RegisterProfessorFormValues) => string | undefined;
+
+const requiredText = (value: string, message: string) => (value.trim() ? undefined : message);
+
+const FIELD_VALIDATORS: Record<RegisterProfessorField, FieldValidator> = {
+  fullName: (values) => requiredText(values.fullName, 'Nome completo é obrigatório.'),
+  email: (values) => {
+    const email = values.email.trim();
+    if (!email) return 'Email institucional é obrigatório.';
+    return EMAIL_UNB_REGEX.test(email) ? undefined : 'Use um email institucional UnB.';
+  },
+  password: (values) => {
+    if (!values.password) return 'Senha é obrigatória.';
+    return values.password.length >= 8 ? undefined : 'A senha deve ter no mínimo 8 caracteres.';
+  },
+  confirmPassword: (values) => {
+    if (!values.confirmPassword) return 'Confirmação de senha é obrigatória.';
+    return values.confirmPassword === values.password ? undefined : 'As senhas não coincidem.';
+  },
+  institution: (values) =>
+    values.institution === PROFESSOR_INSTITUTION ? undefined : 'Instituição inválida.',
+  siape: (values) => {
+    const siape = values.siape.trim();
+    if (!siape) return 'SIAPE é obrigatório.';
+    return SIAPE_REGEX.test(siape) ? undefined : 'SIAPE deve conter exatamente 7 dígitos.';
+  },
+  department: (values) => requiredText(values.department, 'Departamento é obrigatório.'),
+  course: (values) => requiredText(values.course, 'Curso é obrigatório.'),
+};
+
+const validateField = (
+  values: RegisterProfessorFormValues,
+  field: RegisterProfessorField,
+): string | undefined => FIELD_VALIDATORS[field](values);
+
+const validateFields = (
+  values: RegisterProfessorFormValues,
+  fields: RegisterProfessorField[],
+): RegisterProfessorFieldErrors =>
+  fields.reduce<RegisterProfessorFieldErrors>((fieldErrors, field) => {
+    const error = validateField(values, field);
+    if (error) fieldErrors[field] = error;
+    return fieldErrors;
+  }, {});
+
+const touchedFieldsFrom = (fields: RegisterProfessorField[]) =>
+  fields.reduce<Partial<Record<RegisterProfessorField, boolean>>>((touched, field) => {
+    touched[field] = true;
+    return touched;
+  }, {});
+
+const mergeFieldErrors = (
+  previous: RegisterProfessorFieldErrors,
+  fields: RegisterProfessorField[],
+  nextErrors: RegisterProfessorFieldErrors,
+) => {
+  const updated = { ...previous };
+
+  fields.forEach((field) => {
+    if (nextErrors[field]) {
+      updated[field] = nextErrors[field];
+    } else {
+      delete updated[field];
+    }
+  });
+
+  return updated;
+};
+
+const getStepByField = (field: RegisterProfessorField): number =>
+  STEP_FIELDS[1].includes(field) ? 1 : 2;
+
+type TextFieldConfig = {
   label: string;
   name: RegisterProfessorField;
-  value: string;
   type?: 'text' | 'email' | 'password';
   inputMode?: 'numeric';
-  error?: string;
   maxLength?: number;
+  normalize?: (value: string) => string;
+};
+
+const STEP_ONE_TEXT_FIELDS: TextFieldConfig[] = [
+  { label: 'Nome Completo', name: 'fullName' },
+  { label: 'Email Institucional', name: 'email', type: 'email' },
+  { label: 'Senha', name: 'password', type: 'password' },
+  { label: 'Confirmação de senha', name: 'confirmPassword', type: 'password' },
+];
+
+const STEP_TWO_TEXT_FIELDS: TextFieldConfig[] = [
+  { label: 'SIAPE', name: 'siape', inputMode: 'numeric', maxLength: 7, normalize: onlyDigits },
+  { label: 'Departamento', name: 'department' },
+  { label: 'Curso', name: 'course' },
+];
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+type ProfessorTextFieldProps = TextFieldConfig & {
+  value: string;
+  error?: string;
   onBlur: (name: RegisterProfessorField) => void;
   onChange: (name: RegisterProfessorField, value: string) => void;
 };
 
-const TextField = ({
+const inputClassName = (hasError: boolean) =>
+  [
+    'h-10 w-full rounded-[7px] border px-3.5 text-sm text-[#0A1128] outline-none',
+    'transition-colors placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] bg-white',
+    hasError ? 'border-red-400' : 'border-[#14D5C2]',
+  ].join(' ');
+
+const ProfessorTextField = ({
   label,
   name,
   value,
@@ -55,9 +154,10 @@ const TextField = ({
   inputMode,
   error,
   maxLength,
+  normalize,
   onBlur,
   onChange,
-}: TextFieldProps) => (
+}: ProfessorTextFieldProps) => (
   <div className="flex flex-col gap-1.5">
     <label htmlFor={name} className="text-xs font-medium text-[#0A1128]">
       {label}
@@ -70,9 +170,9 @@ const TextField = ({
       value={value}
       maxLength={maxLength}
       aria-invalid={!!error}
-      className={`${INPUT_CLASS} ${error ? 'border-red-400' : 'border-[#14D5C2]'}`}
+      className={inputClassName(!!error)}
       onBlur={() => onBlur(name)}
-      onChange={(event) => onChange(name, event.target.value)}
+      onChange={(event) => onChange(name, normalize?.(event.target.value) ?? event.target.value)}
     />
     {error ? <span className="text-xs font-medium text-red-500">{error}</span> : null}
   </div>
@@ -113,92 +213,11 @@ const LockedInstitutionField = ({ value, error }: LockedInstitutionFieldProps) =
   </div>
 );
 
-const validateField = (
-  values: RegisterProfessorFormValues,
-  field: RegisterProfessorField,
-): string | undefined => {
-  const value = values[field];
-  const trimmedValue = value.trim();
-
-  switch (field) {
-    case 'fullName':
-      if (!trimmedValue) return 'Nome completo é obrigatório.';
-      return undefined;
-    case 'email':
-      if (!trimmedValue) return 'Email institucional é obrigatório.';
-      if (!EMAIL_UNB_REGEX.test(trimmedValue)) {
-        return 'Use um email institucional UnB.';
-      }
-      return undefined;
-    case 'password':
-      if (!value) return 'Senha é obrigatória.';
-      if (value.length < 8) return 'A senha deve ter no mínimo 8 caracteres.';
-      return undefined;
-    case 'confirmPassword':
-      if (!value) return 'Confirmação de senha é obrigatória.';
-      if (value !== values.password) return 'As senhas não coincidem.';
-      return undefined;
-    case 'institution':
-      if (value !== PROFESSOR_INSTITUTION) return 'Instituição inválida.';
-      return undefined;
-    case 'siape':
-      if (!trimmedValue) return 'SIAPE é obrigatório.';
-      if (!SIAPE_REGEX.test(trimmedValue)) return 'SIAPE deve conter exatamente 7 dígitos.';
-      return undefined;
-    case 'department':
-      if (!trimmedValue) return 'Departamento é obrigatório.';
-      return undefined;
-    case 'course':
-      if (!trimmedValue) return 'Curso é obrigatório.';
-      return undefined;
-    default:
-      return undefined;
-  }
-};
-
-const validateFields = (
-  values: RegisterProfessorFormValues,
-  fields: RegisterProfessorField[],
-): RegisterProfessorFieldErrors =>
-  fields.reduce<RegisterProfessorFieldErrors>((fieldErrors, field) => {
-    const error = validateField(values, field);
-    if (error) fieldErrors[field] = error;
-    return fieldErrors;
-  }, {});
-
-const touchedFieldsFrom = (fields: RegisterProfessorField[]) =>
-  fields.reduce<Partial<Record<RegisterProfessorField, boolean>>>((touched, field) => {
-    touched[field] = true;
-    return touched;
-  }, {});
-
-const mergeFieldErrors = (
-  previous: RegisterProfessorFieldErrors,
-  fields: RegisterProfessorField[],
-  nextErrors: RegisterProfessorFieldErrors,
-) => {
-  const updated = { ...previous };
-
-  fields.forEach((field) => {
-    if (nextErrors[field]) {
-      updated[field] = nextErrors[field];
-    } else {
-      delete updated[field];
-    }
-  });
-
-  return updated;
-};
-
-const getStepByField = (field: RegisterProfessorField): number => (
-  STEP_FIELDS[1].includes(field) ? 1 : 2
-);
-
 type StepperProps = {
   step: number;
 };
 
-const Stepper = ({ step }: StepperProps) => (
+const ProfessorStepper = ({ step }: StepperProps) => (
   <div className="mb-6 flex w-full items-center [@media(max-height:760px)]:mb-4">
     {[1, 2, 3].map((marker, index) => (
       <div key={`professor-step-${marker}`} className="flex flex-1 items-center last:flex-none">
@@ -328,31 +347,40 @@ export const RegisterProfessorForm = () => {
           setFormError(error.message);
         }
       } else {
-        setFormError('Não foi possível concluir o cadastro. Tente novamente.');
+        setFormError(GENERIC_REGISTER_ERROR);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const renderTextField = (config: TextFieldConfig) => (
+    <ProfessorTextField
+      key={config.name}
+      {...config}
+      value={values[config.name]}
+      onBlur={markTouchedAndValidate}
+      onChange={handleTextChange}
+      error={errors[config.name]}
+    />
+  );
+
   if (isSuccess) {
     return (
       <section className="w-full max-w-[470px]">
-        <Stepper step={3} />
+        <ProfessorStepper step={3} />
         <div className="rounded-[7px] border border-[#14D5C2] bg-[#EFF3FB] p-4 text-sm text-[#0A1128]">
           <h2 className="text-2xl font-bold text-[#0A1128]">Cadastro completo!</h2>
           <div className="mt-3 flex w-full items-start gap-3 rounded-[7px] border border-[#F5A623] bg-[#E6E4FC] px-3 py-3 text-[#7A4F00]">
-          <span className="text-lg" aria-hidden="true">
-            ⏳
-          </span>
-          <p className="text-xs font-semibold leading-5">
-            <strong>Cadastro realizado!</strong>
-            <br />
-            Seu cadastro está em análise pelo administrador. Você poderá acessar a plataforma após
-            aprovação.
-          </p>
-        </div>
-          <Link to="/professor/login" className="mt-3 inline-block text-[#00AFA0] underline">
+            <Clock3 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="text-xs font-semibold leading-5">
+              <strong>Cadastro realizado!</strong>
+              <br />
+              Seu cadastro está em análise pelo administrador. Você poderá acessar a plataforma
+              após aprovação.
+            </p>
+          </div>
+          <Link to={PROFESSOR_LOGIN_ROUTE} className="mt-3 inline-block text-[#00AFA0] underline">
             Voltar para login
           </Link>
         </div>
@@ -362,12 +390,12 @@ export const RegisterProfessorForm = () => {
 
   return (
     <section className="w-full max-w-[470px]">
-      <Stepper step={step} />
+      <ProfessorStepper step={step} />
 
       <div className="mb-6 [@media(max-height:760px)]:mb-4">
         <h2 className="text-xl font-bold leading-tight text-[#0A1128]">Complete seu perfil</h2>
         <p className="mt-2 max-w-[440px] text-xs leading-5 text-[#0A1128]/65">
-          para continuar preencha o formulário — Acesso para professores
+          Para continuar, preencha o formulário de acesso para professores.
         </p>
       </div>
 
@@ -384,79 +412,20 @@ export const RegisterProfessorForm = () => {
         noValidate
         className="flex flex-col gap-4 [@media(max-height:760px)]:gap-3"
       >
-        {step === 1 ? (
-          <>
-            <TextField
-              label="Nome Completo"
-              name="fullName"
-              value={values.fullName}
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.fullName}
-            />
-            <TextField
-              label="Email Institucional"
-              name="email"
-              value={values.email}
-              type="email"
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.email}
-            />
-            <TextField
-              label="Senha"
-              name="password"
-              value={values.password}
-              type="password"
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.password}
-            />
-            <TextField
-              label="Confirmação de senha"
-              name="confirmPassword"
-              value={values.confirmPassword}
-              type="password"
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.confirmPassword}
-            />
-          </>
-        ) : null}
+        {step === 1 ? <>{STEP_ONE_TEXT_FIELDS.map(renderTextField)}</> : null}
 
         {step === 2 ? (
           <>
             <LockedInstitutionField value={values.institution} error={errors.institution} />
-            <TextField
-              label="SIAPE"
-              name="siape"
-              value={values.siape}
-              inputMode="numeric"
-              maxLength={7}
-              onBlur={markTouchedAndValidate}
-              onChange={(field, value) => handleTextChange(field, value.replace(/\D/g, ''))}
-              error={errors.siape}
-            />
-            <TextField
-              label="Departamento"
-              name="department"
-              value={values.department}
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.department}
-            />
-            <TextField
-              label="Curso"
-              name="course"
-              value={values.course}
-              onBlur={markTouchedAndValidate}
-              onChange={handleTextChange}
-              error={errors.course}
-            />
+            {STEP_TWO_TEXT_FIELDS.map(renderTextField)}
           </>
         ) : null}
 
-        {formError ? <span className="text-xs font-medium text-red-500">{formError}</span> : null}
+        {formError ? (
+          <span aria-live="polite" className="text-xs font-medium text-red-500">
+            {formError}
+          </span>
+        ) : null}
 
         {step > 1 ? (
           <button
@@ -473,11 +442,11 @@ export const RegisterProfessorForm = () => {
           disabled={!isCurrentStepValid}
           className="mt-1 h-10 w-full cursor-pointer rounded-[7px] bg-[#14D5C2] px-4 text-sm font-bold text-[#0A1128] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:bg-[#9FE7DF] disabled:text-[#0A1128]/55"
         >
-          {isLoading ? 'Finalizando...' : 'Completar cadastro'}
+          {isLoading ? 'Finalizando...' : SUBMIT_LABEL}
         </button>
 
         <Link
-          to="/professor/login"
+          to={PROFESSOR_LOGIN_ROUTE}
           className="mt-3 inline-flex items-center justify-center gap-1.5 text-sm font-bold text-[#00AFA0] transition-colors hover:text-[#0A1128]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />

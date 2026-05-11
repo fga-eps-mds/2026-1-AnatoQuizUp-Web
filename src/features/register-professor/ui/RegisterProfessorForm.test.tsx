@@ -15,7 +15,7 @@ jest.mock('../model/registerProfessorService', () => {
   };
 });
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -24,6 +24,9 @@ import { PROFESSOR_INSTITUTION } from '../model/types';
 import { RegisterProfessorForm } from './RegisterProfessorForm';
 
 const registerProfessorMock = registerProfessor as jest.Mock;
+const VALID_PASSWORD = 'senhaValida123';
+const PROFESSOR_NAME = 'Hilmer Rodrigues Neri';
+const PROFESSOR_EMAIL = 'hilmer@unb.br';
 
 const renderForm = () =>
   render(
@@ -32,12 +35,14 @@ const renderForm = () =>
     </MemoryRouter>,
   );
 
+const submitButton = () => screen.getByRole('button', { name: /Completar cadastro/i });
+
 const preencherPasso1 = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.type(screen.getByLabelText(/Nome completo/i), 'Hilmer Rodrigues Neri');
-  await user.type(screen.getByLabelText(/Email institucional/i), 'hilmer@unb.br');
-  await user.type(screen.getByLabelText(/^Senha/i), 'password123');
-  await user.type(screen.getByLabelText(/Confirmação de senha/i), 'password123');
-  await user.click(screen.getByRole('button', { name: /Completar cadastro/i }));
+  await user.type(screen.getByLabelText(/Nome completo/i), PROFESSOR_NAME);
+  await user.type(screen.getByLabelText(/Email institucional/i), PROFESSOR_EMAIL);
+  await user.type(screen.getByLabelText(/^Senha/i), VALID_PASSWORD);
+  await user.type(screen.getByLabelText(/Confirmação de senha/i), VALID_PASSWORD);
+  await user.click(submitButton());
   await screen.findByLabelText(/Instituição/i);
 };
 
@@ -78,24 +83,25 @@ describe('RegisterProfessorForm', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(/Nome completo/i), 'Hilmer Rodrigues Neri');
+    await user.type(screen.getByLabelText(/Nome completo/i), PROFESSOR_NAME);
     await user.type(screen.getByLabelText(/Email institucional/i), 'hilmer@gmail.com');
-    await user.type(screen.getByLabelText(/^Senha/i), 'password123');
-    await user.type(screen.getByLabelText(/Confirmação de senha/i), 'password123');
+    await user.type(screen.getByLabelText(/^Senha/i), VALID_PASSWORD);
+    await user.type(screen.getByLabelText(/Confirmação de senha/i), VALID_PASSWORD);
 
-    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
+    expect(submitButton()).toBeDisabled();
   });
 
   it('aceita email com subdominio UnB', async () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(/Nome completo/i), 'Hilmer Rodrigues Neri');
+    await user.type(screen.getByLabelText(/Nome completo/i), PROFESSOR_NAME);
     await user.type(screen.getByLabelText(/Email institucional/i), 'hilmer@professor.unb.br');
-    await user.type(screen.getByLabelText(/^Senha/i), 'password123');
-    await user.type(screen.getByLabelText(/Confirmação de senha/i), 'password123');
+    await user.type(screen.getByLabelText(/^Senha/i), VALID_PASSWORD);
+    await user.type(screen.getByLabelText(/Confirmação de senha/i), VALID_PASSWORD);
+
     expect(screen.queryByText(/Use um email institucional UnB/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeEnabled();
+    expect(submitButton()).toBeEnabled();
   });
 
   it('exibe erro para SIAPE com formato invalido', async () => {
@@ -108,19 +114,44 @@ describe('RegisterProfessorForm', () => {
     await user.tab();
 
     expect(await screen.findByText(/SIAPE deve conter exatamente 7 dígitos/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it('remove caracteres nao numericos do SIAPE', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await preencherPasso1(user);
+    await user.type(screen.getByLabelText(/SIAPE/i), '12a34-567');
+
+    expect(screen.getByLabelText(/SIAPE/i)).toHaveValue('1234567');
   });
 
   it('mantem o botao desabilitado quando as senhas sao diferentes', async () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(/Nome completo/i), 'Hilmer Rodrigues Neri');
-    await user.type(screen.getByLabelText(/Email institucional/i), 'hilmer@unb.br');
-    await user.type(screen.getByLabelText(/^Senha/i), 'password123');
-    await user.type(screen.getByLabelText(/Confirmação de senha/i), '12345678');
+    await user.type(screen.getByLabelText(/Nome completo/i), PROFESSOR_NAME);
+    await user.type(screen.getByLabelText(/Email institucional/i), PROFESSOR_EMAIL);
+    await user.type(screen.getByLabelText(/^Senha/i), VALID_PASSWORD);
+    await user.type(screen.getByLabelText(/Confirmação de senha/i), 'senhaDiferente123');
 
-    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it('revalida confirmacao quando a senha muda depois de tocada', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(/Nome completo/i), PROFESSOR_NAME);
+    await user.type(screen.getByLabelText(/Email institucional/i), PROFESSOR_EMAIL);
+    await user.type(screen.getByLabelText(/^Senha/i), VALID_PASSWORD);
+    await user.type(screen.getByLabelText(/Confirmação de senha/i), VALID_PASSWORD);
+    await user.tab();
+    await user.clear(screen.getByLabelText(/^Senha/i));
+    await user.type(screen.getByLabelText(/^Senha/i), 'senhaAlterada123');
+
+    expect(await screen.findByText(/As senhas não coincidem/i)).toBeInTheDocument();
   });
 
   it('mantem instituicao pre-preenchida e bloqueada', async () => {
@@ -134,19 +165,42 @@ describe('RegisterProfessorForm', () => {
     expect(institutionInput).toBeDisabled();
   });
 
+  it('volta para a etapa anterior mantendo os dados preenchidos', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await preencherPasso1(user);
+    await user.click(screen.getByRole('button', { name: /Voltar etapa/i }));
+
+    expect(screen.getByLabelText(/Email institucional/i)).toHaveValue(PROFESSOR_EMAIL);
+    expect(screen.queryByLabelText(/SIAPE/i)).not.toBeInTheDocument();
+  });
+
+  it('exibe validacoes obrigatorias quando o formulario da segunda etapa e enviado vazio', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await preencherPasso1(user);
+    fireEvent.submit(screen.getByRole('form', { name: /register professor form/i }));
+
+    expect(await screen.findByText(/SIAPE é obrigatório/i)).toBeInTheDocument();
+    expect(screen.getByText(/Departamento é obrigatório/i)).toBeInTheDocument();
+    expect(screen.getByText(/Curso é obrigatório/i)).toBeInTheDocument();
+  });
+
   it('envia cadastro com valores preenchidos e mostra confirmacao de analise', async () => {
     const user = userEvent.setup();
     renderForm();
 
     await preencherPasso1(user);
     await preencherPasso2(user);
-    await user.click(screen.getByRole('button', { name: /Completar cadastro/i }));
+    await user.click(submitButton());
 
     expect(registerProfessorMock).toHaveBeenCalledWith({
-      fullName: 'Hilmer Rodrigues Neri',
-      email: 'hilmer@unb.br',
-      password: 'password123',
-      confirmPassword: 'password123',
+      fullName: PROFESSOR_NAME,
+      email: PROFESSOR_EMAIL,
+      password: VALID_PASSWORD,
+      confirmPassword: VALID_PASSWORD,
       institution: PROFESSOR_INSTITUTION,
       siape: '1234567',
       department: 'Anatomia',
@@ -160,6 +214,25 @@ describe('RegisterProfessorForm', () => {
     );
   });
 
+  it('mostra carregamento enquanto a API processa o cadastro', async () => {
+    const user = userEvent.setup();
+    let resolveRequest: () => void = () => undefined;
+    registerProfessorMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+
+    renderForm();
+    await preencherPasso1(user);
+    await preencherPasso2(user);
+    await user.click(submitButton());
+
+    expect(await screen.findByRole('button', { name: /Finalizando/i })).toBeDisabled();
+    resolveRequest();
+    expect(await screen.findByText(/Cadastro realizado!/i)).toBeInTheDocument();
+  });
+
   it('exibe erro inline no email quando a API retorna email ja cadastrado', async () => {
     const user = userEvent.setup();
     registerProfessorMock.mockRejectedValueOnce(
@@ -169,7 +242,7 @@ describe('RegisterProfessorForm', () => {
     renderForm();
     await preencherPasso1(user);
     await preencherPasso2(user);
-    await user.click(screen.getByRole('button', { name: /Completar cadastro/i }));
+    await user.click(submitButton());
 
     expect(await screen.findByText(/Email ja cadastrado/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email institucional/i)).toBeInTheDocument();
@@ -184,9 +257,35 @@ describe('RegisterProfessorForm', () => {
     renderForm();
     await preencherPasso1(user);
     await preencherPasso2(user);
-    await user.click(screen.getByRole('button', { name: /Completar cadastro/i }));
+    await user.click(submitButton());
 
     expect(await screen.findByText(/SIAPE ja cadastrado/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/SIAPE/i)).toBeInTheDocument();
+  });
+
+  it('exibe erro geral quando a API retorna RegisterProfessorError sem campo', async () => {
+    const user = userEvent.setup();
+    registerProfessorMock.mockRejectedValueOnce(new RegisterProfessorError('Servidor indisponivel.'));
+
+    renderForm();
+    await preencherPasso1(user);
+    await preencherPasso2(user);
+    await user.click(submitButton());
+
+    expect(await screen.findByText(/Servidor indisponivel/i)).toBeInTheDocument();
+  });
+
+  it('exibe erro geral quando ocorre falha desconhecida', async () => {
+    const user = userEvent.setup();
+    registerProfessorMock.mockRejectedValueOnce(new Error('falha inesperada'));
+
+    renderForm();
+    await preencherPasso1(user);
+    await preencherPasso2(user);
+    await user.click(submitButton());
+
+    expect(
+      await screen.findByText(/Não foi possível concluir o cadastro. Tente novamente/i),
+    ).toBeInTheDocument();
   });
 });

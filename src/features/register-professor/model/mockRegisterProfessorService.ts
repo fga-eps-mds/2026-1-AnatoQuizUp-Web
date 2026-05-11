@@ -1,7 +1,5 @@
 import type { RegisterProfessorFormValues } from './types';
 
-export const registerProfessorMock = async (
+export const registerProfessorMock = (
   values: RegisterProfessorFormValues,
-): Promise<void> => {
-  void values;
-};
+): Promise<void> => Promise.resolve(values).then(() => undefined);
