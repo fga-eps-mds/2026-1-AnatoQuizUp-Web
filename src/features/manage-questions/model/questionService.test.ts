@@ -1,51 +1,64 @@
+/// <reference types="jest" />
+
 const getMock = jest.fn();
+const postMock = jest.fn();
 const putMock = jest.fn();
 const deleteMock = jest.fn();
 
 const loadService = async (useMocks: boolean) => {
   jest.resetModules();
   getMock.mockReset();
+  postMock.mockReset();
   putMock.mockReset();
   deleteMock.mockReset();
-
-  jest.doMock('../../../shared/api/httpClient', () => ({
-    httpClient: {
-      get: getMock,
-      put: putMock,
-      delete: deleteMock,
-    },
-  }));
 
   jest.doMock('../../../shared/config/env', () => ({
     USE_MOCKS: useMocks,
   }));
 
+  jest.doMock('../../../shared/api/httpClient', () => ({
+    httpClient: {
+      get: getMock,
+      post: postMock,
+      put: putMock,
+      delete: deleteMock,
+    },
+  }));
+
   return import('./questionService');
 };
 
+const formValues = {
+  topic: 'Tórax',
+  tags: 'aorta, mediastino',
+  type: 'Múltipla escolha' as const,
+  difficulty: 'Médio' as const,
+  origin: 'Manual',
+  statement: 'Qual estrutura forma a parede anterior do mediastino superior?',
+  explanation: 'O manúbrio se relaciona com os grandes vasos.',
+  alternatives: [
+    { id: 'a', label: 'A', text: 'Esterno', isCorrect: false },
+    { id: 'b', label: 'B', text: 'Manúbrio do esterno', isCorrect: true },
+    { id: 'c', label: 'C', text: 'Clavícula', isCorrect: false },
+    { id: 'd', label: 'D', text: 'Escápula', isCorrect: false },
+    { id: 'e', label: 'E', text: 'Primeira costela', isCorrect: false },
+  ],
+};
+
 const apiQuestion = {
-  id: 'questao-api-001',
-  tema: {
-    id: 'tema-api',
-    nome: 'Sistema Cardiovascular',
-  },
-  enunciado: 'Qual camara do coracao bombeia sangue para a aorta?',
+  id: 'question-1',
+  tema: { id: 'tema-1', nome: 'Tórax' },
   tipo: 'MULTIPLA_ESCOLHA',
   dificuldade: 'MEDIA',
-  imagem: 'https://exemplo.com/coracao.png',
-  alternativaCorreta: 'B',
-  explicacaoPedagogica: 'O ventriculo esquerdo e responsavel pela circulacao sistemica.',
-  alternativas: {
-    A: 'Atrio direito',
-    B: 'Ventriculo esquerdo',
-    C: 'Atrio esquerdo',
-    D: 'Ventriculo direito',
-    E: 'Veia cava',
-  },
+  imagem: 'https://exemplo.com/torax.png',
+  enunciado: 'Pergunta anatômica',
+  alternativaCorreta: 'A',
+  explicacaoPedagogica: 'Explicação pedagógica',
+  alternativas: { A: 'Resposta', B: 'Distrator' },
   status: 'ATIVO',
   criadoPorId: 'professor-api',
-  criadoEm: '2026-05-10T16:56:14.952Z',
-  atualizadoEm: '2026-05-10T16:56:14.952Z',
+  criadoEm: '2025-03-31T10:00:00.000Z',
+  atualizadoEm: '2025-03-31T10:00:00.000Z',
   excluidoEm: null,
 };
 
@@ -54,32 +67,8 @@ describe('questionService', () => {
     jest.clearAllMocks();
   });
 
-  it('returns mocked professor questions without calling the API when mocks are enabled', async () => {
-    const { listarQuestoesProfessor } = await loadService(true);
-
-    const result = await listarQuestoesProfessor();
-
-    expect(getMock).not.toHaveBeenCalled();
-    expect(result.total).toBe(2);
-    expect(result.questoes[0]).toMatchObject({
-      id: 'cmp00lkko00014hlq1ra3432j',
-      tipo: 'MULTIPLA_ESCOLHA',
-      dificuldade: 'MEDIA',
-      alternativaCorreta: 'B',
-      status: 'ATIVO',
-      tema: {
-        id: 'cmozy4dxz00004h3xbjzw5vdv',
-        nome: 'Sistema Cardiovascular',
-      },
-      alternativas: {
-        B: 'Ventriculo esquerdo',
-      },
-    });
-    expect(result.questoes[0]).not.toHaveProperty('tipoQuestao');
-  });
-
-  it('loads paginated questions from the API when mocks are disabled', async () => {
-    const { listarQuestoes } = await loadService(false);
+  it('lists active professor questions from the API', async () => {
+    const { listProfessorQuestions } = await loadService(false);
     getMock.mockResolvedValueOnce({
       data: {
         dados: [apiQuestion],
@@ -92,14 +81,69 @@ describe('questionService', () => {
       },
     });
 
-    const result = await listarQuestoes({ page: 1, limit: 10 });
+    await expect(listProfessorQuestions()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'question-1',
+        topic: 'Tórax',
+        difficulty: 'Médio',
+        createdAt: '31/03/2025',
+      }),
+    ]);
+    expect(getMock).toHaveBeenCalledWith('/questoes');
+  });
 
-    expect(getMock).toHaveBeenCalledWith('/questoes', {
-      params: { page: 1, limit: 10 },
+  it('returns mocked professor questions without calling the API when mocks are enabled', async () => {
+    const { listarQuestoesProfessor } = await loadService(true);
+
+    const result = await listarQuestoesProfessor();
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(result.total).toBeGreaterThan(0);
+    expect(result.questoes[0]).toMatchObject({
+      id: 'cmp00lkko00014hlq1ra3432j',
+      type: 'Múltipla escolha',
+      difficulty: 'Médio',
+      topic: 'Sistema Cardiovascular',
     });
-    expect(result).toMatchObject({
-      dados: [{ id: 'questao-api-001' }],
-      metadados: { total: 1 },
+  });
+
+  it('creates a question using the backend payload contract', async () => {
+    const { createQuestion } = await loadService(false);
+    postMock.mockResolvedValueOnce({
+      data: {
+        dados: {
+          ...apiQuestion,
+          id: 'question-2',
+          enunciado: formValues.statement,
+          alternativaCorreta: 'B',
+          alternativas: {
+            A: 'Esterno',
+            B: 'Manúbrio do esterno',
+            C: 'Clavícula',
+            D: 'Escápula',
+            E: 'Primeira costela',
+          },
+        },
+      },
+    });
+
+    await createQuestion(formValues);
+
+    expect(postMock).toHaveBeenCalledWith('/questoes', {
+      tema: 'Tórax',
+      tipo: 'MULTIPLA_ESCOLHA',
+      dificuldade: 'MEDIA',
+      imagem: 'https://placehold.co/600x400?text=AnatoQuizUp',
+      enunciado: formValues.statement,
+      alternativaCorreta: 'B',
+      explicacaoPedagogica: 'O manúbrio se relaciona com os grandes vasos.',
+      alternativas: {
+        A: 'Esterno',
+        B: 'Manúbrio do esterno',
+        C: 'Clavícula',
+        D: 'Escápula',
+        E: 'Primeira costela',
+      },
     });
   });
 
@@ -108,27 +152,36 @@ describe('questionService', () => {
       atualizarQuestao,
       buscarQuestaoPorFiltro,
       buscarQuestaoPorId,
+      deleteQuestion,
       removerQuestao,
+      updateQuestion,
     } = await loadService(false);
 
     getMock
       .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } })
       .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
-    putMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
+    putMock
+      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } })
+      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
     deleteMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
+    deleteMock.mockResolvedValueOnce({});
 
     await buscarQuestaoPorFiltro({ q: 'cardio' });
-    await buscarQuestaoPorId('questao-api-001');
-    await atualizarQuestao('questao-api-001', { dificuldade: 'DIFICIL' });
-    await removerQuestao('questao-api-001');
+    await buscarQuestaoPorId('question-1');
+    await atualizarQuestao('question-1', { dificuldade: 'DIFICIL' });
+    await updateQuestion('question-1', formValues);
+    await removerQuestao('question-1');
+    await deleteQuestion('question-2');
 
     expect(getMock).toHaveBeenNthCalledWith(1, '/questoes/busca', {
       params: { q: 'cardio' },
     });
-    expect(getMock).toHaveBeenNthCalledWith(2, '/questoes/questao-api-001');
-    expect(putMock).toHaveBeenCalledWith('/questoes/questao-api-001', {
+    expect(getMock).toHaveBeenNthCalledWith(2, '/questoes/question-1');
+    expect(putMock).toHaveBeenNthCalledWith(1, '/questoes/question-1', {
       dificuldade: 'DIFICIL',
     });
-    expect(deleteMock).toHaveBeenCalledWith('/questoes/questao-api-001');
+    expect(putMock).toHaveBeenNthCalledWith(2, '/questoes/question-1', expect.any(Object));
+    expect(deleteMock).toHaveBeenNthCalledWith(1, '/questoes/question-1');
+    expect(deleteMock).toHaveBeenNthCalledWith(2, '/questoes/question-2');
   });
 });

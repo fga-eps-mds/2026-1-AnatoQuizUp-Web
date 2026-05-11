@@ -20,7 +20,7 @@ const extractErrorMessage = (err: unknown): string | null => {
 
 export const requestPasswordRecovery = async (email: string): Promise<string> => {
   try {
-    const { data } = await httpClient.post<BackendMessageResponse>('/auth/forgot-password', {
+    const { data } = await httpClient.post<BackendMessageResponse>('/autenticacao/recuperar-senha', {
       email,
     });
 
@@ -33,7 +33,7 @@ export const requestPasswordRecovery = async (email: string): Promise<string> =>
 
 export const resetPassword = async (token: string, senha: string): Promise<string> => {
   try {
-    const { data } = await httpClient.post<BackendMessageResponse>('/auth/reset-password', {
+    const { data } = await httpClient.post<BackendMessageResponse>('/autenticacao/redefinir-senha', {
       token,
       senha,
     });

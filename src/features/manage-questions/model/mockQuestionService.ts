@@ -1,7 +1,11 @@
 import type {
   ApiSuccessResponse,
   ListQuestionsResponse,
+  ProfessorQuestion,
   Question,
+  QuestionAlternative,
+  QuestionAlternativeKey,
+  QuestionFormValues,
   QuestionListParams,
   QuestionTopic,
   SearchQuestionsParams,
@@ -15,26 +19,28 @@ const CARDIOVASCULAR_TOPIC: QuestionTopic = {
   nome: 'Sistema Cardiovascular',
 };
 
-const RESPIRATORY_TOPIC: QuestionTopic = {
-  id: 'tema-sistema-respiratorio',
-  nome: 'Sistema Respiratorio',
+const IMAGE_TOPIC: QuestionTopic = {
+  id: 'tema-imagem',
+  nome: 'Imagem',
 };
 
-const MOCK_QUESTIONS: Question[] = [
+let mockSequence = 3;
+
+let questionsMock: Question[] = [
   {
     id: 'cmp00lkko00014hlq1ra3432j',
     tema: CARDIOVASCULAR_TOPIC,
-    enunciado: 'Qual camara do coracao bombeia sangue para a aorta?',
+    enunciado: 'Qual câmara do coração bombeia sangue para a aorta?',
     tipo: 'MULTIPLA_ESCOLHA',
     dificuldade: 'MEDIA',
     imagem: 'https://exemplo.com/coracao.png',
     alternativaCorreta: 'B',
-    explicacaoPedagogica: 'O ventriculo esquerdo e responsavel pela circulacao sistemica.',
+    explicacaoPedagogica: 'O ventrículo esquerdo é responsável pela circulação sistêmica.',
     alternativas: {
-      A: 'Atrio direito',
-      B: 'Ventriculo esquerdo',
-      C: 'Atrio esquerdo',
-      D: 'Ventriculo direito',
+      A: 'Átrio direito',
+      B: 'Ventrículo esquerdo',
+      C: 'Átrio esquerdo',
+      D: 'Ventrículo direito',
       E: 'Veia cava',
     },
     status: 'ATIVO',
@@ -44,27 +50,24 @@ const MOCK_QUESTIONS: Question[] = [
     excluidoEm: null,
   },
   {
-    id: 'questao-mock-002',
-    tema: RESPIRATORY_TOPIC,
+    id: 'question-14',
+    tema: IMAGE_TOPIC,
     enunciado:
-      'Em uma radiografia de torax, qual sinal radiologico sugere atelectasia?',
+      'Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?',
     tipo: 'MULTIPLA_ESCOLHA',
     dificuldade: 'DIFICIL',
     imagem: 'https://exemplo.com/radiografia-torax.png',
-    alternativaCorreta: 'C',
+    alternativaCorreta: 'B',
     explicacaoPedagogica:
       'Atelectasia costuma causar perda de volume e deslocamento de estruturas adjacentes.',
     alternativas: {
-      A: 'Broncograma aereo sem desvio mediastinal',
-      B: 'Aumento difuso da transparencia pulmonar',
-      C: 'Perda de volume com desvio de fissuras, hilo ou mediastino',
-      D: 'Derrame pleural bilateral associado a cardiomegalia',
-      E: 'Nodulo calcificado isolado',
+      A: 'Broncograma aéreo',
+      B: 'Perda de volume pulmonar',
     },
     status: 'ATIVO',
     criadoPorId: MOCK_PROFESSOR_ID,
-    criadoEm: '2026-05-09T14:30:00.000Z',
-    atualizadoEm: '2026-05-09T14:30:00.000Z',
+    criadoEm: '2025-03-31T10:00:00.000Z',
+    atualizadoEm: '2025-03-31T10:00:00.000Z',
     excluidoEm: null,
   },
 ];
@@ -76,17 +79,103 @@ const cloneQuestion = (question: Question): Question => ({
 });
 
 const getTopicFromName = (nome: string): QuestionTopic => {
-  const existingQuestion = MOCK_QUESTIONS.find(
+  const existingQuestion = questionsMock.find(
     (question) => question.tema.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'),
   );
 
-  if (existingQuestion) {
-    return { ...existingQuestion.tema };
-  }
+  if (existingQuestion) return { ...existingQuestion.tema };
 
   return {
     id: `tema-mock-${nome.trim().toLocaleLowerCase('pt-BR').replace(/\s+/g, '-')}`,
     nome,
+  };
+};
+
+const formatQuestionDate = (date: string): string => {
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(parsedDate);
+};
+
+const mapTypeToProfessorQuestion = (type: Question['tipo']): ProfessorQuestion['type'] => (
+  type === 'MULTIPLA_ESCOLHA' ? 'Múltipla escolha' : 'Verdadeiro/Falso'
+);
+
+const mapDifficultyToProfessorQuestion = (
+  difficulty: Question['dificuldade'],
+): ProfessorQuestion['difficulty'] => {
+  if (difficulty === 'FACIL') return 'Fácil';
+  if (difficulty === 'DIFICIL') return 'Difícil';
+  return 'Médio';
+};
+
+const mapTypeToApi = (type: QuestionFormValues['type']): Question['tipo'] => (
+  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'CERTO_ERRADO'
+);
+
+const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): Question['dificuldade'] => {
+  if (difficulty === 'Fácil') return 'FACIL';
+  if (difficulty === 'Difícil') return 'DIFICIL';
+  return 'MEDIA';
+};
+
+const mapAlternativeLabelToApi = (label: string): QuestionAlternativeKey => {
+  if (label === 'V') return 'C';
+  if (label === 'F') return 'E';
+  return label as QuestionAlternativeKey;
+};
+
+const mapApiAlternativesToFormAlternatives = (
+  question: Question,
+): QuestionAlternative[] => (
+  Object.entries(question.alternativas ?? {}).map(([label, text]) => ({
+    id: label.toLowerCase(),
+    label,
+    text: text ?? '',
+    isCorrect: label === question.alternativaCorreta,
+  }))
+);
+
+const mapQuestionToProfessorQuestion = (question: Question): ProfessorQuestion => ({
+  id: question.id,
+  topic: question.tema.nome,
+  tags: [],
+  type: mapTypeToProfessorQuestion(question.tipo),
+  difficulty: mapDifficultyToProfessorQuestion(question.dificuldade),
+  origin: 'Manual',
+  statement: question.enunciado,
+  explanation: question.explicacaoPedagogica ?? '',
+  alternatives: mapApiAlternativesToFormAlternatives(question),
+  createdAt: formatQuestionDate(question.criadoEm),
+});
+
+const mapValuesToQuestion = (values: QuestionFormValues, id: string): Question => {
+  const now = new Date().toISOString();
+  const correctAlternative = values.alternatives.find((alternative) => alternative.isCorrect);
+
+  return {
+    id,
+    tema: getTopicFromName(values.topic),
+    enunciado: values.statement,
+    tipo: mapTypeToApi(values.type),
+    dificuldade: mapDifficultyToApi(values.difficulty),
+    imagem: 'https://placehold.co/600x400?text=AnatoQuizUp',
+    alternativaCorreta: correctAlternative
+      ? mapAlternativeLabelToApi(correctAlternative.label)
+      : 'A',
+    explicacaoPedagogica: values.explanation || null,
+    alternativas: values.alternatives.reduce<Question['alternativas']>((acc, alternative) => {
+      return {
+        ...acc,
+        [mapAlternativeLabelToApi(alternative.label)]: alternative.text,
+      };
+    }, {}),
+    status: 'ATIVO',
+    criadoPorId: MOCK_PROFESSOR_ID,
+    criadoEm: now,
+    atualizadoEm: now,
+    excluidoEm: null,
   };
 };
 
@@ -97,15 +186,13 @@ const getSearchTerm = (params?: SearchQuestionsParams): string => (
 const filterQuestions = (params?: SearchQuestionsParams): Question[] => {
   const searchTerm = getSearchTerm(params);
 
-  return MOCK_QUESTIONS.filter((question) => {
+  return questionsMock.filter((question) => {
     const matchesStatus = params?.status ? question.status === params.status : question.status === 'ATIVO';
     const matchesTopic = params?.tema
       ? question.tema.nome.toLocaleLowerCase('pt-BR').includes(params.tema.toLocaleLowerCase('pt-BR'))
       : true;
     const matchesType = params?.tipo ? question.tipo === params.tipo : true;
-    const matchesDifficulty = params?.dificuldade
-      ? question.dificuldade === params.dificuldade
-      : true;
+    const matchesDifficulty = params?.dificuldade ? question.dificuldade === params.dificuldade : true;
     const matchesSearchTerm = searchTerm
       ? [
           question.tema.nome,
@@ -146,17 +233,54 @@ const paginateQuestions = (
 };
 
 const findQuestionIndexById = (id: string): number => (
-  MOCK_QUESTIONS.findIndex((question) => question.id === id)
+  questionsMock.findIndex((question) => question.id === id)
 );
 
 const findQuestionById = (id: string): Question => {
-  const question = MOCK_QUESTIONS.find((item) => item.id === id);
+  const question = questionsMock.find((item) => item.id === id);
 
   if (!question) {
-    throw new Error('Questao nao encontrada.');
+    throw new Error('Questão não encontrada.');
   }
 
   return question;
+};
+
+export const listProfessorQuestionsMock = async (): Promise<ProfessorQuestion[]> => (
+  filterQuestions().map(mapQuestionToProfessorQuestion)
+);
+
+export const createQuestionMock = async (
+  values: QuestionFormValues,
+): Promise<ProfessorQuestion> => {
+  const question = mapValuesToQuestion(values, `question-mock-${String(mockSequence).padStart(3, '0')}`);
+  mockSequence += 1;
+  questionsMock = [question, ...questionsMock];
+  return mapQuestionToProfessorQuestion(question);
+};
+
+export const updateQuestionMock = async (
+  id: string,
+  values: QuestionFormValues,
+): Promise<ProfessorQuestion> => {
+  const questionIndex = findQuestionIndexById(id);
+
+  if (questionIndex < 0) {
+    throw new Error('Questão não encontrada.');
+  }
+
+  const currentQuestion = questionsMock[questionIndex];
+  const updatedQuestion = {
+    ...mapValuesToQuestion(values, id),
+    criadoEm: currentQuestion.criadoEm,
+  };
+
+  questionsMock = questionsMock.map((question) => (question.id === id ? updatedQuestion : question));
+  return mapQuestionToProfessorQuestion(updatedQuestion);
+};
+
+export const deleteQuestionMock = async (id: string): Promise<void> => {
+  await removerQuestaoMock(id);
 };
 
 export const listarQuestoesMock = async (
@@ -169,11 +293,11 @@ export const buscarQuestaoPorFiltroMock = async (
   const [question] = filterQuestions(params);
 
   if (!question) {
-    throw new Error('Questao nao encontrada.');
+    throw new Error('Questão não encontrada.');
   }
 
   return {
-    mensagem: 'Questao encontrada com sucesso.',
+    mensagem: 'Questão encontrada com sucesso.',
     dados: cloneQuestion(question),
   };
 };
@@ -181,7 +305,7 @@ export const buscarQuestaoPorFiltroMock = async (
 export const buscarQuestaoPorIdMock = async (
   id: string,
 ): Promise<ApiSuccessResponse<Question>> => ({
-  mensagem: 'Questao encontrada com sucesso.',
+  mensagem: 'Questão encontrada com sucesso.',
   dados: cloneQuestion(findQuestionById(id)),
 });
 
@@ -192,10 +316,10 @@ export const atualizarQuestaoMock = async (
   const questionIndex = findQuestionIndexById(id);
 
   if (questionIndex < 0) {
-    throw new Error('Questao nao encontrada.');
+    throw new Error('Questão não encontrada.');
   }
 
-  const currentQuestion = MOCK_QUESTIONS[questionIndex];
+  const currentQuestion = questionsMock[questionIndex];
   const updatedQuestion: Question = {
     ...currentQuestion,
     tema: payload.tema ? getTopicFromName(payload.tema) : { ...currentQuestion.tema },
@@ -214,10 +338,10 @@ export const atualizarQuestaoMock = async (
     atualizadoEm: new Date().toISOString(),
   };
 
-  MOCK_QUESTIONS[questionIndex] = updatedQuestion;
+  questionsMock[questionIndex] = updatedQuestion;
 
   return {
-    mensagem: 'Questao atualizada com sucesso.',
+    mensagem: 'Questão atualizada com sucesso.',
     dados: cloneQuestion(updatedQuestion),
   };
 };
@@ -228,21 +352,21 @@ export const removerQuestaoMock = async (
   const questionIndex = findQuestionIndexById(id);
 
   if (questionIndex < 0) {
-    throw new Error('Questao nao encontrada.');
+    throw new Error('Questão não encontrada.');
   }
 
   const now = new Date().toISOString();
   const removedQuestion: Question = {
-    ...MOCK_QUESTIONS[questionIndex],
+    ...questionsMock[questionIndex],
     status: 'INATIVO',
     atualizadoEm: now,
     excluidoEm: now,
   };
 
-  MOCK_QUESTIONS[questionIndex] = removedQuestion;
+  questionsMock[questionIndex] = removedQuestion;
 
   return {
-    mensagem: 'Questao removida com sucesso.',
+    mensagem: 'Questão removida com sucesso.',
     dados: cloneQuestion(removedQuestion),
   };
 };

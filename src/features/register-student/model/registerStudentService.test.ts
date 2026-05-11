@@ -82,10 +82,10 @@ describe('registerStudent', () => {
 
     await expect(validateRegisterStudentIdentity(formValues)).resolves.toBeUndefined();
 
-    expect(getMock).toHaveBeenNthCalledWith(1, '/auth/alunos/email-disponivel', {
+    expect(getMock).toHaveBeenNthCalledWith(1, '/autenticacao/alunos/email-disponivel', {
       params: { email: 'bezerra@email.com' },
     });
-    expect(getMock).toHaveBeenNthCalledWith(2, '/auth/alunos/nickname-disponivel', {
+    expect(getMock).toHaveBeenNthCalledWith(2, '/autenticacao/alunos/nickname-disponivel', {
       params: { nickname: 'behhhhh' },
     });
   });
@@ -116,7 +116,7 @@ describe('registerStudent', () => {
 
     await registerStudent(formValues);
 
-    expect(postMock).toHaveBeenCalledWith('/auth/register', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/cadastro', {
       nome: 'Jose Bezerra Camargo',
       nickname: 'behhhhh',
       email: 'bezerra@email.com',

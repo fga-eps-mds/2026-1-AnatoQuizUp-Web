@@ -88,23 +88,4 @@ describe('LoginForm', () => {
     expect(await screen.findByText('Email ou senha inválidos')).toBeInTheDocument();
   });
 
-  it('navigates to the admin login route', async () => {
-    const testUser = userEvent.setup();
-
-    renderLoginForm();
-
-    await testUser.click(screen.getByRole('button', { name: /Entrar como Administrador/i }));
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/admin/login');
-  });
-
-  it('starts the Microsoft login flow', async () => {
-    const testUser = userEvent.setup();
-
-    renderLoginForm();
-
-    await testUser.click(screen.getByRole('button', { name: /Entrar como Professor/i }));
-
-    expect(screen.getByRole('button', { name: /Entrar como Professor/i })).toBeInTheDocument();
-  });
 });

@@ -79,7 +79,7 @@ describe('loginWithCredencials', () => {
 
     const result = await loginWithCredencials('professor@unb.br', 'secret');
 
-    expect(postMock).toHaveBeenCalledWith('/auth/login', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/login', {
       email: 'professor@unb.br',
       senha: 'secret',
     });
@@ -117,7 +117,7 @@ describe('loginWithCredencials', () => {
 
     await expect(logoutSession('refresh-token')).resolves.toBeUndefined();
 
-    expect(postMock).toHaveBeenCalledWith('/auth/logout', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/sair', {
       refreshToken: 'refresh-token',
     });
   });
@@ -143,7 +143,7 @@ describe('loginWithCredencials', () => {
 
     const result = await getAuthenticatedUser();
 
-    expect(getMock).toHaveBeenCalledWith('/auth/me');
+    expect(getMock).toHaveBeenCalledWith('/autenticacao/usuario-atual');
     expect(result).toEqual({
       id: 'user-1',
       name: 'Professor UnB',
