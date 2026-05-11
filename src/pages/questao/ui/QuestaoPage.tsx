@@ -160,11 +160,21 @@ const QuestionsSummary = ({
 const QuestionsFilters = ({
   resultCount,
   searchTerm,
+  selectedDifficulty,
+  selectedTopic,
+  topicOptions,
+  onDifficultyChange,
   onSearchTermChange,
+  onTopicChange,
 }: {
   resultCount: number;
   searchTerm: string;
+  selectedDifficulty: QuestionDifficulty | 'all';
+  selectedTopic: string;
+  topicOptions: string[];
+  onDifficultyChange: (value: QuestionDifficulty | 'all') => void;
   onSearchTermChange: (value: string) => void;
+  onTopicChange: (value: string) => void;
 }) => (
   <section className="flex w-full flex-wrap items-center gap-2" aria-label="Filtros de questões">
     <label className="relative min-w-[180px] flex-1">
@@ -181,16 +191,18 @@ const QuestionsFilters = ({
     <select
       className="rounded-lg border border-[#e0e5ef] bg-white px-4 py-2 text-xs text-[#4a5578] outline-none focus:border-[#00e5cc]"
       aria-label="Filtrar por tema"
-      defaultValue="all"
+      value={selectedTopic}
+      onChange={(event) => onTopicChange(event.target.value)}
     >
       <option value="all">Todos os temas</option>
-      {TOPICS.map((topic) => <option key={topic} value={topic}>{topic}</option>)}
+      {topicOptions.map((topic) => <option key={topic} value={topic}>{topic}</option>)}
     </select>
 
     <select
       className="rounded-lg border border-[#e0e5ef] bg-white px-4 py-2 text-xs text-[#4a5578] outline-none focus:border-[#00e5cc]"
       aria-label="Filtrar por dificuldade"
-      defaultValue="all"
+      value={selectedDifficulty}
+      onChange={(event) => onDifficultyChange(event.target.value as QuestionDifficulty | 'all')}
     >
       <option value="all">Dificuldade</option>
       {DIFFICULTIES.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
@@ -811,6 +823,8 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<ProfessorQuestion[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -863,18 +877,30 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     };
   }, []);
 
+  const topicOptions = useMemo(() => {
+    const questionTopics = Array.from(
+      new Set(questions.map((question) => question.topic).filter(Boolean)),
+    ).sort((firstTopic, secondTopic) => firstTopic.localeCompare(secondTopic, 'pt-BR'));
+
+    return questionTopics.length > 0 ? questionTopics : TOPICS;
+  }, [questions]);
+
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
 
-    if (!normalizedSearch) return questions;
+    return questions.filter((question) => {
+      const matchesSearch = normalizedSearch
+        ? [question.topic, question.statement, question.difficulty, question.type]
+          .join(' ')
+          .toLocaleLowerCase('pt-BR')
+          .includes(normalizedSearch)
+        : true;
+      const matchesTopic = selectedTopic === 'all' || question.topic === selectedTopic;
+      const matchesDifficulty = selectedDifficulty === 'all' || question.difficulty === selectedDifficulty;
 
-    return questions.filter((question) =>
-      [question.topic, question.statement, question.difficulty, question.type]
-        .join(' ')
-        .toLocaleLowerCase('pt-BR')
-        .includes(normalizedSearch),
-    );
-  }, [questions, searchTerm]);
+      return matchesSearch && matchesTopic && matchesDifficulty;
+    });
+  }, [questions, searchTerm, selectedDifficulty, selectedTopic]);
 
   const handleSubmitQuestion = async () => {
     if (!isFormValid(formValues)) return;
@@ -944,7 +970,12 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
             <QuestionsFilters
               resultCount={filteredQuestions.length}
               searchTerm={searchTerm}
+              selectedDifficulty={selectedDifficulty}
+              selectedTopic={selectedTopic}
+              topicOptions={topicOptions}
+              onDifficultyChange={setSelectedDifficulty}
               onSearchTermChange={setSearchTerm}
+              onTopicChange={setSelectedTopic}
             />
             {filteredQuestions.length > 0 ? (
               <QuestionsTable items={filteredQuestions} onEdit={openEditQuestion} onDelete={setQuestionToDelete} />

@@ -67,6 +67,21 @@ const questions: ProfessorQuestion[] = [
       { id: "b", label: "B", text: "Subcostal", isCorrect: false },
     ],
   },
+  {
+    id: "question-16",
+    topic: "Tórax",
+    tags: ["aorta"],
+    type: "Múltipla escolha",
+    statement: "Qual estrutura anatômica dá origem ao arco aórtico?",
+    difficulty: "Fácil",
+    origin: "Manual",
+    createdAt: "01/04/2025",
+    explanation: "",
+    alternatives: [
+      { id: "a", label: "A", text: "Ventrículo esquerdo", isCorrect: true },
+      { id: "b", label: "B", text: "Átrio direito", isCorrect: false },
+    ],
+  },
 ];
 
 const renderQuestionsPage = (openCreateModal = false) => render(
@@ -86,7 +101,7 @@ describe("QuestionsPage", () => {
     });
     listProfessorQuestionsMock.mockResolvedValue(questions);
     createQuestionMock.mockImplementation(async (values) => ({
-      id: "question-16",
+      id: "question-17",
       createdAt: "01/04/2025",
       tags: [],
       ...values,
@@ -107,7 +122,7 @@ describe("QuestionsPage", () => {
     expect(screen.getByLabelText(/Usuário Joana Batista/i)).toHaveTextContent(
       "JB",
     );
-    expect(await screen.findByText(/2 questões cadastradas/i)).toBeInTheDocument();
+    expect(await screen.findByText(/3 questões cadastradas/i)).toBeInTheDocument();
     expect(listProfessorQuestionsMock).toHaveBeenCalledTimes(1);
   });
 
@@ -124,6 +139,29 @@ describe("QuestionsPage", () => {
 
     expect(screen.getByText(/janela acústica/i)).toBeInTheDocument();
     expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
+    expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
+  });
+
+  it("filters questions by topic and difficulty", async () => {
+    const testUser = userEvent.setup();
+
+    renderQuestionsPage();
+
+    await screen.findByText(/atelectasia/i);
+
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Filtrar por tema/i }), "Tórax");
+
+    expect(screen.getByText(/arco aórtico/i)).toBeInTheDocument();
+    expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/janela acústica/i)).not.toBeInTheDocument();
+    expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
+
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Filtrar por tema/i }), "all");
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Filtrar por dificuldade/i }), "Difícil");
+
+    expect(screen.getByText(/janela acústica/i)).toBeInTheDocument();
+    expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/arco aórtico/i)).not.toBeInTheDocument();
     expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
   });
 
