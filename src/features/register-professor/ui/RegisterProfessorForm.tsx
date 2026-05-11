@@ -32,7 +32,7 @@ const INPUT_CLASS =
   'h-10 w-full rounded-[7px] border px-3.5 text-sm text-[#0A1128] outline-none transition-colors ' +
   'placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] bg-white';
 
-const EMAIL_UNB_REGEX = /^[^\s@]+@unb\.br$/i;
+const EMAIL_UNB_REGEX = /^[^\s@]+@(?:[a-z0-9-]+\.)*unb\.br$/i;
 const SIAPE_REGEX = /^\d{7}$/;
 
 type TextFieldProps = {
@@ -127,7 +127,7 @@ const validateField = (
     case 'email':
       if (!trimmedValue) return 'Email institucional é obrigatório.';
       if (!EMAIL_UNB_REGEX.test(trimmedValue)) {
-        return 'Use um email institucional @unb.br.';
+        return 'Use um email institucional UnB.';
       }
       return undefined;
     case 'password':

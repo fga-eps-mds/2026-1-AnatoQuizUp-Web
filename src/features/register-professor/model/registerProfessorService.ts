@@ -39,7 +39,7 @@ const mapValuesToPayload = (
   nome: values.fullName.trim(),
   email: values.email.trim().toLowerCase(),
   siape: values.siape.trim(),
-  instituicao: values.institution,
+  instituicao: 'UnB',
   departamento: values.department.trim(),
   curso: values.course.trim(),
   senha: values.password,
@@ -107,7 +107,7 @@ export const registerProfessor = async (
   }
 
   try {
-    await httpClient.post('/auth/professores/register', mapValuesToPayload(values));
+    await httpClient.post('/autenticacao/cadastro/professor', mapValuesToPayload(values));
   } catch (error) {
     if (!axios.isAxiosError(error)) {
       throw new RegisterProfessorError('Não foi possível concluir o cadastro. Tente novamente.');

@@ -74,7 +74,7 @@ describe('RegisterProfessorForm', () => {
     expect(screen.getByLabelText(/Curso/i)).toBeInTheDocument();
   });
 
-  it('mantem o botao desabilitado para email fora de @unb.br', async () => {
+  it('mantem o botao desabilitado para email fora do dominio UnB', async () => {
     const user = userEvent.setup();
     renderForm();
 
@@ -86,7 +86,7 @@ describe('RegisterProfessorForm', () => {
     expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
   });
 
-  it('rejeita email com subdominio UnB', async () => {
+  it('aceita email com subdominio UnB', async () => {
     const user = userEvent.setup();
     renderForm();
 
@@ -94,11 +94,8 @@ describe('RegisterProfessorForm', () => {
     await user.type(screen.getByLabelText(/Email institucional/i), 'hilmer@professor.unb.br');
     await user.type(screen.getByLabelText(/^Senha/i), 'password123');
     await user.type(screen.getByLabelText(/Confirmação de senha/i), 'password123');
-    await user.click(screen.getByLabelText(/Email institucional/i));
-    await user.tab();
-
-    expect(await screen.findByText(/@unb\.br/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
+    expect(screen.queryByText(/Use um email institucional UnB/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeEnabled();
   });
 
   it('exibe erro para SIAPE com formato invalido', async () => {

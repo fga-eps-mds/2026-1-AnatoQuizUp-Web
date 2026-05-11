@@ -63,11 +63,11 @@ describe('registerProfessor', () => {
 
     await registerProfessor(formValues);
 
-    expect(postMock).toHaveBeenCalledWith('/auth/professores/register', {
+    expect(postMock).toHaveBeenCalledWith('/autenticacao/cadastro/professor', {
       nome: 'Hilmer Rodrigues Neri',
       email: 'hilmer@unb.br',
       siape: '1234567',
-      instituicao: PROFESSOR_INSTITUTION,
+      instituicao: 'UnB',
       departamento: 'Anatomia',
       curso: 'Medicina',
       senha: 'password123',
