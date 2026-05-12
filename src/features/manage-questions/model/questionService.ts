@@ -23,7 +23,6 @@ import type {
   Question,
   QuestionAlternative,
   QuestionAlternativeKey,
-  QuestionAlternatives,
   QuestionFormValues,
   QuestionListParams,
   QuestionTopic,
@@ -60,10 +59,11 @@ type BackendQuestion = Partial<Omit<Question, 'tema' | 'alternativas'>> & {
   alternativas?: BackendQuestionAlternatives | null;
   alternatives?: BackendQuestionAlternatives | null;
   createdAt?: string;
+  imagem?: string | null;
+  image?: string | null;
 };
 
 const QUESTION_ENDPOINT = '/questoes';
-const DEFAULT_QUESTION_IMAGE_URL = 'https://placehold.co/600x400?text=AnatoQuizUp';
 const DEFAULT_PEDAGOGICAL_EXPLANATION = 'Explicação pedagógica não informada.';
 
 const EMPTY_METADATA: PaginationMetadata = {
@@ -204,6 +204,7 @@ const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   origin: question.origin ?? question.origem ?? 'Manual',
   statement: question.statement ?? question.enunciado ?? '',
   explanation: question.explanation ?? question.explicacao ?? question.explicacaoPedagogica ?? '',
+  image: question.image ?? question.imagem ?? null,
   alternatives: normalizeAlternatives(
     question.alternatives ?? question.alternativas,
     question.alternativaCorreta,
@@ -217,25 +218,33 @@ const mapAlternativeLabelToApi = (label: string): QuestionAlternativeKey => {
   return label as QuestionAlternativeKey;
 };
 
-const mapValuesToPayload = (values: QuestionFormValues): UpdateQuestionPayload => {
-  const correctAlternative = values.alternatives.find((alternative) => alternative.isCorrect);
-  const alternativas = values.alternatives.reduce<QuestionAlternatives>((acc, alternative) => {
-    acc[mapAlternativeLabelToApi(alternative.label)] = alternative.text.trim();
-    return acc;
-  }, {});
+const buildFormData = (values: QuestionFormValues): FormData => {
+  const formData = new FormData();
+  
+  formData.append('tema', values.topic);
+  formData.append('tipo', mapTypeToApi(values.type));
+  formData.append('dificuldade', mapDifficultyToApi(values.difficulty));
+  formData.append('enunciado', values.statement.trim());
+  
+  const explanation = values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION;
+  formData.append('explicacaoPedagogica', explanation);
 
-  return {
-    tema: values.topic,
-    tipo: mapTypeToApi(values.type),
-    dificuldade: mapDifficultyToApi(values.difficulty),
-    imagem: DEFAULT_QUESTION_IMAGE_URL,
-    enunciado: values.statement.trim(),
-    alternativaCorreta: correctAlternative
-      ? mapAlternativeLabelToApi(correctAlternative.label)
-      : undefined,
-    explicacaoPedagogica: values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION,
-    alternativas,
-  };
+  const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
+  if (correctAlternative) {
+    formData.append('alternativaCorreta', mapAlternativeLabelToApi(correctAlternative.label));
+  }
+
+  values.alternatives.forEach((alt) => {
+    if (alt.text.trim()) {
+      formData.append(`alternativas[${mapAlternativeLabelToApi(alt.label)}]`, alt.text.trim());
+    }
+  });
+
+  if (values.image instanceof File) {
+    formData.append('imagem', values.image);
+  }
+
+  return formData;
 };
 
 const extractErrorMessage = (error: unknown): string => {
@@ -365,16 +374,17 @@ export const createQuestion = async (
 ): Promise<ProfessorQuestion> => {
   if (USE_MOCKS) return createQuestionMock(values);
 
-  const payload = mapValuesToPayload(values);
+  const formData = buildFormData(values);
 
   try {
     const { data } = await httpClient.post<ApiSuccessResponse<Question>>(
       QUESTION_ENDPOINT,
-      payload,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
 
     return normalizeQuestion(
-      data.dados ?? ({ id: crypto.randomUUID(), ...payload } as BackendQuestion),
+      data.dados ?? ({ id: crypto.randomUUID() } as BackendQuestion),
     );
   } catch (error) {
     throw new Error(extractErrorMessage(error));
@@ -387,15 +397,16 @@ export const updateQuestion = async (
 ): Promise<ProfessorQuestion> => {
   if (USE_MOCKS) return updateQuestionMock(id, values);
 
-  const payload = mapValuesToPayload(values);
+  const formData = buildFormData(values);
 
   try {
     const { data } = await httpClient.put<ApiSuccessResponse<Question>>(
       `${QUESTION_ENDPOINT}/${id}`,
-      payload,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
 
-    return normalizeQuestion(data.dados ?? ({ id, ...payload } as BackendQuestion));
+    return normalizeQuestion(data.dados ?? ({ id } as BackendQuestion));
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }

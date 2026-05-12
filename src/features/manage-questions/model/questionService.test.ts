@@ -129,22 +129,11 @@ describe('questionService', () => {
 
     await createQuestion(formValues);
 
-    expect(postMock).toHaveBeenCalledWith('/questoes', {
-      tema: 'Tórax',
-      tipo: 'MULTIPLA_ESCOLHA',
-      dificuldade: 'MEDIA',
-      imagem: 'https://placehold.co/600x400?text=AnatoQuizUp',
-      enunciado: formValues.statement,
-      alternativaCorreta: 'B',
-      explicacaoPedagogica: 'O manúbrio se relaciona com os grandes vasos.',
-      alternativas: {
-        A: 'Esterno',
-        B: 'Manúbrio do esterno',
-        C: 'Clavícula',
-        D: 'Escápula',
-        E: 'Primeira costela',
-      },
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      '/questoes',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
   });
 
   it('calls the filter, find by id, update and delete endpoints', async () => {
@@ -180,7 +169,12 @@ describe('questionService', () => {
     expect(putMock).toHaveBeenNthCalledWith(1, '/questoes/question-1', {
       dificuldade: 'DIFICIL',
     });
-    expect(putMock).toHaveBeenNthCalledWith(2, '/questoes/question-1', expect.any(Object));
+    expect(putMock).toHaveBeenNthCalledWith(
+      2, 
+      '/questoes/question-1', 
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
     expect(deleteMock).toHaveBeenNthCalledWith(1, '/questoes/question-1');
     expect(deleteMock).toHaveBeenNthCalledWith(2, '/questoes/question-2');
   });

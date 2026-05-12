@@ -55,6 +55,7 @@ export type ProfessorQuestion = {
   explanation?: string;
   alternatives: QuestionAlternative[];
   createdAt: string;
+  image?: string | null;
 };
 
 export type QuestionFormValues = {
@@ -66,6 +67,7 @@ export type QuestionFormValues = {
   statement: string;
   explanation: string;
   alternatives: QuestionAlternative[];
+  image: File | string | null;
 };
 
 export type UpdateQuestionPayload = Partial<{
