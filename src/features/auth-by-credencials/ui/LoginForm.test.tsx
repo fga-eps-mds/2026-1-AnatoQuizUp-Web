@@ -66,7 +66,7 @@ describe('LoginForm', () => {
 
     const { login, passwordInput } = renderLoginForm();
 
-    await testUser.type(screen.getByPlaceholderText('Aluno@UnB'), 'ana@unb.br');
+    await testUser.type(screen.getByPlaceholderText('Email'), 'ana@unb.br');
     await testUser.type(passwordInput, 'secret');
     await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
 
@@ -83,7 +83,7 @@ describe('LoginForm', () => {
 
     const { passwordInput } = renderLoginForm();
 
-    await testUser.type(screen.getByPlaceholderText('Aluno@UnB'), 'ana@unb.br');
+    await testUser.type(screen.getByPlaceholderText('Email'), 'ana@unb.br');
     await testUser.type(passwordInput, 'wrong');
     await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
 

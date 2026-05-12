@@ -36,7 +36,7 @@ export const LoginForm = () => {
       <Input
         label="Email"
         type="email"
-        placeholder="Aluno@UnB"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
@@ -78,7 +78,16 @@ export const LoginForm = () => {
           to="/cadastro"
           className="font-bold text-[#00214d] md:text-[#fffffe] hover:text-[#0A1128] md:hover:text-[#71edc8] transition-colors ml-1"
         >
-          Cadastrar-se
+          Cadastrar-se como aluno
+        </Link>
+      </div>
+
+      <div className="text-center text-sm text-[#00214d] md:text-[#fffffe]/80 font-medium md:font-normal">
+        <Link
+          to="/professor/cadastro"
+          className="font-bold text-[#00214d] md:text-[#fffffe] hover:text-[#0A1128] md:hover:text-[#71edc8] transition-colors ml-1"
+        >
+          Cadastrar-se como professor
         </Link>
       </div>
     </form>
