@@ -91,6 +91,10 @@ const renderQuestionsPage = (openCreateModal = false) => render(
 );
 
 describe("QuestionsPage", () => {
+  beforeAll(() => {
+    global.URL.createObjectURL = jest.fn(() => "mocked-url");
+  });
+
   beforeEach(() => {
     useAuthMock.mockReturnValue({
       user: professor,
@@ -211,6 +215,52 @@ describe("QuestionsPage", () => {
       );
     });
     expect(await screen.findByText("Questão cadastrada com sucesso!")).toBeInTheDocument();
+  });
+
+
+  it("handles image upload, preview and removal correctly", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+
+    const validFile = new File(["dummy content"], "anatomia.png", { type: "image/png" });
+
+    await testUser.upload(fileInput, validFile);
+
+    const previewImage = await screen.findByAltText("Preview da imagem");
+    expect(previewImage).toBeInTheDocument();
+    expect(previewImage).toHaveAttribute("src", "mocked-url");
+
+    const removeButton = screen.getByRole("button", { name: /Remover imagem/i });
+    await testUser.click(removeButton);
+
+    expect(screen.queryByAltText("Preview da imagem")).not.toBeInTheDocument();
+    expect(screen.getByText(/Clique para adicionar imagem/i)).toBeInTheDocument();
+  });
+
+  it("prevents uploading an image larger than 5MB and shows alert", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+
+    const bigFile = new File(["dummy"], "big-image.jpg", { type: "image/jpeg" });
+    Object.defineProperty(bigFile, "size", { value: 6 * 1024 * 1024 }); 
+
+    await testUser.upload(fileInput, bigFile);
+
+    expect(alertSpy).toHaveBeenCalledWith("A imagem deve ter no máximo 5MB");
+    expect(screen.queryByAltText("Preview da imagem")).not.toBeInTheDocument();
+
+    alertSpy.mockRestore();
   });
 
   it("opens a confirmation modal before deleting a question", async () => {
