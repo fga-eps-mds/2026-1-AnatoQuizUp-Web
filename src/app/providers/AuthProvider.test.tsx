@@ -203,4 +203,52 @@ describe('AuthProvider', () => {
 
     expect(() => render(<AuthConsumer />)).toThrow('useAuth deve ser usado dentro de um AuthProvider');
   });
+
+  it('does not update state if unmounted during successful session restoration', async () => {
+    localStorage.setItem('access_token', 'token-valido');
+
+    let resolver: (user: User) => void;
+    const deferredPromise = new Promise<User>((resolve) => {
+      resolver = resolve;
+    });
+    getAuthenticatedUserMock.mockReturnValueOnce(deferredPromise);
+
+    const { unmount } = render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    unmount();
+    
+    resolver!(user);
+
+    await new Promise(process.nextTick);
+
+    expect(localStorage.getItem('access_token')).toBe('token-valido');
+  });
+
+  it('does not clear session if unmounted during failed session restoration', async () => {
+    localStorage.setItem('access_token', 'token-invalido');
+
+    let rejecter: (err: Error) => void;
+    const deferredPromise = new Promise<User>((_, reject) => {
+      rejecter = reject;
+    });
+    getAuthenticatedUserMock.mockReturnValueOnce(deferredPromise);
+
+    const { unmount } = render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    unmount();
+
+    rejecter!(new Error('Sessão expirada'));
+
+    await new Promise(process.nextTick);
+
+    expect(localStorage.getItem('access_token')).toBe('token-invalido');
+  });
 });

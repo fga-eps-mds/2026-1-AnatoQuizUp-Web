@@ -166,4 +166,147 @@ describe('questionService', () => {
       expect(questoes).toBeDefined();
     });
   });
+
+  describe('Edge Cases de Normalização (Datas, Tags, Alternativas e Temas)', () => {
+    it('normaliza formatos atípicos retornados pelo backend', async () => {
+      const { listProfessorQuestions } = await loadService(false);
+      getMock.mockResolvedValueOnce({
+        data: {
+          dados: [
+            {
+              id: 'weird-1',
+              criadoEm: 'data-invalida', 
+              tags: 'tag1, tag2', 
+              tipo: 'VERDADEIRO_FALSO',
+              dificuldade: 'FÁCIL',
+              alternativaCorreta: 'C',
+              alternativas: { C: 'Certo', E: 'Errado' }, 
+            },
+            {
+              id: 'weird-2',
+              tema: 'Tema em String Plana',
+              alternativas: [{ id: '1', texto: 'Alternativa em array', correta: true }],
+            },
+            {
+              id: 'weird-3',
+              alternativas: null, 
+            },
+          ],
+        },
+      });
+
+      const res = await listProfessorQuestions();
+
+      expect(res[0].createdAt).toBe('data-invalida');
+      expect(res[0].tags).toEqual(['tag1', 'tag2']);
+      expect(res[0].type).toBe('Verdadeiro/Falso');
+      expect(res[0].difficulty).toBe('Fácil');
+      expect(res[0].alternatives[0].label).toBe('V');
+      expect(res[0].alternatives[1].label).toBe('F');
+
+      expect(res[1].topic).toBe('Tema em String Plana');
+      expect(res[1].alternatives[0].text).toBe('Alternativa em array');
+
+      expect(res[2].alternatives).toEqual([]);
+    });
+  });
+
+  describe('Edge Cases de Formulário e Mapeamento', () => {
+    it('ignora alternativas vazias e usa fallback de explicação no buildFormData', async () => {
+      const { createQuestion } = await loadService(false);
+      postMock.mockResolvedValueOnce({ data: { dados: apiQuestion } });
+
+      const formIncompleto = {
+        ...formValues,
+        type: 'Verdadeiro/Falso' as const,
+        difficulty: 'Difícil' as const,
+        explanation: '   ', 
+        alternatives: [
+          { id: 'v', label: 'V', text: 'Opção V', isCorrect: true },
+          { id: 'f', label: 'F', text: '   ', isCorrect: false }, 
+        ],
+      };
+
+      await createQuestion(formIncompleto);
+
+      const formData = postMock.mock.calls[0][1] as FormData;
+      
+      expect(formData.get('tipo')).toBe('VERDADEIRO_FALSO');
+      expect(formData.get('dificuldade')).toBe('DIFICIL');
+      expect(formData.get('explicacaoPedagogica')).toBe('Explicação pedagógica não informada.');
+      expect(formData.get('alternativaCorreta')).toBe('C');
+      expect(formData.get('alternativas[C]')).toBe('Opção V');
+      expect(formData.has('alternativas[E]')).toBe(false); // Ignorado por ser vazio
+    });
+  });
+
+  describe('Edge Cases de USE_MOCKS nas Funções Singulares', () => {
+    it('cobre chamadas diretas com MOCKS ativados', async () => {
+      const { listarQuestoes, atualizarQuestao, removerQuestao } = await loadService(true);
+      
+      await expect(listarQuestoes()).resolves.toBeDefined();
+      
+      await expect(atualizarQuestao('id-fake', {} as never)).rejects.toThrow('Questão não encontrada.');
+      await expect(removerQuestao('id-fake')).rejects.toThrow('Questão não encontrada.');
+      
+      expect(getMock).not.toHaveBeenCalled();
+      expect(putMock).not.toHaveBeenCalled();
+      expect(deleteMock).not.toHaveBeenCalled();
+    });
+
+    it('cobre fallback de fallback vazio em listarQuestoes sem mocks', async () => {
+      const { listarQuestoes } = await loadService(false);
+      getMock.mockResolvedValueOnce({ data: {} }); // Sem dados e metadados
+      
+      const res = await listarQuestoes();
+      expect(res.dados).toEqual([]);
+      expect(res.metadados.page).toBe(1);
+    });
+  });
+
+  describe('Tratamento de Erros e extractErrorMessage (Catch Blocks)', () => {
+    it('repassa erro extraído em updateQuestion', async () => {
+      const { updateQuestion } = await loadService(false);
+      putMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: { erro: { mensagem: 'Falha ao atualizar questão' } } },
+      });
+
+      await expect(updateQuestion('1', formValues)).rejects.toThrow('Falha ao atualizar questão');
+    });
+
+    it('retorna mensagem genérica de rede ao tentar deletar', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce(new Error('Erro de execução JS/Rede'));
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível conectar ao servidor. Tente novamente.');
+    });
+
+    it('retorna mensagem genérica de servidor sem response', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({ isAxiosError: true }); 
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível conectar ao servidor. Tente novamente.');
+    });
+
+    it('extrai mensagem direta do message', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: { message: 'Erro internal server error' } },
+      });
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Erro internal server error');
+    });
+
+    it('usa fallback máximo se o response.data não tiver campos conhecidos', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: {} },
+      });
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível processar a questão.');
+    });
+  });
 });

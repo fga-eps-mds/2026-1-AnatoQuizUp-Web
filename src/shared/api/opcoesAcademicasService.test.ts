@@ -66,4 +66,32 @@ describe('opcoesAcademicasService', () => {
       naoSeAplica: '',
     });
   });
+  it('normalizes malformed academic options (non-arrays and nulls) to empty default values', async () => {
+    const { listarOpcoesAcademicas } = await loadService(false);
+    
+    const malformedDados = {
+      escolaridades: null, 
+      instituicoes: 'apenas-uma-string',
+      cursos: { tipo: 'objeto-aleatorio' }, 
+      periodos: undefined, 
+      naoSeAplica: null, 
+    };
+    
+    getMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: malformedDados } });
+
+    await expect(listarOpcoesAcademicas()).resolves.toEqual({
+      escolaridades: [],
+      instituicoes: [],
+      cursos: [],
+      periodos: [],
+      naoSeAplica: '',
+    });
+  });
+
+  it('throws an error if the API request fails', async () => {
+    const { listarOpcoesAcademicas } = await loadService(false);
+    getMock.mockRejectedValueOnce(new Error('Erro de conexão com a API'));
+
+    await expect(listarOpcoesAcademicas()).rejects.toThrow('Erro de conexão com a API');
+  });
 });

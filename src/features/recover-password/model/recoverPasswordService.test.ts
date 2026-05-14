@@ -83,4 +83,63 @@ describe('recoverPasswordService', () => {
       'Link expirado ou invalido.',
     );
   });
+
+  it('throws default recovery message when error is not from Axios', async () => {
+    postMock.mockRejectedValueOnce(new Error('Erro generico do JavaScript'));
+
+    await expect(requestPasswordRecovery('aluno@unb.br')).rejects.toThrow(
+      'Nao foi possivel enviar as instrucoes de recuperacao.'
+    );
+  });
+
+  it('throws default reset message when Axios error has no response object', async () => {
+    postMock.mockRejectedValueOnce({ isAxiosError: true }); 
+
+    await expect(resetPassword('token', 'senha123')).rejects.toThrow(
+      'Link expirado ou invalido.'
+    );
+  });
+
+  it('extracts flat "mensagem" directly from response data', async () => {
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          mensagem: 'Mensagem de erro flat vinda do backend',
+        },
+      },
+    });
+
+    await expect(requestPasswordRecovery('aluno@unb.br')).rejects.toThrow(
+      'Mensagem de erro flat vinda do backend'
+    );
+  });
+
+  it('extracts "message" (in english) directly from response data', async () => {
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          message: 'Internal server error',
+        },
+      },
+    });
+
+    await expect(requestPasswordRecovery('aluno@unb.br')).rejects.toThrow(
+      'Internal server error'
+    );
+  });
+
+  it('throws default recovery message when response data has no recognized error fields', async () => {
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {}, 
+      },
+    });
+
+    await expect(requestPasswordRecovery('aluno@unb.br')).rejects.toThrow(
+      'Nao foi possivel enviar as instrucoes de recuperacao.'
+    );
+  });
 });
