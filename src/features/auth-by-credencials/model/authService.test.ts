@@ -337,4 +337,113 @@ describe('loginWithCredencials', () => {
       'Nao foi possivel carregar o usuario autenticado.',
     );
   });
+
+  it('extrai "mensagem" direta do corpo da resposta (linha 69)', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { mensagem: 'Mensagem flat vinda da API' },
+      },
+    });
+
+    await expect(loginWithCredencials('email@unb.br', 'senha')).rejects.toThrow('Mensagem flat vinda da API');
+  });
+
+  it('extrai "message" direta do corpo da resposta (linha 69)', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { message: 'Message flat vinda da API' },
+      },
+    });
+
+    await expect(loginWithCredencials('email@unb.br', 'senha')).rejects.toThrow('Message flat vinda da API');
+  });
+
+  it('usa fallback de 401 quando a API não retorna uma mensagem extraível (linha 107)', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: {}, 
+      },
+    });
+
+    await expect(loginWithCredencials('email@unb.br', 'senha')).rejects.toThrow('Email ou senha invalidos');
+  });
+
+  it('usa fallback de 403 quando a API não retorna uma mensagem extraível (linha 111)', async () => {
+    const { loginWithCredencials } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {}, 
+      },
+    });
+
+    await expect(loginWithCredencials('email@unb.br', 'senha')).rejects.toThrow('Conta desativada. Entre em contato com o administrador.');
+  });
+
+  it('lança erro genérico quando getAuthenticatedUser falha com um erro que não é do Axios (linha 129)', async () => {
+    const { getAuthenticatedUser } = await loadService(false);
+    getMock.mockRejectedValueOnce(new Error('Erro puro do JS/Navegador'));
+
+    await expect(getAuthenticatedUser()).rejects.toThrow('Nao foi possivel carregar o usuario autenticado.');
+  });
+});
+
+
+describe('mockAuthService internal branches (USE_MOCKS = true)', () => {
+  it('throws error when mock login receives an unknown email', async () => {
+    const { loginWithCredencials } = await loadService(true);
+    
+    await expect(loginWithCredencials('email_inexistente@unb.br', 'senha')).rejects.toThrow(
+      'Email ou senha invalidos'
+    );
+  });
+
+  it('returns STUDENT_USER when storage has student token explicitly', async () => {
+    const { getAuthenticatedUser } = await loadService(true);
+    
+    localStorage.setItem('access_token', 'mock-access-token');
+    
+    const user = await getAuthenticatedUser();
+    expect(user.role).toBe('STUDENT');
+    expect(user.email).toBe('aluno@unb.br');
+  });
+
+  it('returns authenticatedMockUser fallback when token is invalid or missing', async () => {
+    const { loginWithCredencials, getAuthenticatedUser } = await loadService(true);
+    
+    await loginWithCredencials('professor@unb.br', 'any');
+    
+    localStorage.setItem('access_token', 'token-completamente-invalido');
+    
+    const user = await getAuthenticatedUser();
+    expect(user.role).toBe('PROFESSOR');
+  });
+
+  it('returns null from getStoredAccessToken when localStorage throws (covering catch block)', async () => {
+    const { getAuthenticatedUser } = await loadService(true);
+    
+    const originalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    
+    Object.defineProperty(globalThis, 'localStorage', {
+      get: () => { throw new Error('Acesso Negado'); },
+      configurable: true,
+    });
+
+    const user = await getAuthenticatedUser();
+    expect(user).toBeDefined();
+
+    if (originalLocalStorage) {
+      Object.defineProperty(globalThis, 'localStorage', originalLocalStorage);
+    }
+  });
 });

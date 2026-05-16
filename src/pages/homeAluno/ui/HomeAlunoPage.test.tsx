@@ -61,4 +61,27 @@ describe('HomeAlunoPage', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent('/aluno/questoes');
   });
+
+
+  it('renders fallback metadata when user has no course', () => {
+    const userWithoutCourse = { ...user, course: undefined };
+    useAuthMock.mockReturnValue({ user: userWithoutCourse, isAuthenticated: true });
+
+    renderHomeAlunoPage();
+
+    expect(screen.getByText('UnB')).toBeInTheDocument();
+    expect(screen.queryByText(/\|/)).not.toBeInTheDocument();
+  });
+
+  it('navigates to login when unauthenticated and onLogin is called', async () => {
+    const testUser = userEvent.setup();
+    useAuthMock.mockReturnValue({ user: null, isAuthenticated: false });
+
+    renderHomeAlunoPage();
+
+    const loginButton = screen.getByRole('button', { name: /login|entrar/i });
+    await testUser.click(loginButton);
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/login');
+  });
 });

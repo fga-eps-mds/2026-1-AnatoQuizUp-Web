@@ -58,6 +58,7 @@ const emptyFormValues: QuestionFormValues = {
   statement: '',
   explanation: '',
   alternatives: EMPTY_ALTERNATIVES,
+  image: null,
 };
 
 const getInitials = (name?: string | null) => {
@@ -88,6 +89,7 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
   origin: question.origin,
   statement: question.statement,
   explanation: question.explanation ?? '',
+  image: question.image || null,
   alternatives: question.type === 'Verdadeiro/Falso'
     ? TRUE_FALSE_ALTERNATIVES.map((alternative) => ({
       ...alternative,
@@ -617,13 +619,55 @@ const QuestionModal = ({
                   </span>
                 )}
               </label>
-              <label className="block">
+
+              <div className="block">
                 <FieldLabel>Contexto / imagem (opcional)</FieldLabel>
-                <span className="flex h-[88px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-[#cbd5e1] bg-[#f8fafc] text-center">
-                  <span className="text-xs font-bold text-[#64748b]">Clique para adicionar imagem</span>
-                  <span className="mt-1 text-[10px] text-[#8a9ab8]">PNG, JPG ou SVG · máx. 5 MB</span>
-                </span>
-              </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/png, image/jpeg, image/svg+xml"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('A imagem deve ter no máximo 5MB');
+                          return;
+                        }
+                        updateValue('image', file);
+                      }
+                    }}
+                  />
+                  {!values.image ? (
+                    <label
+                      htmlFor="image-upload"
+                      className="flex h-[88px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-[#cbd5e1] bg-[#f8fafc] text-center transition-colors hover:bg-[#f1f5f9]"
+                    >
+                      <Plus size={20} className="mb-1 text-[#64748b]" aria-hidden="true" />
+                      <span className="text-xs font-bold text-[#64748b]">Clique para adicionar imagem</span>
+                      <span className="mt-1 text-[10px] text-[#8a9ab8]">PNG, JPG ou SVG · máx. 5 MB</span>
+                    </label>
+                  ) : (
+                    <div className="relative flex h-[120px] w-full items-center justify-center overflow-hidden rounded-md border border-[#e2e8f0] bg-white p-2">
+                      <img
+                        src={values.image instanceof File ? URL.createObjectURL(values.image) : values.image}
+                        alt="Preview da imagem"
+                        className="h-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateValue('image', null)}
+                        className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-[#e14b4b] text-white shadow-md hover:bg-[#c03939]"
+                        aria-label="Remover imagem"
+                      >
+                        <X size={14} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <label className="block">
                 <FieldLabel>Explicação / justificativa (opcional)</FieldLabel>
                 <textarea
@@ -945,10 +989,11 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
         if (!editingQuestion) return [savedQuestion, ...currentQuestions];
         return currentQuestions.map((question) => question.id === editingQuestion.id ? savedQuestion : question);
       });
+      
       setToastMessage(editingQuestion ? 'Questão atualizada com sucesso!' : 'Questão cadastrada com sucesso!');
       closeQuestionModal();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Nao foi possivel salvar a questão.');
+      setError(submitError instanceof Error ? submitError.message : 'Não foi possível salvar a questão.');
     } finally {
       setIsSubmitting(false);
     }
