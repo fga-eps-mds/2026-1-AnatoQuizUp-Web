@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./router/ProtectedRoute";
 import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
+import { TurmasPage } from "../pages/turma/ui/TurmaPage";
 
 export const AppRouter = () => {
   return (
@@ -48,6 +49,7 @@ export const AppRouter = () => {
             </ProtectedRoute>
           } 
         />
+
         <Route
           path="/professor/questoes"
           element={
@@ -56,6 +58,7 @@ export const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/professor/criar-questao"
           element={
@@ -64,6 +67,16 @@ export const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/turmas"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <TurmasPage />
+            </ProtectedRoute>
+          }
+        />
+        
       </Route>
 
       <Route path="*" element={<Navigate to="/home" replace />} />
