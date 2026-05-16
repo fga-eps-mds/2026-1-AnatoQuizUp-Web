@@ -187,4 +187,123 @@ describe('registerStudent', () => {
       new RegisterStudentError('Nao foi possivel conectar ao servidor. Tente novamente.'),
     );
   });
+  
+  it('mapeia escolaridade desconhecida para OUTRO', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockResolvedValueOnce({ data: { mensagem: 'ok' } });
+
+    await registerStudent({ ...formValues, education: 'VALOR_NUNCA_VISTO' });
+
+    expect(postMock).toHaveBeenCalledWith(
+      '/autenticacao/cadastro',
+      expect.objectContaining({ escolaridade: 'OUTRO' }),
+    );
+  });
+
+  it('retorna erro generico quando falha no register e nao e erro do Axios', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockRejectedValueOnce(new Error('Erro generico de rede ou JS'));
+
+    await expect(registerStudent(formValues)).rejects.toThrow(
+      'Nao foi possivel concluir o cadastro. Tente novamente.'
+    );
+  });
+
+  it('retorna a mensagem do backend quando ocorre erro generico sem fieldErrors', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { data: { mensagem: 'Erro interno no banco de dados' } },
+    });
+
+    await expect(registerStudent(formValues)).rejects.toThrow('Erro interno no banco de dados');
+  });
+
+  it('extrai fieldError quando detalhes e um array (formato API padrao)', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          erro: {
+            detalhes: [{ campo: 'email', mensagem: 'O formato do email esta incorreto' }],
+          },
+        },
+      },
+    });
+
+    await expect(registerStudent(formValues)).rejects.toMatchObject({
+      fieldErrors: { email: 'O formato do email esta incorreto' },
+    });
+  });
+
+  it('extrai fieldError quando detalhes e um objeto com formato de errors aninhados', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          erro: {
+            detalhes: { email: { errors: ['Email muito curto'] } },
+          },
+        },
+      },
+    });
+
+    await expect(registerStudent(formValues)).rejects.toMatchObject({
+      fieldErrors: { email: 'Email muito curto' },
+    });
+  });
+
+  it('extrai fieldError por regex quando backend envia mensagem flat', async () => {
+    const { registerStudent } = await loadService(false);
+    postMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: { mensagem: 'O email fornecido ja esta em uso no sistema' },
+      },
+    });
+
+    await expect(registerStudent(formValues)).rejects.toMatchObject({
+      fieldErrors: { email: 'O email fornecido ja esta em uso no sistema' },
+    });
+  });
+
+  it('retorna erro generico quando nao e erro do Axios na validacao de identidade', async () => {
+    const { validateRegisterStudentIdentity } = await loadService(false);
+    getMock.mockRejectedValueOnce(new Error('Erro de execucao'));
+
+    await expect(validateRegisterStudentIdentity(formValues)).rejects.toThrow(
+      'Nao foi possivel validar email e nickname. Tente novamente.'
+    );
+  });
+
+  it('retorna erro de conexao quando Axios falha sem response na validacao', async () => {
+    const { validateRegisterStudentIdentity } = await loadService(false);
+    getMock.mockRejectedValueOnce({ isAxiosError: true }); 
+
+    await expect(validateRegisterStudentIdentity(formValues)).rejects.toThrow(
+      'Nao foi possivel conectar ao servidor. Tente novamente.'
+    );
+  });
+
+  it('repassa fieldErrors da API quando validateRegisterStudentIdentity recebe 400', async () => {
+    const { validateRegisterStudentIdentity } = await loadService(false);
+    getMock.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          mensagem: 'Campos invalidos',
+          erro: {
+            detalhes: [{ campo: 'nickname', mensagem: 'Nickname contem caracteres invalidos' }],
+          },
+        },
+      },
+    });
+
+    await expect(validateRegisterStudentIdentity(formValues)).rejects.toMatchObject({
+      message: 'Campos invalidos',
+      fieldErrors: { nickname: 'Nickname contem caracteres invalidos' },
+    });
+  });
 });

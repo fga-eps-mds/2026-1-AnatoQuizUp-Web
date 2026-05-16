@@ -17,6 +17,7 @@ import {
   createQuestion,
   deleteQuestion,
   listProfessorQuestions,
+  updateQuestion,
 } from "../../../features/manage-questions/model/questionService";
 import type { ProfessorQuestion } from "../../../features/manage-questions/model/types";
 import type { User } from "../../../entities/user/model/types";
@@ -26,6 +27,7 @@ const useAuthMock = useAuth as jest.Mock;
 const listProfessorQuestionsMock = listProfessorQuestions as jest.Mock;
 const createQuestionMock = createQuestion as jest.Mock;
 const deleteQuestionMock = deleteQuestion as jest.Mock;
+const updateQuestionMock = updateQuestion as jest.Mock;
 
 const professor: User = {
   id: "professor-1",
@@ -50,6 +52,10 @@ const questions: ProfessorQuestion[] = [
     alternatives: [
       { id: "a", label: "A", text: "Broncograma aéreo", isCorrect: false },
       { id: "b", label: "B", text: "Perda de volume pulmonar", isCorrect: true },
+      { id: "c", label: "C", text: "Opção C", isCorrect: false },
+      { id: "d", label: "D", text: "Opção D", isCorrect: false },
+      { id: "e", label: "E", text: "Opção E", isCorrect: false },
+      { id: "f", label: "F", text: "Opção extra", isCorrect: false }, 
     ],
   },
   {
@@ -65,6 +71,8 @@ const questions: ProfessorQuestion[] = [
     alternatives: [
       { id: "a", label: "A", text: "Paraesternal eixo curto", isCorrect: true },
       { id: "b", label: "B", text: "Subcostal", isCorrect: false },
+      { id: "c", label: "C", text: "Opção C", isCorrect: false },
+      { id: "d", label: "D", text: "Opção D", isCorrect: false },
     ],
   },
   {
@@ -80,6 +88,9 @@ const questions: ProfessorQuestion[] = [
     alternatives: [
       { id: "a", label: "A", text: "Ventrículo esquerdo", isCorrect: true },
       { id: "b", label: "B", text: "Átrio direito", isCorrect: false },
+      { id: "c", label: "C", text: "Opção C", isCorrect: false },
+      { id: "d", label: "D", text: "Opção D", isCorrect: false },
+      { id: "e", label: "E", text: "Opção E", isCorrect: false },
     ],
   },
 ];
@@ -91,6 +102,10 @@ const renderQuestionsPage = (openCreateModal = false) => render(
 );
 
 describe("QuestionsPage", () => {
+  beforeAll(() => {
+    global.URL.createObjectURL = jest.fn(() => "mocked-url");
+  });
+
   beforeEach(() => {
     useAuthMock.mockReturnValue({
       user: professor,
@@ -213,6 +228,51 @@ describe("QuestionsPage", () => {
     expect(await screen.findByText("Questão cadastrada com sucesso!")).toBeInTheDocument();
   });
 
+  it("handles image upload, preview and removal correctly", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+
+    const validFile = new File(["dummy content"], "anatomia.png", { type: "image/png" });
+
+    await testUser.upload(fileInput, validFile);
+
+    const previewImage = await screen.findByAltText("Preview da imagem");
+    expect(previewImage).toBeInTheDocument();
+    expect(previewImage).toHaveAttribute("src", "mocked-url");
+
+    const removeButton = screen.getByRole("button", { name: /Remover imagem/i });
+    await testUser.click(removeButton);
+
+    expect(screen.queryByAltText("Preview da imagem")).not.toBeInTheDocument();
+    expect(screen.getByText(/Clique para adicionar imagem/i)).toBeInTheDocument();
+  });
+
+  it("prevents uploading an image larger than 5MB and shows alert", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+
+    const bigFile = new File(["dummy"], "big-image.jpg", { type: "image/jpeg" });
+    Object.defineProperty(bigFile, "size", { value: 6 * 1024 * 1024 }); 
+
+    await testUser.upload(fileInput, bigFile);
+
+    expect(alertSpy).toHaveBeenCalledWith("A imagem deve ter no máximo 5MB");
+    expect(screen.queryByAltText("Preview da imagem")).not.toBeInTheDocument();
+
+    alertSpy.mockRestore();
+  });
+
   it("opens a confirmation modal before deleting a question", async () => {
     const testUser = userEvent.setup();
     deleteQuestionMock.mockResolvedValueOnce(undefined);
@@ -231,5 +291,148 @@ describe("QuestionsPage", () => {
       expect(deleteQuestionMock).toHaveBeenCalledWith("question-14");
     });
     expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
+  });
+
+  describe("Edge Cases, Error Handling and Modal Navigation", () => {
+    it("handles load error as an Error instance", async () => {
+      listProfessorQuestionsMock.mockRejectedValueOnce(new Error("Erro simulado de rede"));
+      renderQuestionsPage();
+      expect(await screen.findByText("Erro simulado de rede")).toBeInTheDocument();
+    });
+
+    it("handles load error as a non-Error fallback", async () => {
+      listProfessorQuestionsMock.mockRejectedValueOnce({ status: 500 });
+      renderQuestionsPage();
+      expect(await screen.findByText("Nao foi possivel carregar as questões.")).toBeInTheDocument();
+    });
+
+    it("does not update state if unmounted during load", async () => {
+      let resolver: (questions: ProfessorQuestion[]) => void;
+      listProfessorQuestionsMock.mockReturnValueOnce(new Promise((res) => { resolver = res; }));
+      
+      const { unmount } = renderQuestionsPage();
+      unmount(); 
+      
+      resolver!(questions);
+      await new Promise(process.nextTick);
+      expect(screen.queryByText(/atelectasia/i)).not.toBeInTheDocument();
+    });
+
+    it("cancels question deletion modal", async () => {
+      const testUser = userEvent.setup();
+      renderQuestionsPage();
+
+      const row = (await screen.findByText(/atelectasia/i)).closest("tr");
+      await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Excluir/i }));
+      
+      expect(screen.getByRole("dialog", { name: /Excluir questão/i })).toBeInTheDocument();
+      
+      await testUser.click(screen.getByRole("button", { name: /Cancelar/i }));
+      
+      expect(screen.queryByRole("dialog", { name: /Excluir questão/i })).not.toBeInTheDocument();
+    });
+
+    it("handles non-Error rejection when deleting a question", async () => {
+      const testUser = userEvent.setup();
+      deleteQuestionMock.mockRejectedValueOnce({ erro: "desconhecido" }); 
+      
+      renderQuestionsPage();
+
+      const row = (await screen.findByText(/atelectasia/i)).closest("tr");
+      await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Excluir/i }));
+      
+      const dialog = await screen.findByRole("dialog", { name: /Excluir questão/i });
+      await testUser.click(within(dialog).getByRole("button", { name: /Excluir/i }));
+
+      expect(await screen.findByText("Nao foi possivel excluir a questão.")).toBeInTheDocument();
+    });
+
+    it("edits an existing question, removes alternative, and saves", async () => {
+      const testUser = userEvent.setup();
+      updateQuestionMock.mockResolvedValueOnce({ ...questions[0] });
+
+      renderQuestionsPage();
+
+      const row = (await screen.findByText(/atelectasia/i)).closest("tr");
+      await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Editar/i }));
+
+      expect(await screen.findByRole("dialog", { name: /Editar questão/i })).toBeInTheDocument();
+
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      await screen.findByRole("textbox", { name: /Enunciado da questão/i });
+      
+      const backButton = await screen.findByRole("button", { name: /Voltar|Anterior/i });
+      await testUser.click(backButton);
+      
+      await waitFor(() => {
+        expect(screen.queryByRole("textbox", { name: /Enunciado da questão/i })).not.toBeInTheDocument();
+      });
+
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      await screen.findByRole("textbox", { name: /Enunciado da questão/i });
+
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      
+      const removeButtons = await screen.findAllByRole("button", { name: /Remover alternativa/i });
+      expect(removeButtons.length).toBeGreaterThan(0);
+      
+      await testUser.click(removeButtons[0]);
+
+      const saveBtn = await screen.findByRole("button", { name: /Salvar questão/i });
+      expect(saveBtn).toBeEnabled();
+      await testUser.click(saveBtn);
+
+      await waitFor(() => {
+        expect(updateQuestionMock).toHaveBeenCalledWith("question-14", expect.anything());
+      });
+      
+      expect(await screen.findByText("Questão atualizada com sucesso!")).toBeInTheDocument();
+    });
+
+    it("adds an alternative and then closes the modal", async () => {
+      const testUser = userEvent.setup();
+
+      renderQuestionsPage();
+
+      const row = (await screen.findByText(/janela acústica/i)).closest("tr");
+      await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Editar/i }));
+
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      await screen.findByRole("textbox", { name: /Enunciado da questão/i });
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+      const addBtn = await screen.findByRole("button", { name: /Adicionar alternativa/i });
+      await testUser.click(addBtn);
+
+      const closeBtn = screen.getByRole("button", { name: /Fechar modal/i });
+      await testUser.click(closeBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: /Editar questão/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it("handles non-Error rejection when saving a question", async () => {
+      const testUser = userEvent.setup();
+      updateQuestionMock.mockRejectedValueOnce("Erro genérico ao salvar"); 
+      
+      renderQuestionsPage();
+
+      const row = (await screen.findByText(/arco aórtico/i)).closest("tr");
+      await testUser.click(within(row as HTMLTableRowElement).getByRole("button", { name: /Editar/i }));
+      
+      expect(await screen.findByRole("dialog", { name: /Editar questão/i })).toBeInTheDocument();
+
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      await screen.findByRole("textbox", { name: /Enunciado da questão/i }); 
+      
+      await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+      
+      const saveBtn = await screen.findByRole("button", { name: /Salvar questão/i }); 
+      expect(saveBtn).toBeEnabled();
+      await testUser.click(saveBtn);
+
+      expect(await screen.findByText("Não foi possível salvar a questão.")).toBeInTheDocument();
+    });
   });
 });

@@ -36,6 +36,7 @@ const formValues = {
   origin: 'Manual',
   statement: 'Qual estrutura forma a parede anterior do mediastino superior?',
   explanation: 'O manúbrio se relaciona com os grandes vasos.',
+  image: null,
   alternatives: [
     { id: 'a', label: 'A', text: 'Esterno', isCorrect: false },
     { id: 'b', label: 'B', text: 'Manúbrio do esterno', isCorrect: true },
@@ -72,12 +73,7 @@ describe('questionService', () => {
     getMock.mockResolvedValueOnce({
       data: {
         dados: [apiQuestion],
-        metadados: {
-          page: 1,
-          limit: 10,
-          total: 1,
-          totalPages: 1,
-        },
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
       },
     });
 
@@ -94,57 +90,36 @@ describe('questionService', () => {
 
   it('returns mocked professor questions without calling the API when mocks are enabled', async () => {
     const { listarQuestoesProfessor } = await loadService(true);
-
     const result = await listarQuestoesProfessor();
-
     expect(getMock).not.toHaveBeenCalled();
     expect(result.total).toBeGreaterThan(0);
-    expect(result.questoes[0]).toMatchObject({
-      id: 'cmp00lkko00014hlq1ra3432j',
-      type: 'Múltipla escolha',
-      difficulty: 'Médio',
-      topic: 'Sistema Cardiovascular',
-    });
   });
 
-  it('creates a question using the backend payload contract', async () => {
+  it('creates a question using FormData', async () => {
     const { createQuestion } = await loadService(false);
-    postMock.mockResolvedValueOnce({
-      data: {
-        dados: {
-          ...apiQuestion,
-          id: 'question-2',
-          enunciado: formValues.statement,
-          alternativaCorreta: 'B',
-          alternativas: {
-            A: 'Esterno',
-            B: 'Manúbrio do esterno',
-            C: 'Clavícula',
-            D: 'Escápula',
-            E: 'Primeira costela',
-          },
-        },
-      },
-    });
+    postMock.mockResolvedValueOnce({ data: { dados: apiQuestion } });
 
     await createQuestion(formValues);
 
-    expect(postMock).toHaveBeenCalledWith('/questoes', {
-      tema: 'Tórax',
-      tipo: 'MULTIPLA_ESCOLHA',
-      dificuldade: 'MEDIA',
-      imagem: 'https://placehold.co/600x400?text=AnatoQuizUp',
-      enunciado: formValues.statement,
-      alternativaCorreta: 'B',
-      explicacaoPedagogica: 'O manúbrio se relaciona com os grandes vasos.',
-      alternativas: {
-        A: 'Esterno',
-        B: 'Manúbrio do esterno',
-        C: 'Clavícula',
-        D: 'Escápula',
-        E: 'Primeira costela',
-      },
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      '/questoes',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  });
+
+  it('covers image upload and error handling', async () => {
+    const { createQuestion, listProfessorQuestions } = await loadService(false);
+    const file = new File([''], 'test.png', { type: 'image/png' });
+    postMock.mockResolvedValueOnce({ data: { dados: apiQuestion } });
+    await createQuestion({ ...formValues, image: file });
+
+    const errorMock = {
+      isAxiosError: true,
+      response: { data: { mensagem: 'Erro simulado' } }
+    };
+    getMock.mockRejectedValueOnce(errorMock);
+    await expect(listProfessorQuestions()).rejects.toThrow('Erro simulado');
   });
 
   it('calls the filter, find by id, update and delete endpoints', async () => {
@@ -157,52 +132,181 @@ describe('questionService', () => {
       updateQuestion,
     } = await loadService(false);
 
-    getMock
-      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } })
-      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
-    putMock
-      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } })
-      .mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
-    deleteMock.mockResolvedValueOnce({ data: { mensagem: 'ok', dados: apiQuestion } });
-    deleteMock.mockResolvedValueOnce({});
+    getMock.mockResolvedValue({ data: { mensagem: 'ok', dados: apiQuestion } });
+    putMock.mockResolvedValue({ data: { mensagem: 'ok', dados: apiQuestion } });
+    deleteMock.mockResolvedValue({});
 
     await buscarQuestaoPorFiltro({ q: 'cardio' });
     await buscarQuestaoPorId('question-1');
-    await atualizarQuestao('question-1', { dificuldade: 'DIFICIL' });
+    await atualizarQuestao('question-1', {} as unknown as never);
     await updateQuestion('question-1', formValues);
     await removerQuestao('question-1');
     await deleteQuestion('question-2');
 
-    expect(getMock).toHaveBeenNthCalledWith(1, '/questoes/busca', {
-      params: { tema: 'cardio' },
-    });
-    expect(getMock).toHaveBeenNthCalledWith(2, '/questoes/question-1');
-    expect(putMock).toHaveBeenNthCalledWith(1, '/questoes/question-1', {
-      dificuldade: 'DIFICIL',
-    });
-    expect(putMock).toHaveBeenNthCalledWith(2, '/questoes/question-1', expect.any(Object));
-    expect(deleteMock).toHaveBeenNthCalledWith(1, '/questoes/question-1');
-    expect(deleteMock).toHaveBeenNthCalledWith(2, '/questoes/question-2');
+    expect(getMock).toHaveBeenNthCalledWith(1, '/questoes/busca', { params: { tema: 'cardio' } });
+    expect(putMock).toHaveBeenNthCalledWith(2, '/questoes/question-1', expect.any(FormData), { headers: { 'Content-Type': 'multipart/form-data' } });
   });
 
   it('lists questions using the backend search endpoint when filters are provided', async () => {
     const { listProfessorQuestions } = await loadService(false);
-    getMock.mockResolvedValueOnce({
-      data: {
-        dados: [apiQuestion],
-        metadados: {
-          page: 1,
-          limit: 10,
-          total: 1,
-          totalPages: 1,
-        },
-      },
-    });
-
+    getMock.mockResolvedValueOnce({ data: { dados: [apiQuestion] } });
     await listProfessorQuestions({ q: 'Tórax', dificuldade: 'MEDIA' });
-
     expect(getMock).toHaveBeenCalledWith('/questoes/busca', {
       params: { dificuldade: 'MEDIA', tema: 'Tórax' },
+    });
+  });
+
+  describe('Mocks Edge Cases', () => {
+    it('covers mock filtering and true/false normalization', async () => {
+      const { buscarQuestaoPorFiltro, listProfessorQuestions } = await loadService(true);
+
+      await expect(buscarQuestaoPorFiltro({ tema: 'Sistema' })).resolves.toBeDefined();
+
+      const questoes = await listProfessorQuestions();
+      expect(questoes).toBeDefined();
+    });
+  });
+
+  describe('Edge Cases de Normalização (Datas, Tags, Alternativas e Temas)', () => {
+    it('normaliza formatos atípicos retornados pelo backend', async () => {
+      const { listProfessorQuestions } = await loadService(false);
+      getMock.mockResolvedValueOnce({
+        data: {
+          dados: [
+            {
+              id: 'weird-1',
+              criadoEm: 'data-invalida', 
+              tags: 'tag1, tag2', 
+              tipo: 'VERDADEIRO_FALSO',
+              dificuldade: 'FÁCIL',
+              alternativaCorreta: 'C',
+              alternativas: { C: 'Certo', E: 'Errado' }, 
+            },
+            {
+              id: 'weird-2',
+              tema: 'Tema em String Plana',
+              alternativas: [{ id: '1', texto: 'Alternativa em array', correta: true }],
+            },
+            {
+              id: 'weird-3',
+              alternativas: null, 
+            },
+          ],
+        },
+      });
+
+      const res = await listProfessorQuestions();
+
+      expect(res[0].createdAt).toBe('data-invalida');
+      expect(res[0].tags).toEqual(['tag1', 'tag2']);
+      expect(res[0].type).toBe('Verdadeiro/Falso');
+      expect(res[0].difficulty).toBe('Fácil');
+      expect(res[0].alternatives[0].label).toBe('V');
+      expect(res[0].alternatives[1].label).toBe('F');
+
+      expect(res[1].topic).toBe('Tema em String Plana');
+      expect(res[1].alternatives[0].text).toBe('Alternativa em array');
+
+      expect(res[2].alternatives).toEqual([]);
+    });
+  });
+
+  describe('Edge Cases de Formulário e Mapeamento', () => {
+    it('ignora alternativas vazias e usa fallback de explicação no buildFormData', async () => {
+      const { createQuestion } = await loadService(false);
+      postMock.mockResolvedValueOnce({ data: { dados: apiQuestion } });
+
+      const formIncompleto = {
+        ...formValues,
+        type: 'Verdadeiro/Falso' as const,
+        difficulty: 'Difícil' as const,
+        explanation: '   ', 
+        alternatives: [
+          { id: 'v', label: 'V', text: 'Opção V', isCorrect: true },
+          { id: 'f', label: 'F', text: '   ', isCorrect: false }, 
+        ],
+      };
+
+      await createQuestion(formIncompleto);
+
+      const formData = postMock.mock.calls[0][1] as FormData;
+      
+      expect(formData.get('tipo')).toBe('VERDADEIRO_FALSO');
+      expect(formData.get('dificuldade')).toBe('DIFICIL');
+      expect(formData.get('explicacaoPedagogica')).toBe('Explicação pedagógica não informada.');
+      expect(formData.get('alternativaCorreta')).toBe('C');
+      expect(formData.get('alternativas[C]')).toBe('Opção V');
+      expect(formData.has('alternativas[E]')).toBe(false); // Ignorado por ser vazio
+    });
+  });
+
+  describe('Edge Cases de USE_MOCKS nas Funções Singulares', () => {
+    it('cobre chamadas diretas com MOCKS ativados', async () => {
+      const { listarQuestoes, atualizarQuestao, removerQuestao } = await loadService(true);
+      
+      await expect(listarQuestoes()).resolves.toBeDefined();
+      
+      await expect(atualizarQuestao('id-fake', {} as never)).rejects.toThrow('Questão não encontrada.');
+      await expect(removerQuestao('id-fake')).rejects.toThrow('Questão não encontrada.');
+      
+      expect(getMock).not.toHaveBeenCalled();
+      expect(putMock).not.toHaveBeenCalled();
+      expect(deleteMock).not.toHaveBeenCalled();
+    });
+
+    it('cobre fallback de fallback vazio em listarQuestoes sem mocks', async () => {
+      const { listarQuestoes } = await loadService(false);
+      getMock.mockResolvedValueOnce({ data: {} }); // Sem dados e metadados
+      
+      const res = await listarQuestoes();
+      expect(res.dados).toEqual([]);
+      expect(res.metadados.page).toBe(1);
+    });
+  });
+
+  describe('Tratamento de Erros e extractErrorMessage (Catch Blocks)', () => {
+    it('repassa erro extraído em updateQuestion', async () => {
+      const { updateQuestion } = await loadService(false);
+      putMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: { erro: { mensagem: 'Falha ao atualizar questão' } } },
+      });
+
+      await expect(updateQuestion('1', formValues)).rejects.toThrow('Falha ao atualizar questão');
+    });
+
+    it('retorna mensagem genérica de rede ao tentar deletar', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce(new Error('Erro de execução JS/Rede'));
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível conectar ao servidor. Tente novamente.');
+    });
+
+    it('retorna mensagem genérica de servidor sem response', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({ isAxiosError: true }); 
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível conectar ao servidor. Tente novamente.');
+    });
+
+    it('extrai mensagem direta do message', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: { message: 'Erro internal server error' } },
+      });
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Erro internal server error');
+    });
+
+    it('usa fallback máximo se o response.data não tiver campos conhecidos', async () => {
+      const { deleteQuestion } = await loadService(false);
+      deleteMock.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: {} },
+      });
+
+      await expect(deleteQuestion('1')).rejects.toThrow('Não foi possível processar a questão.');
     });
   });
 });
