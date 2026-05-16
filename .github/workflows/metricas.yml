@@ -53,7 +53,6 @@ jobs:
           git clone --single-branch --branch main "https://x-access-token:${{ secrets.DOC_PUSH_TOKEN }}@github.com/fga-eps-mds/2026-1-AnatoQuizUp-Doc.git" doc
           mkdir -p doc/analytics-raw-data/web
           cp -R analytics-raw-data/*.json doc/analytics-raw-data/web
-          cp "$(ls -t analytics-raw-data/fga-eps-mds-*.json | head -n 1)" doc/analytics-raw-data/web/latest.json
           cd doc
           git add .
           git commit -m "Adicionando metricas do repositorio ${{ github.event.repository.name }} ${{ github.ref_name }}" || echo "Sem alteracoes para commitar"
