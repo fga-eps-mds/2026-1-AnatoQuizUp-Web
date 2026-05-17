@@ -1,32 +1,109 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ListaTurmas } from './ListarTurmas';
-import { listarTurmas, excluirTurma } from '../../../entities/turmas/api/turmaApi';
-import type { Turma } from '../../../entities/turmas/model/types';
+import {
+  atualizarTurma,
+  criarTurma,
+  excluirTurma,
+  listarTurmas,
+} from '../../../entities/turmas/api/turmaApi';
+import type { SalvarTurmaPayload, Turma } from '../../../entities/turmas/model/types';
 
 jest.mock('../../../entities/turmas/api/turmaApi', () => ({
-  listarTurmas: jest.fn(),
+  atualizarTurma: jest.fn(),
+  criarTurma: jest.fn(),
   excluirTurma: jest.fn(),
+  listarTurmas: jest.fn(),
+}));
+
+const payloadTurma: SalvarTurmaPayload = {
+  codigo: 'ANAT-01',
+  nome: 'Anatomia Sistemica',
+  semestre: '1',
+  ano: 2026,
+  descricao: 'Turma matutina',
+  status: 'ATIVA',
+};
+
+jest.mock('./ModalTurma', () => ({
+  ModalTurma: ({
+    isOpen,
+    mode,
+    turma,
+    onClose,
+    onSubmit,
+  }: {
+    isOpen: boolean;
+    mode: 'create' | 'edit';
+    turma: Turma | null;
+    onClose: () => void;
+    onSubmit: (payload: SalvarTurmaPayload) => void;
+  }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div data-testid="mock-modal-turma">
+        <span>{mode}</span>
+        <span>{turma?.nome}</span>
+        <button onClick={onClose}>Fechar turma</button>
+        <button onClick={() => onSubmit(payloadTurma)}>Salvar turma mock</button>
+      </div>
+    );
+  },
+}));
+
+jest.mock('./ModalGerenciarAlunos', () => ({
+  ModalGerenciarAlunos: ({
+    isOpen,
+    turma,
+    onClose,
+    onAfterChange,
+    onFeedback,
+  }: {
+    isOpen: boolean;
+    turma: Turma | null;
+    onClose: () => void;
+    onAfterChange: () => void;
+    onFeedback: (message: string, type: 'success' | 'error') => void;
+  }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div data-testid="mock-modal-alunos">
+        <span>{turma?.nome}</span>
+        <button onClick={onClose}>Fechar alunos</button>
+        <button
+          onClick={() => {
+            onFeedback('Aluno vinculado com sucesso.', 'success');
+            onAfterChange();
+          }}
+        >
+          Simular alteracao alunos
+        </button>
+      </div>
+    );
+  },
 }));
 
 jest.mock('./ModalExcluirTurma', () => ({
-  ModalExcluirTurma: ({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    turma 
-  }: { 
-    isOpen: boolean; 
-    onClose: () => void; 
-    onConfirm: () => void; 
-    turma: Turma | null; 
+  ModalExcluirTurma: ({
+    isOpen,
+    onClose,
+    onConfirm,
+    turma,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    turma: Turma | null;
   }) => {
     if (!isOpen) return null;
+
     return (
-      <div data-testid="mock-modal">
+      <div data-testid="mock-modal-excluir">
         <span data-testid="modal-turma-nome">{turma?.nome}</span>
-        <button onClick={onClose} data-testid="modal-btn-cancelar">Cancelar</button>
-        <button onClick={onConfirm} data-testid="modal-btn-confirmar">Confirmar Exclusão</button>
+        <button onClick={onClose}>Cancelar exclusao</button>
+        <button onClick={onConfirm}>Confirmar exclusao</button>
       </div>
     );
   },
@@ -36,7 +113,7 @@ const mockTurmas: Turma[] = [
   {
     id: 'turma-1',
     codigo: 'ANAT-01',
-    nome: 'Anatomia Sistêmica',
+    nome: 'Anatomia Sistemica',
     semestre: '1',
     ano: 2026,
     descricao: 'Turma matutina',
@@ -59,41 +136,39 @@ const mockTurmas: Turma[] = [
 
 describe('ListaTurmas Feature', () => {
   let consoleErrorSpy: jest.SpyInstance;
-  let windowAlertSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    windowAlertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    (listarTurmas as jest.Mock).mockResolvedValue(mockTurmas);
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
-    windowAlertSpy.mockRestore();
   });
 
-    it('deve carregar e renderizar a lista de turmas na montagem inicial', async () => {
-    (listarTurmas as jest.Mock).mockResolvedValue(mockTurmas);
-
+  it('deve carregar e renderizar a lista de turmas na montagem inicial', async () => {
     render(<ListaTurmas />);
 
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
-    expect(listarTurmas).toHaveBeenCalledWith({ busca: undefined, status: undefined });
+    expect(listarTurmas).toHaveBeenCalledWith({
+      busca: undefined,
+      status: undefined,
+      ano: undefined,
+      semestre: undefined,
+    });
 
-    expect(await screen.findByText('Anatomia Sistêmica')).toBeInTheDocument();
-    
+    expect(await screen.findByText('Anatomia Sistemica')).toBeInTheDocument();
     expect(screen.getByText('Neuroanatomia')).toBeInTheDocument();
     expect(screen.getByText('2 turmas cadastradas')).toBeInTheDocument();
   });
 
-  it('deve mostrar mensagem de lista vazia quando não houver turmas', async () => {
+  it('deve mostrar mensagem de lista vazia quando nao houver turmas', async () => {
     (listarTurmas as jest.Mock).mockResolvedValue([]);
 
     render(<ListaTurmas />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Nenhuma turma encontrada.')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('Nenhuma turma encontrada.')).toBeInTheDocument();
   });
 
   it('deve lidar com erro na API ao carregar as turmas', async () => {
@@ -105,16 +180,15 @@ describe('ListaTurmas Feature', () => {
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Erro ao carregar turmas', erroMock);
     });
+    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel carregar as turmas.');
   });
 
   it('deve disparar nova busca ao digitar no campo de pesquisa', async () => {
     const user = userEvent.setup();
-    (listarTurmas as jest.Mock).mockResolvedValue(mockTurmas);
 
     render(<ListaTurmas />);
 
     const inputBusca = screen.getByPlaceholderText('Buscar turma');
-    
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
 
@@ -122,97 +196,132 @@ describe('ListaTurmas Feature', () => {
 
     await waitFor(() => {
       expect(listarTurmas).toHaveBeenLastCalledWith(
-        expect.objectContaining({ busca: 'Anatomia' })
+        expect.objectContaining({ busca: 'Anatomia' }),
       );
     });
   });
 
-  it('deve disparar nova busca ao alterar o filtro de status', async () => {
+  it('deve disparar nova busca ao alterar filtros de ano, semestre e status', async () => {
     const user = userEvent.setup();
-    (listarTurmas as jest.Mock).mockResolvedValue(mockTurmas);
 
     render(<ListaTurmas />);
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
 
-    const selectStatus = screen.getByDisplayValue('Todos os status');
-    await user.selectOptions(selectStatus, 'ATIVA');
+    await user.selectOptions(screen.getByLabelText('Filtrar por ano'), '2026');
+    await user.selectOptions(screen.getByLabelText('Filtrar por semestre'), '1');
+    await user.selectOptions(screen.getByLabelText('Filtrar por status'), 'ATIVA');
 
     await waitFor(() => {
-      expect(listarTurmas).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'ATIVA' })
-      );
+      expect(listarTurmas).toHaveBeenLastCalledWith({
+        busca: undefined,
+        status: 'ATIVA',
+        ano: 2026,
+        semestre: '1',
+      });
     });
   });
 
-  it('deve disparar os alerts nos botões de feature futura (Nova Turma e Editar)', async () => {
+  it('deve abrir modal de criacao e criar turma', async () => {
     const user = userEvent.setup();
-    (listarTurmas as jest.Mock).mockResolvedValue([mockTurmas[0]]);
+    (criarTurma as jest.Mock).mockResolvedValue(mockTurmas[0]);
 
     render(<ListaTurmas />);
-    await waitFor(() => expect(screen.getByText('Anatomia Sistêmica')).toBeInTheDocument());
+    await screen.findByText('Anatomia Sistemica');
 
-    const btnNovaTurma = screen.getByRole('button', { name: /Nova Turma/i });
-    await user.click(btnNovaTurma);
-    expect(windowAlertSpy).toHaveBeenCalledWith('Abrir feature de Nova Turma');
+    await user.click(screen.getByRole('button', { name: /Nova Turma/i }));
+    expect(screen.getByTestId('mock-modal-turma')).toHaveTextContent('create');
 
-    const btnEditar = screen.getByRole('button', { name: /Editar/i });
-    await user.click(btnEditar);
-    expect(windowAlertSpy).toHaveBeenCalledWith('Abrir edição para Anatomia Sistêmica');
+    await user.click(screen.getByRole('button', { name: /Salvar turma mock/i }));
+
+    await waitFor(() => {
+      expect(criarTurma).toHaveBeenCalledWith(payloadTurma);
+    });
+    expect(await screen.findByRole('status')).toHaveTextContent('Turma criada com sucesso.');
   });
 
-  describe('Fluxo de Exclusão (Modal)', () => {
+  it('deve abrir modal de edicao e atualizar turma', async () => {
+    const user = userEvent.setup();
+    (atualizarTurma as jest.Mock).mockResolvedValue(mockTurmas[0]);
+
+    render(<ListaTurmas />);
+    await screen.findByText('Anatomia Sistemica');
+
+    await user.click(screen.getAllByRole('button', { name: /Editar/i })[0]);
+    expect(screen.getByTestId('mock-modal-turma')).toHaveTextContent('edit');
+    expect(screen.getByTestId('mock-modal-turma')).toHaveTextContent('Anatomia Sistemica');
+
+    await user.click(screen.getByRole('button', { name: /Salvar turma mock/i }));
+
+    await waitFor(() => {
+      expect(atualizarTurma).toHaveBeenCalledWith('turma-1', payloadTurma);
+    });
+    expect(await screen.findByRole('status')).toHaveTextContent('Turma atualizada com sucesso.');
+  });
+
+  it('deve abrir modal de alunos e atualizar listagem apos alteracao', async () => {
+    const user = userEvent.setup();
+
+    render(<ListaTurmas />);
+    await screen.findByText('Anatomia Sistemica');
+
+    await user.click(screen.getAllByRole('button', { name: /Alunos/i })[0]);
+    expect(screen.getByTestId('mock-modal-alunos')).toHaveTextContent('Anatomia Sistemica');
+
+    await user.click(screen.getByRole('button', { name: /Simular alteracao alunos/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Aluno vinculado com sucesso.');
+    await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(2));
+  });
+
+  describe('Fluxo de Exclusao', () => {
     it('deve abrir o modal ao clicar em excluir e permitir cancelar', async () => {
       const user = userEvent.setup();
-      (listarTurmas as jest.Mock).mockResolvedValue([mockTurmas[0]]); 
 
       render(<ListaTurmas />);
-      await waitFor(() => expect(screen.getByText('Anatomia Sistêmica')).toBeInTheDocument());
+      await screen.findByText('Anatomia Sistemica');
 
-      const btnExcluir = screen.getByRole('button', { name: /Excluir/i });
-      await user.click(btnExcluir);
+      await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
 
-      expect(screen.getByTestId('mock-modal')).toBeInTheDocument();
-      expect(screen.getByTestId('modal-turma-nome')).toHaveTextContent('Anatomia Sistêmica');
+      expect(screen.getByTestId('mock-modal-excluir')).toBeInTheDocument();
+      expect(screen.getByTestId('modal-turma-nome')).toHaveTextContent('Anatomia Sistemica');
 
-      await user.click(screen.getByTestId('modal-btn-cancelar'));
+      await user.click(screen.getByRole('button', { name: /Cancelar exclusao/i }));
 
-      expect(screen.queryByTestId('mock-modal')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('mock-modal-excluir')).not.toBeInTheDocument();
     });
 
-    it('deve chamar a API de exclusão, fechar o modal e recarregar a lista ao confirmar', async () => {
+    it('deve chamar a API de exclusao, fechar o modal e recarregar a lista ao confirmar', async () => {
       const user = userEvent.setup();
-      (listarTurmas as jest.Mock).mockResolvedValue([mockTurmas[0]]);
       (excluirTurma as jest.Mock).mockResolvedValue(undefined);
 
       render(<ListaTurmas />);
-      await waitFor(() => expect(screen.getByText('Anatomia Sistêmica')).toBeInTheDocument());
+      await screen.findByText('Anatomia Sistemica');
 
-      await user.click(screen.getByRole('button', { name: /Excluir/i }));
-      await user.click(screen.getByTestId('modal-btn-confirmar'));
+      await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
+      await user.click(screen.getByRole('button', { name: /Confirmar exclusao/i }));
 
-      // Validações
       expect(excluirTurma).toHaveBeenCalledWith('turma-1');
-      expect(listarTurmas).toHaveBeenCalledTimes(2); 
-      expect(screen.queryByTestId('mock-modal')).not.toBeInTheDocument();
+      await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(2));
+      expect(screen.queryByTestId('mock-modal-excluir')).not.toBeInTheDocument();
+      expect(await screen.findByRole('status')).toHaveTextContent('Turma excluida com sucesso.');
     });
 
-    it('deve lidar com erro na API de exclusão e fechar o estado de loading', async () => {
+    it('deve lidar com erro na API de exclusao', async () => {
       const user = userEvent.setup();
       const erroExclusao = new Error('Falha ao excluir');
-      
-      (listarTurmas as jest.Mock).mockResolvedValue([mockTurmas[0]]);
       (excluirTurma as jest.Mock).mockRejectedValue(erroExclusao);
 
       render(<ListaTurmas />);
-      await waitFor(() => expect(screen.getByText('Anatomia Sistêmica')).toBeInTheDocument());
+      await screen.findByText('Anatomia Sistemica');
 
-      await user.click(screen.getByRole('button', { name: /Excluir/i }));
-      await user.click(screen.getByTestId('modal-btn-confirmar'));
+      await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
+      await user.click(screen.getByRole('button', { name: /Confirmar exclusao/i }));
 
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith('Erro ao excluir turma', erroExclusao);
       });
+      expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel excluir a turma.');
     });
   });
 });
