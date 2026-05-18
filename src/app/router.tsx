@@ -12,6 +12,8 @@ import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
 
+import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
+
 export const AppRouter = () => {
   return (
     <Routes>
@@ -24,6 +26,7 @@ export const AppRouter = () => {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
 
+      {/* TODAS AS ROTAS AQUI DENTRO TERÃO A BARRA LATERAL (MENU) */}
       <Route
         element={
           <ProtectedRoute>
@@ -36,6 +39,26 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <HomeAlunoPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ROTA: ESCOLHA O QUIZ */}
+        <Route 
+          path="/aluno/quiz/escolha"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EscolhaQuizPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ROTA: RESPONDER O QUIZ (A que estava faltando!) */}
+        <Route 
+          path="/aluno/quiz/responder"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ResponderQuizPage />
             </ProtectedRoute>
           } 
         />

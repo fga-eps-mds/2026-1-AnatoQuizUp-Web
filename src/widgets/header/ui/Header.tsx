@@ -57,7 +57,6 @@ export const Header = () => {
       icon: Home,
       onSelect: () => navigate("/home"),
       isActive: isRouteActive("/home") || isRouteActive("/"),
-      // se role==professor -> ir para /professor/home, se role==student -> ir para /home
     };
     const homeProfessorItem: NavItem = {
       key: "home",
@@ -69,7 +68,14 @@ export const Header = () => {
         isRouteActive("/home") ||
         isRouteActive("/"),
     };
-    // se role==professor -> ir para /professor/home, se role==student -> ir para /home
+
+    const studentQuestaoItem: NavItem = {
+      key: "aluno-questoes",
+      label: "Questões",
+      icon: Newspaper,
+      onSelect: () => navigate("/aluno/quiz/escolha"),
+      isActive: location.pathname.startsWith("/aluno/quiz"),
+    };
 
     switch (role) {
       case "PROFESSOR":
@@ -116,7 +122,7 @@ export const Header = () => {
         ];
       case "STUDENT":
       default:
-        return [homeItem];
+        return [homeItem, studentQuestaoItem];
     }
   };
 
