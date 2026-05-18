@@ -247,7 +247,7 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   return formData;
 };
 
-const extractErrorMessage = (error: unknown): string => {
+export const extractErrorMessage = (error: unknown): string => {
   if (!axios.isAxiosError(error) || !error.response) {
     return 'Não foi possível conectar ao servidor. Tente novamente.';
   }
