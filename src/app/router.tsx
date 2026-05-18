@@ -54,6 +54,14 @@ export const AppRouter = () => {
         />
 
         {/* ROTA: RESPONDER O QUIZ (A que estava faltando!) */}
+        <Route
+          path="/aluno/quiz/escolha"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EscolhaQuizPage />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path="/aluno/quiz/responder"
           element={

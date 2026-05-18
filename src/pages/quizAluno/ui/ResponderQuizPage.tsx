@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Clock, ArrowLeft, CheckCircle2, XCircle, Flag, PauseCircle, PlayCircle, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2 } from 'lucide-react';
 
-import { buscarQuestoesPorTema, type QuestaoAPI } from '../../../shared/api/quizService';
+import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/random-quiz/randomQuizService';
+import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
+import type { ApiQuestionDifficulty } from '../../../features/manage-questions';
 
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
@@ -11,7 +13,9 @@ export const ResponderQuizPage = () => {
   const temaQuery = searchParams.get('tema') || '';
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
 
-  const [questoes, setQuestoes] = useState<QuestaoAPI[]>([]);
+  const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
+  const [feedback, setFeedback] = useState<QuestaoQuizFeedback | null>(null);
+  const [isRespondendo, setIsRespondendo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const [indiceAtual, setIndiceAtual] = useState(0);
@@ -20,21 +24,41 @@ export const ResponderQuizPage = () => {
   const [segundos, setSegundos] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  useEffect(() => {
-    const carregarQuestoes = async () => {
-      setIsLoading(true);
-      try {
-        const dados = await buscarQuestoesPorTema(temaQuery, dificuldadeQuery);
-        setQuestoes(dados);
-      } catch (error) {
-        console.error('Erro ao buscar questões:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [paginaAtual, setPaginaAtual] = useState(1);
 
-    carregarQuestoes();
-  }, [temaQuery, dificuldadeQuery]);
+  const carregarQuestoes = async (
+    page: number,
+    append = false,
+  ) => {
+    try {
+      setIsLoading(true);
+    
+
+      const response = await buscarQuestoesQuiz({
+        tema: temaQuery,
+        dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
+        page,
+        limit: 10,
+      });
+
+      const novasQuestoes = response.dados;
+
+      if (append) {
+        setQuestoes(prev => [...prev, ...novasQuestoes]);
+      } else {
+        setQuestoes(novasQuestoes);
+      }
+
+    } catch (error) {
+      console.error('Erro ao buscar questões:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+  carregarQuestoes(1, false);
+}, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -83,26 +107,59 @@ export const ResponderQuizPage = () => {
   const questaoAtual = questoes[indiceAtual];
 
   const questoesConcluidas = jaRespondeu ? indiceAtual + 1 : indiceAtual;
-  const progresso = (questoesConcluidas / questoes.length) * 100;
   
-  const isUltimaQuestao = indiceAtual === questoes.length - 1;
-  const acertou = jaRespondeu && alternativaSelecionada === questaoAtual.respostaCorreta;
+  const acertou = feedback?.correcao ?? false;
 
-  const handleConfirmar = () => {
+  const alternativasFormatadas = questaoAtual.alternativas
+  ? Object.entries(questaoAtual.alternativas).map(([id, texto]) => ({
+      id,
+      texto,
+    }))
+  : [];
+
+  const handleConfirmar = async () => {
     if (!alternativaSelecionada) return;
-    setJaRespondeu(true);
-    setIsPaused(true);
+
+    try {
+      setIsRespondendo(true);
+
+      const response = await responderQuestaoQuiz({
+        questaoId: questaoAtual.id,
+        tipo: questaoAtual.tipo,
+        respostaMarcada: alternativaSelecionada as 'A' | 'B' | 'C' | 'D' | 'E',
+      });
+
+      setFeedback(response);
+
+      setJaRespondeu(true);
+      setIsPaused(true);
+    } catch (error) {
+      console.error('Erro ao responder questão:', error);
+    } finally {
+      setIsRespondendo(false);
+    }
   };
 
-  const handleProxima = () => {
-    if (isUltimaQuestao) {
-      navigate('/aluno/home'); 
-    } else {
-      setIndiceAtual(prev => prev + 1);
-      setAlternativaSelecionada(null);
-      setJaRespondeu(false);
-      setIsPaused(false);
+  const handleProxima = async () => {
+    const proximoIndice = indiceAtual + 1;
+
+    const chegouAoFimDoLote =
+      proximoIndice >= questoes.length;
+
+    if (chegouAoFimDoLote) {
+      const proximaPagina = paginaAtual + 1;
+
+      await carregarQuestoes(proximaPagina, true);
+
+      setPaginaAtual(proximaPagina);
     }
+
+    setIndiceAtual(proximoIndice);
+
+    setAlternativaSelecionada(null);
+    setJaRespondeu(false);
+    setFeedback(null);
+    setIsPaused(false);
   };
 
   return (
@@ -124,22 +181,10 @@ export const ResponderQuizPage = () => {
 
           <div className="hidden md:block w-px h-10 bg-gray-200"></div>
 
-          <div className="hidden md:block flex-1 max-w-[200px]">
-            <div className="flex justify-between text-[10px] font-bold text-[#0A1128]/50 uppercase mb-1.5 tracking-wider">
-              <span>Progresso</span>
-              <span className="text-[#0A1128]">{Math.round(progresso)}%</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5">
-              <div className="bg-[#14D5C2] h-1.5 rounded-full transition-all duration-500" style={{ width: `${progresso}%` }}></div>
-            </div>
-          </div>
-
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
           <div className="flex gap-6 items-center">
             <div className="text-center">
-              <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Questão</p>
-              <p className="text-sm font-black text-[#0A1128]">{indiceAtual + 1} de {questoes.length}</p>
+              <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Questões respondidas</p>
+              <p className="text-sm font-black text-[#0A1128]">{questoesConcluidas}</p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -177,7 +222,7 @@ export const ResponderQuizPage = () => {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-4 animate-fade-in">
             <div className="inline-flex items-center gap-1.5 bg-[#E6FCFA] text-[#14D5C2] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-[#14D5C2]/20">
               <CheckCircle2 className="w-3 h-3" />
-              {questaoAtual.tipoQuestao.replace('_', ' ')}
+              {questaoAtual.tipo.replace('_', ' ')}
             </div>
 
             <h3 className="text-lg font-black text-[#0A1128] mb-6 leading-snug">
@@ -185,16 +230,25 @@ export const ResponderQuizPage = () => {
             </h3>
 
             <div className="flex flex-col gap-3">
-              {questaoAtual.alternativas.map((alt) => {
+              {alternativasFormatadas.map((alt) => {
                 const isSelecionada = alternativaSelecionada === alt.id;
-                const isCorreta = questaoAtual.respostaCorreta === alt.id;
+
+                const isCorreta =
+                  jaRespondeu &&
+                  feedback?.correcao &&
+                  isSelecionada;
+
+                const isIncorreta =
+                  jaRespondeu &&
+                  !feedback?.correcao &&
+                  isSelecionada;
                 
                 let estilosBase = 'p-3 rounded-lg border-2 flex items-center justify-between font-bold text-sm transition-all cursor-pointer';
                 
                 if (jaRespondeu) {
                   if (isCorreta) {
                     estilosBase += ' bg-[#E6FCFA] border-[#14D5C2] text-[#14D5C2]';
-                  } else if (isSelecionada && !isCorreta) {
+                  } else if (isIncorreta) {
                     estilosBase += ' bg-rose-50 border-rose-500 text-rose-500';
                   } else {
                     estilosBase += ' border-gray-100 text-[#0A1128]/40 bg-white cursor-default';
@@ -230,26 +284,24 @@ export const ResponderQuizPage = () => {
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-4 text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider">
                 <span className="flex items-center gap-1.5">Dificuldade: <span className="bg-[#E6FCFA] text-[#14D5C2] px-1.5 py-0.5 rounded">{questaoAtual.dificuldade}</span></span>
-                <button className="flex items-center gap-1.5 hover:text-rose-500 transition-colors sm:ml-2">
-                  <Flag className="w-3 h-3 text-rose-500" /> Reportar
-                </button>
               </div>
 
               <div className="flex gap-3">
-                {!jaRespondeu ? (
-                  <button
-                    onClick={handleConfirmar}
-                    disabled={!alternativaSelecionada}
-                    className="bg-[#14D5C2] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Confirmar
-                  </button>
-                ) : (
+                {jaRespondeu ? (
                   <button
                     onClick={handleProxima}
                     className="bg-[#14D5C2] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all flex items-center gap-1.5 shadow-md shadow-[#14D5C2]/30"
                   >
-                    {isUltimaQuestao ? 'Finalizar Quiz' : 'Próxima'} <ChevronRight className="w-4 h-4" />
+                    {'Próxima'} <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                ) : (
+                  <button
+                    onClick={handleConfirmar}
+                    disabled={!alternativaSelecionada || isRespondendo}
+                    className="bg-[#14D5C2] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRespondendo ? 'Enviando...' : 'Confirmar'} 
                   </button>
                 )}
               </div>
@@ -257,13 +309,13 @@ export const ResponderQuizPage = () => {
           </div>
         )}
 
-        {jaRespondeu && questaoAtual.saibaMais && (
+        {jaRespondeu && feedback?.saibaMais && (
           <div className={`rounded-xl p-5 border animate-fade-in ${acertou ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
             <h3 className={`text-sm font-black mb-2 uppercase tracking-wide ${acertou ? 'text-emerald-700' : 'text-rose-700'}`}>
               {acertou ? 'Resposta Correta!' : 'Resposta Incorreta'}
             </h3>
             <p className="text-sm font-medium leading-relaxed text-[#0A1128]/80">
-              {questaoAtual.saibaMais}
+              {feedback.saibaMais}
             </p>
           </div>
         )}

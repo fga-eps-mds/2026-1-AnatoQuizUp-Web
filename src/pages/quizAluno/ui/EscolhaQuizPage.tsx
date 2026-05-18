@@ -4,13 +4,13 @@ import { Brain, HeartPulse, Bone, ArrowLeft, Shuffle, ChevronRight, CheckCircle2
 
 const DIFICULDADES = [
   { id: 'FACIL', titulo: 'Fácil', desc: 'Questões diretas para fixar o conteúdo.', tag: 'Iniciantes', color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  { id: 'MEDIO', titulo: 'Médio', desc: 'Questões intermediárias para reforçar.', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+  { id: 'MEDIA', titulo: 'Médio', desc: 'Questões intermediárias para reforçar.', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
   { id: 'DIFICIL', titulo: 'Difícil', desc: 'Questões desafiadoras para avançar.', color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-200' },
 ];
 
 const TEMAS = [
   { id: 'neuro', titulo: 'Neuroanatomia', desc: 'Sistema nervoso e estruturas relacionadas.', icon: <Brain className="w-10 h-10 text-[#00E5FF]" />, qtd: 100 },
-  { id: 'torax', titulo: 'Tórax', desc: 'Coração, pulmão, grandes vasos.', icon: <HeartPulse className="w-10 h-10 text-[#00E5FF]" />, qtd: 240 },
+  { id: 'Tórax', titulo: 'Tórax', desc: 'Coração, pulmão, grandes vasos.', icon: <HeartPulse className="w-10 h-10 text-[#00E5FF]" />, qtd: 240 },
   { id: 'esqueleto', titulo: 'Esqueleto', desc: 'Membros, cinturas e articulações.', icon: <Bone className="w-10 h-10 text-[#00E5FF]" />, qtd: 60 },
 ];
 
