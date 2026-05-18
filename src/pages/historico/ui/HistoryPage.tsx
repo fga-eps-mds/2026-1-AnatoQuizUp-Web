@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const mockHistory = [
   {
@@ -27,6 +28,14 @@ const mockHistory = [
   },
   {
     id: 4,
+    date: "25/04/2026",
+    hour: "14:32",
+    title: "Tórax",
+    subtitle: "Coração e grandes vasos",
+    accuracy: 85,
+  },
+  {
+    id: 5,
     date: "25/04/2026",
     hour: "14:32",
     title: "Tórax",
@@ -136,81 +145,82 @@ interface HistoryCardProps {
 }
 
 const HistoryCard = ({ item }: HistoryCardProps) => {
-  const getAccuracyStyles = () => {
-    if (item.accuracy >= 75) {
-      return {
-        bg: "bg-[#E6FFFA]",
-        text: "text-[#00BFA5]",
-        icon: "text-[#00BFA5]",
-      };
-    }
+    const navigate = useNavigate();
+    const getAccuracyStyles = () => {
+        if (item.accuracy >= 75) {
+        return {
+            bg: "bg-[#E6FFFA]",
+            text: "text-[#00BFA5]",
+            icon: "text-[#00BFA5]",
+        };
+        }
 
-    if (item.accuracy >= 50) {
-      return {
-        bg: "bg-[#FEF3C7]",
-        text: "text-[#F59E0B]",
-        icon: "text-[#F59E0B]",
-      };
-    }
+        if (item.accuracy >= 50) {
+        return {
+            bg: "bg-[#FEF3C7]",
+            text: "text-[#F59E0B]",
+            icon: "text-[#F59E0B]",
+        };
+        }
 
-    return {
-      bg: "bg-[#FFE4E6]",
-      text: "text-[#FF5470]",
-      icon: "text-[#FF5470]",
+        return {
+        bg: "bg-[#FFE4E6]",
+        text: "text-[#FF5470]",
+        icon: "text-[#FF5470]",
+        };
     };
-  };
 
-  const styles = getAccuracyStyles();
+    const styles = getAccuracyStyles();
 
-  return (
-    <button
-      className="grid grid-cols-[1.2fr_1fr_160px_60px] items-center rounded-2xl border border-[#E5E7EB] bg-white px-4 py-5 text-left transition hover:shadow-sm"
-    >
-      {/* Date */}
-      <div className="flex items-center gap-4">
-        <div
-          className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 ${styles.icon}`}
+    return (
+        <button
+        className="grid grid-cols-[1.2fr_1fr_160px_60px] items-center rounded-2xl border border-[#E5E7EB] bg-white px-4 py-5 text-left transition hover:shadow-sm"
         >
-          📅
+        {/* Date */}
+        <div className="flex items-center gap-4">
+            <div
+            className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 ${styles.icon}`}
+            >
+            📅
+            </div>
+
+            <div>
+            <p className="font-medium text-[#00214D]">
+                {item.date}
+            </p>
+
+            <p className="text-sm text-[#6B7280]">
+                {item.hour}
+            </p>
+            </div>
         </div>
 
+        {/* Theme */}
         <div>
-          <p className="font-medium text-[#00214D]">
-            {item.date}
-          </p>
+            <p className="font-medium text-[#00214D]">
+            {item.title}
+            </p>
 
-          <p className="text-sm text-[#6B7280]">
-            {item.hour}
-          </p>
+            <p className="text-sm text-[#9CA3AF]">
+            {item.subtitle}
+            </p>
         </div>
-      </div>
 
-      {/* Theme */}
-      <div>
-        <p className="font-medium text-[#00214D]">
-          {item.title}
-        </p>
-
-        <p className="text-sm text-[#9CA3AF]">
-          {item.subtitle}
-        </p>
-      </div>
-
-      {/* Accuracy */}
-      <div className="flex justify-center">
-        <div
-          className={`flex h-14 w-14 items-center justify-center rounded-full ${styles.bg}`}
-        >
-          <span className={`text-sm font-semibold ${styles.text}`}>
-            {item.accuracy}%
-          </span>
+        {/* Accuracy */}
+        <div className="flex justify-center">
+            <div
+            className={`flex h-14 w-14 items-center justify-center rounded-full ${styles.bg}`}
+            >
+            <span className={`text-sm font-semibold ${styles.text}`}>
+                {item.accuracy}%
+            </span>
+            </div>
         </div>
-      </div>
 
-      {/* Action */}
-      <div className="flex justify-center">
-        <ChevronRight className="h-5 w-5 text-[#00214D]" />
-      </div>
-    </button>
+        {/* Action */}
+        <div className="flex justify-center" onClick={() => navigate(`/historico/${item.id}`)}>
+            <ChevronRight className="h-5 w-5 text-[#00214D]" />
+        </div>
+        </button>
   );
 };

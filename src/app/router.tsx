@@ -12,6 +12,7 @@ import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
 import { HistoryPage } from "../pages/historico/ui/HistoryPage";
+import { QuizReviewPage } from "../pages/historico/ui/QuizReviewPage";
 
 export const AppRouter = () => {
   return (
@@ -22,6 +23,8 @@ export const AppRouter = () => {
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route path="/historico" element={<HistoryPage />} />
+      <Route path="/historico/:id" element={<QuizReviewPage />}
+/>
     
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
