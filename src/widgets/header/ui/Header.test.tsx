@@ -107,4 +107,64 @@ describe('Header', () => {
       expect(screen.queryByRole('button', { name: /Fechar menu/i })).not.toBeInTheDocument();
     });
   });
+
+  it('navigates professors to the turmas page', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Turmas/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/turmas');
+  });
+
+  it('renders the active turmas item for admin', () => {
+    renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/turmas');
+
+    expect(screen.getByRole('button', { name: /Turmas/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('closes the mobile drawer when clicking the close button (X)', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Abrir menu/i }));
+    expect(screen.getByRole('button', { name: /Fechar menu/i })).toBeInTheDocument();
+
+    await testUser.click(screen.getByRole('button', { name: /Fechar menu/i }));
+
+    expect(screen.queryByRole('button', { name: /Fechar menu/i })).not.toBeInTheDocument();
+  });
+
+  it('closes the mobile drawer automatically when a navigation item is selected', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Abrir menu/i }));
+    expect(screen.getByRole('button', { name: /Fechar menu/i })).toBeInTheDocument();
+
+    const inicioButtons = screen.getAllByRole('button', { name: /Início/i });
+    await testUser.click(inicioButtons[1]);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /Fechar menu/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('navigates to home when clicking the mobile logo', async () => {
+    const testUser = userEvent.setup();
+    
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/outra-rota');
+
+    const logos = screen.getAllByAltText('AnatoQuizUp');
+    const mobileLogoButton = logos[0].closest('button'); 
+    
+    if (mobileLogoButton) {
+      await testUser.click(mobileLogoButton);
+    }
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/home');
+  });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Menu, Users, X, Newspaper } from "lucide-react";
+import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
@@ -58,6 +58,7 @@ export const Header = () => {
       onSelect: () => navigate("/home"),
       isActive: isRouteActive("/home") || isRouteActive("/"),
     };
+    
     const homeProfessorItem: NavItem = {
       key: "home",
       label: "Início",
@@ -75,6 +76,14 @@ export const Header = () => {
       icon: Newspaper,
       onSelect: () => navigate("/aluno/quiz/escolha"),
       isActive: location.pathname.startsWith("/aluno/quiz"),
+    }
+    
+    const turmasItem: NavItem = {
+      key: "turmas",
+      label: "Turmas",
+      icon: BookOpen,
+      onSelect: () => navigate("/turmas"),
+      isActive: location.pathname.startsWith("/turmas"),
     };
 
     switch (role) {
@@ -99,6 +108,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          turmasItem, 
         ];
       case "ADMIN":
         return [
@@ -112,6 +122,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          turmasItem,
           {
             key: "admin-users",
             label: "Gerenciar Usuários",
