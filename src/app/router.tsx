@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./router/ProtectedRoute";
 import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
+import { HistoryPage } from "../pages/historico/ui/HistoryPage";
 
 export const AppRouter = () => {
   return (
@@ -20,6 +21,7 @@ export const AppRouter = () => {
       <Route path="/professor/cadastro" element={<ProfessorRegisterPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+      <Route path="/historico" element={<HistoryPage />} />
     
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
