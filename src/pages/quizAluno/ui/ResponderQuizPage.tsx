@@ -229,6 +229,17 @@ export const ResponderQuizPage = () => {
               {questaoAtual.enunciado}
             </h3>
 
+            {questaoAtual.imagem && (
+              <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <img
+                  src={questaoAtual.imagem}
+                  alt="Imagem da questão"
+                  className="w-full max-h-[420px] object-contain"
+                  loading="lazy"
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-3">
               {alternativasFormatadas.map((alt) => {
                 const isSelecionada = alternativaSelecionada === alt.id;
