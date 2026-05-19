@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export const ResponderQuizPage = () => {
 
   const [paginaAtual, setPaginaAtual] = useState(1);
 
-  const carregarQuestoes = async (
+  const carregarQuestoes = useCallback(async (
     page: number,
     append = false,
   ) => {
@@ -54,11 +54,33 @@ export const ResponderQuizPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
-  carregarQuestoes(1, false);
-}, [temaQuery, dificuldadeQuery]);
+  const carregarInicial = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await buscarQuestoesQuiz({
+        tema: temaQuery,
+        dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
+        page: 1,
+        limit: 10,
+      });
+
+      setQuestoes(response.dados);
+
+      setPaginaAtual(1);
+
+    } catch (error) {
+      console.error('Erro ao buscar questões:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  carregarInicial();
+  }, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -105,6 +127,14 @@ export const ResponderQuizPage = () => {
   // --------------------------------------------
 
   const questaoAtual = questoes[indiceAtual];
+
+  if (!questaoAtual) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#14D5C2]" />
+      </div>
+    );
+  }
 
   const questoesConcluidas = jaRespondeu ? indiceAtual + 1 : indiceAtual;
   

@@ -26,3 +26,16 @@ export type QuestaoQuizFeedback = {
   correcao: boolean;
   saibaMais: string | null;
 }
+
+export type Dificuldade = "FACIL" | "MEDIA" | "DIFICIL"
+type QuantidadePorDificuldade = Record<Dificuldade, number>;
+
+export type QuantidadeQuestoesTema = {
+  nome: string;
+  totalQuestoes: number;
+  porDificuldade: QuantidadePorDificuldade;
+}
+
+export type QuantidadeQuestoesTemaResponse = {
+  quantidadeDeQuestoesPorTema: QuantidadeQuestoesTema[];
+};
