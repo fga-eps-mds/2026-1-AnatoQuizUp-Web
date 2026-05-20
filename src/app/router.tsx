@@ -12,6 +12,8 @@ import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
 import { TurmasPage } from "../pages/turma/ui/TurmaPage";
+import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
+import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 
 export const AppRouter = () => {
   return (
@@ -32,13 +34,31 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route 
+        <Route
           path="/aluno/home"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <HomeAlunoPage />
             </ProtectedRoute>
-          } 
+          }
+        />
+
+        <Route
+          path="/aluno/turmas"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <MinhasTurmasAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/turmas/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <TurmaDetalheAlunoPage />
+            </ProtectedRoute>
+          }
         />
 
         <Route 
