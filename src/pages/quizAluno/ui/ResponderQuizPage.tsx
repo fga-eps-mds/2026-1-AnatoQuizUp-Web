@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2, Flag } from 'lucide-react';
 
 import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/random-quiz/randomQuizService';
 import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
@@ -14,7 +14,7 @@ export const ResponderQuizPage = () => {
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
 
   const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
-  const [feedback, setFeedback] = useState<QuestaoQuizFeedback | null>(null);
+  const [feedback, setFeedback] = useState<QuestaoQuizFeedback & { respostaCorreta?: string } | null>(null);
   const [isRespondendo, setIsRespondendo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,7 +24,7 @@ export const ResponderQuizPage = () => {
   const [segundos, setSegundos] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const [paginaAtual, setPaginaAtual] = useState(1);
+  const limit = 10;
 
   const carregarQuestoes = useCallback(async (
     page: number,
@@ -32,13 +32,11 @@ export const ResponderQuizPage = () => {
   ) => {
     try {
       setIsLoading(true);
-    
-
       const response = await buscarQuestoesQuiz({
         tema: temaQuery,
         dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
         page,
-        limit: 10,
+        limit,
       });
 
       const novasQuestoes = response.dados;
@@ -48,7 +46,6 @@ export const ResponderQuizPage = () => {
       } else {
         setQuestoes(novasQuestoes);
       }
-
     } catch (error) {
       console.error('Erro ao buscar questões:', error);
     } finally {
@@ -57,30 +54,8 @@ export const ResponderQuizPage = () => {
   }, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
-  const carregarInicial = async () => {
-    try {
-      setIsLoading(true);
-
-      const response = await buscarQuestoesQuiz({
-        tema: temaQuery,
-        dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
-        page: 1,
-        limit: 10,
-      });
-
-      setQuestoes(response.dados);
-
-      setPaginaAtual(1);
-
-    } catch (error) {
-      console.error('Erro ao buscar questões:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  carregarInicial();
-  }, [temaQuery, dificuldadeQuery]);
+    carregarQuestoes(1, false);
+  }, [carregarQuestoes]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -98,7 +73,7 @@ export const ResponderQuizPage = () => {
     return `${m}:${s}`;
   };
 
-  if (isLoading) {
+  if (isLoading && questoes.length === 0) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center">
         <Loader2 className="w-12 h-12 text-[#14D5C2] animate-spin mb-4" />
@@ -124,43 +99,29 @@ export const ResponderQuizPage = () => {
       </div>
     );
   }
-  // --------------------------------------------
 
   const questaoAtual = questoes[indiceAtual];
-
-  if (!questaoAtual) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <Loader2 className="w-10 h-10 animate-spin text-[#14D5C2]" />
-      </div>
-    );
-  }
-
+  const totalQuestoes = questoes.length;
+  const isUltimaQuestao = indiceAtual === totalQuestoes - 1;
   const questoesConcluidas = jaRespondeu ? indiceAtual + 1 : indiceAtual;
-  
+  const progresso = (questoesConcluidas / totalQuestoes) * 100;
   const acertou = feedback?.correcao ?? false;
 
-  const alternativasFormatadas = questaoAtual.alternativas
-  ? Object.entries(questaoAtual.alternativas).map(([id, texto]) => ({
-      id,
-      texto,
-    }))
-  : [];
+  const alternativasFormatadas = questaoAtual?.alternativas
+    ? Object.entries(questaoAtual.alternativas).map(([id, texto]) => ({ id, texto }))
+    : [];
 
   const handleConfirmar = async () => {
     if (!alternativaSelecionada) return;
 
     try {
       setIsRespondendo(true);
-
       const response = await responderQuestaoQuiz({
         questaoId: questaoAtual.id,
         tipo: questaoAtual.tipo,
         respostaMarcada: alternativaSelecionada as 'A' | 'B' | 'C' | 'D' | 'E',
       });
-
       setFeedback(response);
-
       setJaRespondeu(true);
       setIsPaused(true);
     } catch (error) {
@@ -170,22 +131,14 @@ export const ResponderQuizPage = () => {
     }
   };
 
-  const handleProxima = async () => {
-    const proximoIndice = indiceAtual + 1;
-
-    const chegouAoFimDoLote =
-      proximoIndice >= questoes.length;
-
-    if (chegouAoFimDoLote) {
-      const proximaPagina = paginaAtual + 1;
-
-      await carregarQuestoes(proximaPagina, true);
-
-      setPaginaAtual(proximaPagina);
+  const handleProximaOuFinalizar = async () => {
+    if (isUltimaQuestao) {
+      navigate('/aluno/quiz/escolha');
+      return;
     }
 
+    const proximoIndice = indiceAtual + 1;
     setIndiceAtual(proximoIndice);
-
     setAlternativaSelecionada(null);
     setJaRespondeu(false);
     setFeedback(null);
@@ -203,22 +156,38 @@ export const ResponderQuizPage = () => {
           <ArrowLeft className="w-3 h-3" /> Abandonar
         </button>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 flex justify-between items-center gap-4">
+        {/* Cabeçalho Clássico recriado */}
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-4 flex justify-between items-center gap-4">
           <div className="flex-1">
-            <h2 className="text-lg font-black text-[#0A1128] leading-tight">Prática de Anatomia</h2>
+            <h2 className="text-xl font-black text-[#0A1128] leading-tight">Prática de Anatomia</h2>
             <p className="text-xs text-[#0A1128]/60 mt-0.5">Treinamento via sistema</p>
           </div>
 
-          <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
           <div className="flex gap-6 items-center">
-            <div className="text-center">
-              <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Questões respondidas</p>
-              <p className="text-sm font-black text-[#0A1128]">{questoesConcluidas}</p>
+            
+            {/* Bloco de Progresso */}
+            <div className="flex flex-col w-32 hidden md:flex">
+              <div className="flex justify-between text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-1.5">
+                <span>Progresso</span>
+                <span>{Math.round(progresso)}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#14D5C2] transition-all duration-500 ease-out" 
+                  style={{ width: `${progresso}%` }} 
+                />
+              </div>
+            </div>
+
+            {/* Bloco de Questão */}
+            <div className="text-center border-l border-gray-100 pl-6 hidden sm:block">
+              <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Questão</p>
+              <p className="text-sm font-black text-[#0A1128]">{indiceAtual + 1} de {totalQuestoes}</p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-right">
+            {/* Bloco de Tempo */}
+            <div className="text-right border-l border-gray-100 pl-6 flex items-center gap-4">
+              <div>
                 <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Tempo</p>
                 <div className="flex items-center gap-1.5 justify-end">
                   <Clock className="w-3.5 h-3.5 text-[#0A1128]/50" />
@@ -228,9 +197,9 @@ export const ResponderQuizPage = () => {
               <button 
                 onClick={() => !jaRespondeu && setIsPaused(!isPaused)}
                 disabled={jaRespondeu}
-                className={`transition-colors ${isPaused ? 'text-emerald-500' : 'text-[#0A1128]/40 hover:text-[#0A1128]'}`}
+                className={`transition-colors ${isPaused ? 'text-[#14D5C2]' : 'text-[#14D5C2] hover:brightness-95'}`}
               >
-                {isPaused && !jaRespondeu ? <PlayCircle className="w-7 h-7" /> : <PauseCircle className="w-7 h-7" />}
+                {isPaused && !jaRespondeu ? <PlayCircle className="w-8 h-8" /> : <PauseCircle className="w-8 h-8" />}
               </button>
             </div>
           </div>
@@ -249,56 +218,43 @@ export const ResponderQuizPage = () => {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-4 animate-fade-in">
-            <div className="inline-flex items-center gap-1.5 bg-[#E6FCFA] text-[#14D5C2] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-[#14D5C2]/20">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 mb-4 animate-fade-in">
+            <div className="inline-flex items-center gap-1.5 bg-[#E6FCFA] text-[#14D5C2] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-6 border border-[#14D5C2]/20">
               <CheckCircle2 className="w-3 h-3" />
               {questaoAtual.tipo.replace('_', ' ')}
             </div>
 
-            <h3 className="text-lg font-black text-[#0A1128] mb-6 leading-snug">
+            <h3 className="text-xl font-black text-[#0A1128] mb-8 leading-relaxed">
               {questaoAtual.enunciado}
             </h3>
 
-            {questaoAtual.imagem && (
-              <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                <img
-                  src={questaoAtual.imagem}
-                  alt="Imagem da questão"
-                  className="w-full max-h-[420px] object-contain"
-                  loading="lazy"
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {alternativasFormatadas.map((alt) => {
                 const isSelecionada = alternativaSelecionada === alt.id;
+                const isCorretaPeloFeedback = feedback?.respostaCorreta === alt.id;
 
-                const isCorreta =
-                  jaRespondeu &&
-                  feedback?.correcao &&
-                  isSelecionada;
+                let estilosBase = 'p-4 rounded-xl border-2 flex items-center justify-between font-bold text-sm transition-all cursor-pointer';
+                let iconClass = 'bg-gray-50 text-[#0A1128]/60 border border-gray-200';
 
-                const isIncorreta =
-                  jaRespondeu &&
-                  !feedback?.correcao &&
-                  isSelecionada;
-                
-                let estilosBase = 'p-3 rounded-lg border-2 flex items-center justify-between font-bold text-sm transition-all cursor-pointer';
-                
                 if (jaRespondeu) {
-                  if (isCorreta) {
-                    estilosBase += ' bg-[#E6FCFA] border-[#14D5C2] text-[#14D5C2]';
-                  } else if (isIncorreta) {
-                    estilosBase += ' bg-rose-50 border-rose-500 text-rose-500';
+                  if (acertou && isSelecionada) {
+                    estilosBase += ' bg-[#E6FCFA] border-[#14D5C2] text-[#0A1128]';
+                    iconClass = 'bg-[#14D5C2] text-white border-[#14D5C2]';
+                  } else if (!acertou && isSelecionada) {
+                    estilosBase += ' bg-rose-50 border-rose-500 text-rose-600 opacity-90';
+                    iconClass = 'bg-rose-500 text-white border-rose-500';
+                  } else if (!acertou && isCorretaPeloFeedback) {
+                    estilosBase += ' bg-[#E6FCFA] border-[#14D5C2] text-[#0A1128]';
+                    iconClass = 'bg-[#14D5C2] text-white border-[#14D5C2]';
                   } else {
-                    estilosBase += ' border-gray-100 text-[#0A1128]/40 bg-white cursor-default';
+                    estilosBase += ' border-gray-100 text-[#0A1128]/40 bg-white cursor-default opacity-60';
                   }
                 } else {
                   if (isSelecionada) {
-                    estilosBase += ' border-[#14D5C2] text-[#14D5C2] bg-white';
+                    estilosBase += ' border-[#14D5C2] text-[#0A1128] bg-white shadow-sm scale-[1.01]';
+                    iconClass = 'bg-[#14D5C2] text-white border-[#14D5C2]';
                   } else {
-                    estilosBase += ' border-gray-100 text-[#0A1128] hover:border-gray-300 bg-white';
+                    estilosBase += ' border-gray-100 text-[#0A1128]/70 hover:border-gray-300 bg-white hover:bg-gray-50';
                   }
                 }
 
@@ -309,38 +265,43 @@ export const ResponderQuizPage = () => {
                     onClick={() => setAlternativaSelecionada(alt.id)}
                     className={estilosBase}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs ${jaRespondeu && isCorreta ? 'bg-[#14D5C2] text-white' : jaRespondeu && isSelecionada ? 'bg-rose-500 text-white' : 'bg-gray-100 text-[#0A1128]'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-black ${iconClass}`}>
                         {alt.id}
                       </div>
                       <span>{alt.texto}</span>
                     </div>
-                    {jaRespondeu && isCorreta && <Check className="w-5 h-5" />}
-                    {jaRespondeu && isSelecionada && !isCorreta && <XCircle className="w-5 h-5" />}
+                    {jaRespondeu && acertou && isSelecionada && <Check className="w-5 h-5 text-[#14D5C2]" />}
+                    {jaRespondeu && !acertou && isSelecionada && <XCircle className="w-5 h-5 text-rose-500" />}
+                    {jaRespondeu && !acertou && isCorretaPeloFeedback && <Check className="w-5 h-5 text-[#14D5C2] opacity-80" />}
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-4 text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider">
-                <span className="flex items-center gap-1.5">Dificuldade: <span className="bg-[#E6FCFA] text-[#14D5C2] px-1.5 py-0.5 rounded">{questaoAtual.dificuldade}</span></span>
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+              <div className="flex items-center gap-6">
+                <span className="flex items-center gap-2 text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider">
+                  Dificuldade: <span className="bg-[#E6FCFA] text-[#14D5C2] px-2 py-0.5 rounded">{questaoAtual.dificuldade}</span>
+                </span>
+                <button className="flex items-center gap-1.5 text-[10px] text-rose-500/70 hover:text-rose-500 font-bold uppercase tracking-wider transition-colors">
+                  <Flag className="w-3 h-3" /> Reportar
+                </button>
               </div>
 
-              <div className="flex gap-3">
+              <div>
                 {jaRespondeu ? (
                   <button
-                    onClick={handleProxima}
-                    className="bg-[#14D5C2] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all flex items-center gap-1.5 shadow-md shadow-[#14D5C2]/30"
+                    onClick={handleProximaOuFinalizar}
+                    className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all flex items-center gap-2 shadow-md shadow-[#14D5C2]/30"
                   >
-                    {'Próxima'} <ChevronRight className="w-4 h-4" />
+                    {isUltimaQuestao ? 'Finalizar Quiz' : 'Próxima'} <ChevronRight className="w-4 h-4" />
                   </button>
-
                 ) : (
                   <button
                     onClick={handleConfirmar}
                     disabled={!alternativaSelecionada || isRespondendo}
-                    className="bg-[#14D5C2] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#14D5C2]/30"
                   >
                     {isRespondendo ? 'Enviando...' : 'Confirmar'} 
                   </button>
@@ -351,9 +312,9 @@ export const ResponderQuizPage = () => {
         )}
 
         {jaRespondeu && feedback?.saibaMais && (
-          <div className={`rounded-xl p-5 border animate-fade-in ${acertou ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
-            <h3 className={`text-sm font-black mb-2 uppercase tracking-wide ${acertou ? 'text-emerald-700' : 'text-rose-700'}`}>
-              {acertou ? 'Resposta Correta!' : 'Resposta Incorreta'}
+          <div className={`rounded-xl p-6 border animate-fade-in ${acertou ? 'bg-[#E6FCFA] border-[#14D5C2]' : 'bg-rose-50 border-rose-200'}`}>
+            <h3 className={`text-sm font-black mb-2 uppercase tracking-wide ${acertou ? 'text-[#0E9384]' : 'text-rose-700'}`}>
+              {acertou ? 'Resposta Correta!' : 'Resposta Incorreta!'}
             </h3>
             <p className="text-sm font-medium leading-relaxed text-[#0A1128]/80">
               {feedback.saibaMais}

@@ -4,7 +4,7 @@ import { Brain, HeartPulse, Bone, ArrowLeft, Shuffle, ChevronRight, CheckCircle2
 import { buscarQuantidadeDeQuestoesPorTema } from '../../../features/random-quiz/randomQuizService';
 import type { Dificuldade, QuantidadeQuestoesTema } from '../../../features/random-quiz/types';
 
-  const TEMA_VISUAL_MAP: Record<
+const TEMA_VISUAL_MAP: Record<
     string,
     {
       titulo: string;
@@ -12,20 +12,20 @@ import type { Dificuldade, QuantidadeQuestoesTema } from '../../../features/rand
       icon: JSX.Element;
     }
   > = {
-    neuro: {
+    'Neuroanatomia': {
       titulo: 'Neuroanatomia',
       descricao: 'Sistema nervoso e estruturas relacionadas.',
       icon: <Brain className="w-10 h-10 text-[#00E5FF]" />,
     },
 
-    torax: {
-      titulo: 'Tórax',
-      descricao: 'Coração, pulmão e grandes vasos.',
+    'Abdome Agudo': {
+      titulo: 'Abdome Agudo',
+      descricao: 'Diagnóstico de emergências abdominais.',
       icon: <HeartPulse className="w-10 h-10 text-[#00E5FF]" />,
     },
 
-    esqueleto: {
-      titulo: 'Esqueleto',
+    'Sistema Esquelético': {
+      titulo: 'Sistema Esquelético',
       descricao: 'Membros, cinturas e articulações.',
       icon: <Bone className="w-10 h-10 text-[#00E5FF]" />,
     },
