@@ -24,3 +24,9 @@ export interface ResultadoBuscaAlunos {
   dados: UsuarioResumo[];
   metadados: MetadadosPaginacao;
 }
+
+export interface UsuarioPublico {
+  id: string;
+  nome: string;
+  papel: PerfilUsuario;
+}
