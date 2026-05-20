@@ -124,6 +124,27 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: /Turmas/i })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('navigates students to minhas turmas page', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Minhas Turmas/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/turmas');
+  });
+
+  it('renders the active minhas turmas item for student on detail route', () => {
+    renderHeader(
+      { user: makeUser('STUDENT'), isAuthenticated: true },
+      '/aluno/turmas/turma-1',
+    );
+
+    expect(
+      screen.getByRole('button', { name: /Minhas Turmas/i }),
+    ).toHaveAttribute('aria-current', 'page');
+  });
+
   it('closes the mobile drawer when clicking the close button (X)', async () => {
     const testUser = userEvent.setup();
 

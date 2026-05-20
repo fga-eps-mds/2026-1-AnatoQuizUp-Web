@@ -78,6 +78,14 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/turmas"),
     };
 
+    const minhasTurmasAlunoItem: NavItem = {
+      key: "minhas-turmas",
+      label: "Minhas Turmas",
+      icon: BookOpen,
+      onSelect: () => navigate("/aluno/turmas"),
+      isActive: location.pathname.startsWith("/aluno/turmas"),
+    };
+
     switch (role) {
       case "PROFESSOR":
         return [
@@ -125,7 +133,7 @@ export const Header = () => {
         ];
       case "STUDENT":
       default:
-        return [homeItem];
+        return [homeItem, minhasTurmasAlunoItem];
     }
   };
 
