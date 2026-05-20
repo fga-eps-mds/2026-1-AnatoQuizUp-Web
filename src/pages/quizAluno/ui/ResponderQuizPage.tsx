@@ -18,7 +18,12 @@ export const ResponderQuizPage = () => {
   const [isRespondendo, setIsRespondendo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [paginaAtual, setPaginaAtual] = useState(1);
   const [indiceAtual, setIndiceAtual] = useState(0);
+  const [numeroDaQuestao, setNumeroDaQuestao] = useState(1);
+  const [acertos, setAcertos] = useState(0);
+  const [questoesRespondidas, setQuestoesRespondidas] = useState(0);
+
   const [alternativaSelecionada, setAlternativaSelecionada] = useState<string | null>(null);
   const [jaRespondeu, setJaRespondeu] = useState(false);
   const [segundos, setSegundos] = useState(0);
@@ -26,10 +31,7 @@ export const ResponderQuizPage = () => {
 
   const limit = 10;
 
-  const carregarQuestoes = useCallback(async (
-    page: number,
-    append = false,
-  ) => {
+  const carregarQuestoes = useCallback(async (page: number) => {
     try {
       setIsLoading(true);
       const response = await buscarQuestoesQuiz({
@@ -39,13 +41,9 @@ export const ResponderQuizPage = () => {
         limit,
       });
 
-      const novasQuestoes = response.dados;
-
-      if (append) {
-        setQuestoes(prev => [...prev, ...novasQuestoes]);
-      } else {
-        setQuestoes(novasQuestoes);
-      }
+      setQuestoes(response.dados);
+      setPaginaAtual(page);
+      setIndiceAtual(0);
     } catch (error) {
       console.error('Erro ao buscar questões:', error);
     } finally {
@@ -54,7 +52,7 @@ export const ResponderQuizPage = () => {
   }, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
-    carregarQuestoes(1, false);
+    carregarQuestoes(1);
   }, [carregarQuestoes]);
 
   useEffect(() => {
@@ -101,11 +99,19 @@ export const ResponderQuizPage = () => {
   }
 
   const questaoAtual = questoes[indiceAtual];
-  const totalQuestoes = questoes.length;
-  const isUltimaQuestao = indiceAtual === totalQuestoes - 1;
-  const questoesConcluidas = jaRespondeu ? indiceAtual + 1 : indiceAtual;
-  const progresso = (questoesConcluidas / totalQuestoes) * 100;
+
+  if (!questaoAtual) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#14D5C2] animate-spin mb-4" />
+        <p className="text-[#0A1128] font-bold text-sm">Preparando a próxima questão...</p>
+      </div>
+    );
+  }
+
   const acertou = feedback?.correcao ?? false;
+  
+  const taxaAcerto = questoesRespondidas === 0 ? 0 : (acertos / questoesRespondidas) * 100;
 
   const alternativasFormatadas = questaoAtual?.alternativas
     ? Object.entries(questaoAtual.alternativas).map(([id, texto]) => ({ id, texto }))
@@ -121,9 +127,17 @@ export const ResponderQuizPage = () => {
         tipo: questaoAtual.tipo,
         respostaMarcada: alternativaSelecionada as 'A' | 'B' | 'C' | 'D' | 'E',
       });
+      
       setFeedback(response);
       setJaRespondeu(true);
       setIsPaused(true);
+      
+      // Atualiza os contadores de acerto
+      setQuestoesRespondidas(prev => prev + 1);
+      if (response.correcao) {
+        setAcertos(prev => prev + 1);
+      }
+
     } catch (error) {
       console.error('Erro ao responder questão:', error);
     } finally {
@@ -131,18 +145,49 @@ export const ResponderQuizPage = () => {
     }
   };
 
-  const handleProximaOuFinalizar = async () => {
-    if (isUltimaQuestao) {
-      navigate('/aluno/quiz/escolha');
-      return;
-    }
-
-    const proximoIndice = indiceAtual + 1;
-    setIndiceAtual(proximoIndice);
+  const handleProxima = async () => {
     setAlternativaSelecionada(null);
     setJaRespondeu(false);
     setFeedback(null);
     setIsPaused(false);
+    setNumeroDaQuestao(prev => prev + 1);
+
+    if (indiceAtual >= questoes.length - 1) {
+      setIsLoading(true);
+      try {
+        const proxPagina = paginaAtual + 1;
+        const response = await buscarQuestoesQuiz({
+          tema: temaQuery,
+          dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
+          page: proxPagina,
+          limit,
+        });
+
+        if (response.dados.length > 0) {
+          setQuestoes(response.dados);
+          setPaginaAtual(proxPagina);
+          setIndiceAtual(0);
+        } else {
+
+          const responseInicial = await buscarQuestoesQuiz({
+            tema: temaQuery,
+            dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
+            page: 1,
+            limit,
+          });
+          setQuestoes(responseInicial.dados);
+          setPaginaAtual(1);
+          setIndiceAtual(0);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar novas questões:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+
+      setIndiceAtual(prev => prev + 1);
+    }
   };
 
   return (
@@ -151,30 +196,29 @@ export const ResponderQuizPage = () => {
         
         <button 
           onClick={() => navigate('/aluno/quiz/escolha')}
-          className="flex items-center gap-2 text-[10px] text-[#0A1128]/50 hover:text-[#0A1128] font-bold uppercase tracking-wide mb-4 transition-colors"
+          className="flex items-center gap-2 text-[11px] text-rose-500/70 hover:text-rose-600 font-black uppercase tracking-wide mb-4 transition-colors"
         >
-          <ArrowLeft className="w-3 h-3" /> Abandonar
+          <ArrowLeft className="w-3.5 h-3.5" /> Encerrar Treino
         </button>
 
-        {/* Cabeçalho Clássico recriado */}
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-4 flex justify-between items-center gap-4">
           <div className="flex-1">
             <h2 className="text-xl font-black text-[#0A1128] leading-tight">Prática de Anatomia</h2>
-            <p className="text-xs text-[#0A1128]/60 mt-0.5">Treinamento via sistema</p>
+            <p className="text-xs text-[#0A1128]/60 mt-0.5">Modo Treino Infinito</p>
           </div>
 
           <div className="flex gap-6 items-center">
             
-            {/* Bloco de Progresso */}
+            {/* Bloco de Taxa de Acerto */}
             <div className="flex flex-col w-32 hidden md:flex">
               <div className="flex justify-between text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-1.5">
-                <span>Progresso</span>
-                <span>{Math.round(progresso)}%</span>
+                <span>Taxa de Acerto</span>
+                <span>{Math.round(taxaAcerto)}%</span>
               </div>
               <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#14D5C2] transition-all duration-500 ease-out" 
-                  style={{ width: `${progresso}%` }} 
+                  className={`h-full transition-all duration-500 ease-out ${taxaAcerto >= 50 ? 'bg-[#14D5C2]' : taxaAcerto > 0 ? 'bg-amber-400' : 'bg-gray-300'}`} 
+                  style={{ width: `${taxaAcerto === 0 ? 100 : taxaAcerto}%`, opacity: taxaAcerto === 0 ? 0.3 : 1 }} 
                 />
               </div>
             </div>
@@ -182,7 +226,7 @@ export const ResponderQuizPage = () => {
             {/* Bloco de Questão */}
             <div className="text-center border-l border-gray-100 pl-6 hidden sm:block">
               <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Questão</p>
-              <p className="text-sm font-black text-[#0A1128]">{indiceAtual + 1} de {totalQuestoes}</p>
+              <p className="text-sm font-black text-[#0A1128]">{numeroDaQuestao}</p>
             </div>
             
             {/* Bloco de Tempo */}
@@ -208,13 +252,13 @@ export const ResponderQuizPage = () => {
         {isPaused && !jaRespondeu ? (
           <div className="bg-white rounded-xl p-16 shadow-sm border border-gray-100 mb-4 flex flex-col items-center justify-center text-center animate-fade-in">
             <PauseCircle className="w-16 h-16 text-[#14D5C2] mb-4 opacity-50" />
-            <h2 className="text-2xl font-black text-[#0A1128] mb-2">Quiz Pausado</h2>
-            <p className="text-[#0A1128]/60 mb-8 max-w-md">O tempo foi interrompido. A questão está oculta para que você possa descansar.</p>
+            <h2 className="text-2xl font-black text-[#0A1128] mb-2">Treino Pausado</h2>
+            <p className="text-[#0A1128]/60 mb-8 max-w-md">O tempo foi interrompido. A questão está oculta para que possa descansar.</p>
             <button 
               onClick={() => setIsPaused(false)}
               className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-wide hover:brightness-95 transition-all shadow-md shadow-[#14D5C2]/30"
             >
-              Retomar Quiz
+              Retomar Treino
             </button>
           </div>
         ) : (
@@ -292,10 +336,10 @@ export const ResponderQuizPage = () => {
               <div>
                 {jaRespondeu ? (
                   <button
-                    onClick={handleProximaOuFinalizar}
+                    onClick={handleProxima}
                     className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all flex items-center gap-2 shadow-md shadow-[#14D5C2]/30"
                   >
-                    {isUltimaQuestao ? 'Finalizar Quiz' : 'Próxima'} <ChevronRight className="w-4 h-4" />
+                    Próxima <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
                   <button
