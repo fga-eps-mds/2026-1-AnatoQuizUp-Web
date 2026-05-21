@@ -150,18 +150,22 @@ const handleQuizAleatorio = () => {
         {/* 1. Escolha a Dificuldade */}
         <section className="mb-8">
           <h2 className="text-lg font-black text-[#0A1128] mb-4 flex items-center gap-2">
-            <span className="bg-[#14D5C2] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+            <span className="bg-[#14D5C2] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>{
+
+            }
             Escolha a dificuldade
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {DIFICULDADES.map((dif) => {
               const isSelected = dificuldadeSelecionada === dif.id;
+              const styling = isSelected ? `${dif.border} ${dif.bg} shadow-sm scale-[1.01]` : 'border-transparent bg-white hover:border-gray-200 shadow-sm'
               return (
-                <div 
+                <button
                   key={dif.id}
                   onClick={() => setDificuldadeSelecionada(dif.id)}
-                  className={`relative p-5 rounded-2xl cursor-pointer transition-all border-2 ${isSelected ? `${dif.border} ${dif.bg} shadow-sm scale-[1.01]` : 'border-transparent bg-white hover:border-gray-200 shadow-sm'}`}
+                  className={`relative p-5 rounded-2xl cursor-pointer transition-all border-2 ${styling}`}
                 >
+                <div>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className={`text-xl font-black ${dif.color}`}>{dif.titulo}</h3>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? dif.border : 'border-gray-200'}`}>
@@ -175,6 +179,7 @@ const handleQuizAleatorio = () => {
                     </span>
                   )}
                 </div>
+                </button>
               );
             })}
           </div>
@@ -183,7 +188,8 @@ const handleQuizAleatorio = () => {
         {/* 2. Escolha o Tema */}
         <section>
           <h2 className="text-lg font-black text-[#0A1128] mb-4 flex items-center gap-2">
-            <span className="bg-[#14D5C2] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+            <span className="bg-[#14D5C2] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>{
+            }
             Escolha o tema do quiz
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
@@ -196,11 +202,12 @@ const handleQuizAleatorio = () => {
                   icon: <Brain className="w-10 h-10 text-[#00E5FF]" />,
                 };
               return (
-                <div 
+                <button
                   key={tema.nome}
                   onClick={() => setTemaSelecionado(tema.nome)}
                   className={`min-w-[220px] relative p-5 rounded-2xl cursor-pointer transition-all border-2 snap-center ${isSelected ? 'border-[#14D5C2] bg-[#E6FCFA] shadow-sm scale-[1.01]' : 'border-transparent bg-white hover:border-gray-200 shadow-sm'}`}
                 >
+                <div>
                   {isSelected && <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-[#14D5C2]" />}
                   <div className="mb-3 flex justify-center">{visual.icon}</div>
                   <h3 className="text-base font-black text-[#0A1128] text-center mb-1">{visual.titulo}</h3>
@@ -209,6 +216,7 @@ const handleQuizAleatorio = () => {
                     <span className="text-[#14D5C2] font-bold text-[10px] uppercase tracking-wider">{tema.porDificuldade?.[dificuldadeSelecionada] ?? 0} Questões Totais</span>
                   </div>
                 </div>
+                </button>
               );
             })}
           </div>
