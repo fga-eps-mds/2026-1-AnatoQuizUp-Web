@@ -218,7 +218,11 @@ const HistoryCard = ({ item }: HistoryCardProps) => {
         </div>
 
         {/* Action */}
-        <div className="flex justify-center" onClick={() => navigate(`/historico/${item.id}`)}>
+        <div className="flex justify-center" onClick={() =>
+            navigate(`/historico/${item.id}`, {
+                state: item,
+            })
+        }>
             <ChevronRight className="h-5 w-5 text-[#00214D]" />
         </div>
         </button>
