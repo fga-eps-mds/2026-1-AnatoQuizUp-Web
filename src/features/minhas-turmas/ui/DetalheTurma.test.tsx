@@ -59,6 +59,11 @@ describe('DetalheTurma Feature', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    // Restaura jest.spyOn (ex.: axios.isAxiosError) para nao vazar entre testes.
+    jest.restoreAllMocks();
+  });
+
   it('deve renderizar nome, descricao e professor da turma', async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
       data: { dados: turmaApiMock },
