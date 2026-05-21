@@ -15,6 +15,8 @@ import { TurmasPage } from "../pages/turma/ui/TurmaPage";
 import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 
+import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
+
 export const AppRouter = () => {
   return (
     <Routes>
@@ -27,6 +29,7 @@ export const AppRouter = () => {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
 
+      {/* TODAS AS ROTAS AQUI DENTRO TERÃO A BARRA LATERAL (MENU) */}
       <Route
         element={
           <ProtectedRoute>
@@ -59,6 +62,34 @@ export const AppRouter = () => {
               <TurmaDetalheAlunoPage />
             </ProtectedRoute>
           }
+        />
+
+        {/* ROTA: ESCOLHA O QUIZ */}
+        <Route 
+          path="/aluno/quiz/escolha"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EscolhaQuizPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ROTA: RESPONDER O QUIZ (A que estava faltando!) */}
+        <Route
+          path="/aluno/quiz/escolha"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EscolhaQuizPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/aluno/quiz/responder"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ResponderQuizPage />
+            </ProtectedRoute>
+          } 
         />
 
         <Route 

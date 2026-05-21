@@ -70,6 +70,14 @@ export const Header = () => {
         isRouteActive("/"),
     };
 
+    const studentQuestaoItem: NavItem = {
+      key: "aluno-questoes",
+      label: "Questões",
+      icon: Newspaper,
+      onSelect: () => navigate("/aluno/quiz/escolha"),
+      isActive: location.pathname.startsWith("/aluno/quiz"),
+    }
+    
     const turmasItem: NavItem = {
       key: "turmas",
       label: "Turmas",

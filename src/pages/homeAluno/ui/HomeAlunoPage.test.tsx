@@ -59,9 +59,8 @@ describe('HomeAlunoPage', () => {
 
     await testUser.click(screen.getByRole('button', { name: /Acessar Quizzes/i }));
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/questoes');
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/quiz/escolha');
   });
-
 
   it('renders fallback metadata when user has no course', () => {
     const userWithoutCourse = { ...user, course: undefined };
