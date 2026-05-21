@@ -6,7 +6,7 @@ import { Button } from '../../../shared/ui/button/Button';
 const StudentActions = () => {
   const navigate = useNavigate();
   return (
-    <Button onClick={() => navigate('/aluno/questoes')}>
+    <Button onClick={() => navigate('/aluno/quiz/escolha')}>
       Acessar Quizzes
     </Button>
   );
