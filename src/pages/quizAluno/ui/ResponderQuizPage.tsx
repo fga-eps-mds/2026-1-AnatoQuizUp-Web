@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2, Flag } from 'lucide-react';
 
@@ -31,30 +31,35 @@ export const ResponderQuizPage = () => {
 
   const limit = 10;
 
-  const carregarQuestoes = useCallback(async (page: number) => {
-    try {
-      setIsLoading(true);
+  useEffect(() => {
+    let deveAtualizarEstado = true;
 
-      const response = await buscarQuestoesQuiz({
-        tema: temaQuery,
-        dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
-        page,
-        limit,
+    buscarQuestoesQuiz({
+      tema: temaQuery,
+      dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
+      page: 1,
+      limit,
+    })
+      .then((response) => {
+        if (!deveAtualizarEstado) return;
+
+        setQuestoes(response.dados);
+        setPaginaAtual(1);
+        setIndiceAtual(0);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar questões:', error);
+      })
+      .finally(() => {
+        if (!deveAtualizarEstado) return;
+
+        setIsLoading(false);
       });
 
-      setQuestoes(response.dados);
-      setPaginaAtual(page);
-      setIndiceAtual(0);
-    } catch (error) {
-      console.error('Erro ao buscar questões:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    return () => {
+      deveAtualizarEstado = false;
+    };
   }, [temaQuery, dificuldadeQuery]);
-
-  useEffect(() => {
-    carregarQuestoes(1);
-  }, [carregarQuestoes]);
 
   useEffect(() => {
     let timer: number | undefined;
