@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen } from "lucide-react";
+import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen, List } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
@@ -86,6 +86,14 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/turmas"),
     };
 
+    const listasItem: NavItem = {
+      key: "listas",
+      label: "Listas",
+      icon: List,
+      onSelect: () => navigate("/professor/lista"),
+      isActive: location.pathname.startsWith("/professor/listas"),
+    };
+
     switch (role) {
       case "PROFESSOR":
         return [
@@ -108,6 +116,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          listasItem,
           turmasItem, 
         ];
       case "ADMIN":
@@ -122,6 +131,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          listasItem,
           turmasItem,
           {
             key: "admin-users",
