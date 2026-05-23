@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ModalExcluirLista } from './ModalExcluirLista';
-import type { ListaQuestao } from '../../../entities/listas/model/types';
+import type { ListaQuestao } from '../../entities/lista/model/types';
 
 describe('ModalExcluirLista', () => {
   const mockLista: ListaQuestao = {
@@ -20,7 +20,7 @@ describe('ModalExcluirLista', () => {
     jest.clearAllMocks();
   });
 
-  it('não deve renderizar nada se isOpen for falso', () => {
+  it('nao deve renderizar nada se isOpen for falso', () => {
     const { container } = render(
       <ModalExcluirLista isOpen={false} lista={mockLista} onClose={mockOnClose} onConfirm={mockOnConfirm} />
     );
@@ -34,7 +34,7 @@ describe('ModalExcluirLista', () => {
 
     expect(screen.getByText('Excluir lista?')).toBeInTheDocument();
     expect(screen.getByText('Simulado Anato')).toBeInTheDocument();
-    expect(screen.getByText('10 questões · 1 turma(s) vinculada(s)')).toBeInTheDocument();
+    expect(screen.getByText('10 questao(oes) - 1 turma(s) vinculada(s)')).toBeInTheDocument();
   });
 
   it('deve chamar onClose ao clicar em Cancelar', () => {
@@ -55,7 +55,7 @@ describe('ModalExcluirLista', () => {
     expect(mockOnConfirm).toHaveBeenCalledWith('1');
   });
 
-  it('deve desabilitar botões quando isLoading for true', () => {
+  it('deve desabilitar botoes quando isLoading for true', () => {
     render(
       <ModalExcluirLista isOpen={true} lista={mockLista} onClose={mockOnClose} onConfirm={mockOnConfirm} isLoading={true} />
     );

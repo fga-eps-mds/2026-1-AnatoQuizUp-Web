@@ -19,12 +19,12 @@ export const ModalExcluirLista = ({ isOpen, lista, onClose, onConfirm, isLoading
           Excluir lista?
         </h3>
         <p className="text-sm text-gray-500 mb-4">
-          Esta ação removerá a lista permanentemente e desvinculará todas as turmas. Confirme para excluir:
+          Esta acao removera a lista permanentemente e desvinculara todas as turmas. Confirme para excluir:
         </p>
         
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 mb-6">
           <strong className="text-gray-900">{lista.nome}</strong><br />
-          <span className="text-gray-500 text-xs">{lista.quantidadeQuestoes} questões · {lista.turmas.length} turma(s) vinculada(s)</span>
+          <span className="text-gray-500 text-xs">{lista.quantidadeQuestoes} questao(oes) - {lista.turmas.length} turma(s) vinculada(s)</span>
         </div>
 
         <div className="flex justify-end gap-3">

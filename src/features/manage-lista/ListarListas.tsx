@@ -1,152 +1,329 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search, Users, FileText, Pencil, Trash2 } from 'lucide-react';
-import type { ListaQuestao } from '../../entities/lista/model/types';
-import { listarListas, excluirLista } from '../../entities/lista/api/listaApi';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ClipboardList,
+  Edit,
+  FileText,
+  HelpCircle,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react';
+import type { ListaQuestao, StatusLista } from '../../entities/lista/model/types';
+import {
+  atualizarLista,
+  criarLista,
+  excluirLista,
+  listarListas,
+} from '../../entities/lista/api/listaApi';
 import { ModalExcluirLista } from './ModalExcluirLista';
+import { ModalGerenciarQuestoesLista } from './ModalGerenciarQuestoesLista';
+import { ModalGerenciarTurmasLista } from './ModalGerenciarTurmasLista';
+import { ModalLista } from './ModalLista';
+
+type TipoToast = 'success' | 'error';
+
+interface ToastState {
+  id: number;
+  message: string;
+  type: TipoToast;
+}
+
+const statusLabel: Record<StatusLista, string> = {
+  RASCUNHO: 'Rascunho',
+  PUBLICADA: 'Publicada',
+};
 
 export const ListarListas = () => {
   const [listas, setListas] = useState<ListaQuestao[]>([]);
-  
-  // O estado de loading já começa como TRUE aqui!
+  const [busca, setBusca] = useState('');
+  const [statusFiltro, setStatusFiltro] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  const [isModalListaOpen, setIsModalListaOpen] = useState(false);
+  const [modoModalLista, setModoModalLista] = useState<'create' | 'edit'>('create');
+  const [listaSelecionada, setListaSelecionada] = useState<ListaQuestao | null>(null);
+  const [listaParaQuestoes, setListaParaQuestoes] = useState<ListaQuestao | null>(null);
+  const [listaParaTurmas, setListaParaTurmas] = useState<ListaQuestao | null>(null);
   const [listaParaExcluir, setListaParaExcluir] = useState<ListaQuestao | null>(null);
+  const [isSavingLista, setIsSavingLista] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    // 1º: A função agora vive dentro do useEffect (evita problemas de dependência)
-    const carregarListas = async () => {
-      try {
-        // Não precisamos mais do setIsLoading(true) aqui, 
-        // evitando a quebra da regra "set-state-in-effect".
-        const dados = await listarListas();
-        setListas(dados);
-      } catch (error) {
-        console.error('Erro ao buscar listas', error);
-        alert('Erro ao buscar as listas.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const mostrarToast = useCallback((message: string, type: TipoToast = 'success') => {
+    const id = Date.now();
+    setToast({ id, message, type });
 
-    carregarListas();
+    window.setTimeout(() => {
+      setToast((current) => (current?.id === id ? null : current));
+    }, 4000);
   }, []);
 
-  const handleAcaoNaoImplementada = (acao: string) => {
-    alert(`Ação "${acao}" não implementada nesta etapa.`);
+  const solicitarAtualizacao = useCallback(() => {
+    setRefreshKey((current) => current + 1);
+  }, []);
+
+  const carregarListas = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const dados = await listarListas({
+        busca: busca.trim() || undefined,
+        status: statusFiltro ? (statusFiltro as StatusLista) : undefined,
+      });
+      setListas(dados);
+    } catch (error) {
+      console.error('Erro ao buscar listas', error);
+      mostrarToast('Nao foi possivel carregar as listas.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [busca, mostrarToast, statusFiltro]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void carregarListas();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [carregarListas, refreshKey]);
+
+  const handleAbrirCriacao = () => {
+    setModoModalLista('create');
+    setListaSelecionada(null);
+    setIsModalListaOpen(true);
+  };
+
+  const handleAbrirEdicao = (lista: ListaQuestao) => {
+    setModoModalLista('edit');
+    setListaSelecionada(lista);
+    setIsModalListaOpen(true);
+  };
+
+  const handleFecharModalLista = () => {
+    if (isSavingLista) return;
+    setIsModalListaOpen(false);
+    setListaSelecionada(null);
+  };
+
+  const handleSalvarLista = async (nome: string) => {
+    setIsSavingLista(true);
+    try {
+      if (modoModalLista === 'create') {
+        await criarLista({ nome });
+        mostrarToast('Lista criada com sucesso.');
+      } else if (listaSelecionada) {
+        await atualizarLista(listaSelecionada.id, { nome });
+        mostrarToast('Lista atualizada com sucesso.');
+      }
+
+      setIsModalListaOpen(false);
+      setListaSelecionada(null);
+      solicitarAtualizacao();
+    } catch (error) {
+      console.error('Erro ao salvar lista', error);
+      mostrarToast('Nao foi possivel salvar a lista.', 'error');
+    } finally {
+      setIsSavingLista(false);
+    }
   };
 
   const handleExcluir = async (id: string) => {
+    setIsDeleting(true);
     try {
-      setIsDeleting(true);
       await excluirLista(id);
-      setListas((prev) => prev.filter((l) => l.id !== id));
       setListaParaExcluir(null);
+      mostrarToast('Lista excluida com sucesso.');
+      solicitarAtualizacao();
     } catch (error) {
-      console.error('Erro ao excluir', error);
-      alert('Erro ao excluir a lista.');
+      console.error('Erro ao excluir lista', error);
+      mostrarToast('Nao foi possivel excluir a lista.', 'error');
     } finally {
       setIsDeleting(false);
     }
   };
 
+  const handlePdfPendente = () => {
+    mostrarToast('Geracao de PDF ainda depende do endpoint no Quiz-Service.', 'error');
+  };
+
+  const totalListas = listas.length;
+
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 shadow-sm">
+      {toast && (
+        <div
+          role="status"
+          className={`mb-4 flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold ${
+            toast.type === 'success'
+              ? 'border-teal-400 bg-teal-50 text-teal-800'
+              : 'border-red-300 bg-red-50 text-red-700'
+          }`}
+        >
+          {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {toast.message}
+        </div>
+      )}
+
+      <div className="mb-6 flex flex-col items-start justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Suas listas</h2>
-          <p className="text-sm text-gray-500 mt-1">{listas.length} listas criadas</p>
+          <p className="mt-1 text-sm text-gray-500">
+            {totalListas} lista(s) encontrada(s)
+          </p>
         </div>
-        <button 
-          onClick={() => handleAcaoNaoImplementada('Nova Lista')}
-          className="mt-4 sm:mt-0 bg-teal-500 hover:bg-teal-600 text-white rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2 transition-colors"
+        <button
+          type="button"
+          onClick={handleAbrirCriacao}
+          className="mt-4 flex items-center gap-2 rounded-lg bg-teal-400 px-4 py-2 text-sm font-bold text-teal-950 transition-colors hover:bg-teal-500 sm:mt-0"
         >
-          <Plus className="w-4 h-4" />
-          Nova Lista
+          <Plus className="h-4 w-4" />
+          Nova lista
         </button>
       </div>
 
-      <div className="flex gap-3 items-center mb-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Buscar lista..." 
-            className="w-full py-2 pl-9 pr-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all"
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <label className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <span className="sr-only">Buscar lista</span>
+          <input
+            type="text"
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            placeholder="Buscar lista"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none transition-all focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
           />
-        </div>
-        <select className="py-2 px-3 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
-          <option>Todos os status</option>
-          <option>Rascunho</option>
-          <option>Publicada</option>
+        </label>
+
+        <select
+          value={statusFiltro}
+          onChange={(event) => setStatusFiltro(event.target.value)}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition-all focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          aria-label="Filtrar listas por status"
+        >
+          <option value="">Todos os status</option>
+          <option value="RASCUNHO">Rascunho</option>
+          <option value="PUBLICADA">Publicada</option>
         </select>
+
+        <span className="text-sm text-gray-500">{totalListas} resultado(s)</span>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome da Lista</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Questões</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Turmas Vinculadas</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Criada em</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Lista</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Questoes</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Turmas</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Criada em</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acoes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-gray-500">Carregando listas...</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                    Carregando listas...
+                  </td>
                 </tr>
               ) : listas.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-gray-500">Nenhuma lista encontrada.</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                    Nenhuma lista encontrada.
+                  </td>
                 </tr>
               ) : (
                 listas.map((lista) => (
-                  <tr key={lista.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-4 text-sm font-medium text-gray-900">{lista.nome}</td>
-                    <td className="py-4 px-4 text-sm text-gray-500">{lista.quantidadeQuestoes} questões</td>
-                    <td className="py-4 px-4 text-sm">
+                  <tr key={lista.id} className="transition-colors hover:bg-gray-50">
+                    <td className="px-4 py-4 text-sm">
+                      <div className="flex items-center gap-2 font-semibold text-gray-900">
+                        <ClipboardList className="h-4 w-4 text-teal-600" />
+                        {lista.nome}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600">
+                      <button
+                        type="button"
+                        onClick={() => setListaParaQuestoes(lista)}
+                        className="flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                        {lista.quantidadeQuestoes} questao(oes)
+                      </button>
+                    </td>
+                    <td className="px-4 py-4 text-sm">
                       {lista.turmas.length > 0 ? (
-                        <div className="flex gap-2 flex-wrap">
-                          {lista.turmas.map((t) => (
-                            <span key={t.id} className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                              {t.nome}
+                        <div className="flex flex-wrap gap-2">
+                          {lista.turmas.slice(0, 3).map((turma) => (
+                            <span
+                              key={turma.id}
+                              className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700"
+                            >
+                              {turma.nome}
                             </span>
                           ))}
+                          {lista.turmas.length > 3 && (
+                            <span className="text-xs font-medium text-gray-500">
+                              +{lista.turmas.length - 3}
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 italic">Nenhuma turma</span>
+                        <span className="text-sm italic text-gray-400">Nenhuma turma</span>
                       )}
                     </td>
-                    <td className="py-4 px-4 text-sm">
-                      {lista.status === 'PUBLICADA' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
-                          ● Publicada
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                          ● Rascunho
-                        </span>
-                      )}
+                    <td className="px-4 py-4 text-sm">
+                      <span
+                        className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${
+                          lista.status === 'PUBLICADA'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        <span className="mr-1 h-1.5 w-1.5 rounded-full bg-current" />
+                        {statusLabel[lista.status]}
+                      </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-500">{lista.criadoEm}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex gap-2 flex-wrap">
-                        <button onClick={() => handleAcaoNaoImplementada('Vincular Turma')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
-                          <Users className="w-3.5 h-3.5" /> Vincular
+                    <td className="px-4 py-4 text-sm text-gray-500">{lista.criadoEm}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setListaParaTurmas(lista)}
+                          className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          Turmas
                         </button>
-                        <button onClick={() => handleAcaoNaoImplementada('Exportar PDF')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
-                          <FileText className="w-3.5 h-3.5" /> PDF
+                        <button
+                          type="button"
+                          onClick={handlePdfPendente}
+                          title="Geracao de PDF pendente no servico"
+                          className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          PDF
                         </button>
-                        <button onClick={() => handleAcaoNaoImplementada('Editar')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
-                          <Pencil className="w-3.5 h-3.5" /> Editar
+                        <button
+                          type="button"
+                          onClick={() => handleAbrirEdicao(lista)}
+                          className="flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Editar
                         </button>
-                        <button onClick={() => setListaParaExcluir(lista)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" /> Excluir
+                        <button
+                          type="button"
+                          onClick={() => setListaParaExcluir(lista)}
+                          className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Excluir
                         </button>
                       </div>
                     </td>
@@ -158,7 +335,33 @@ export const ListarListas = () => {
         </div>
       </div>
 
-      <ModalExcluirLista 
+      <ModalLista
+        key={`${modoModalLista}-${listaSelecionada?.id ?? 'nova'}-${isModalListaOpen ? 'open' : 'closed'}`}
+        isOpen={isModalListaOpen}
+        mode={modoModalLista}
+        lista={listaSelecionada}
+        isLoading={isSavingLista}
+        onClose={handleFecharModalLista}
+        onSubmit={handleSalvarLista}
+      />
+
+      <ModalGerenciarQuestoesLista
+        isOpen={!!listaParaQuestoes}
+        lista={listaParaQuestoes}
+        onClose={() => setListaParaQuestoes(null)}
+        onAfterChange={solicitarAtualizacao}
+        onFeedback={mostrarToast}
+      />
+
+      <ModalGerenciarTurmasLista
+        isOpen={!!listaParaTurmas}
+        lista={listaParaTurmas}
+        onClose={() => setListaParaTurmas(null)}
+        onAfterChange={solicitarAtualizacao}
+        onFeedback={mostrarToast}
+      />
+
+      <ModalExcluirLista
         isOpen={!!listaParaExcluir}
         lista={listaParaExcluir}
         onClose={() => setListaParaExcluir(null)}
