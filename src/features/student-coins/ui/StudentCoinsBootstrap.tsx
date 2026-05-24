@@ -31,7 +31,7 @@ export const StudentCoinsBootstrap = () => {
         }
       } catch (error) {
         if (isMounted) {
-          setError(error instanceof Error ? error.message : 'Erro ao buscar saldo de moedas.');
+          setError(error instanceof Error ? error.message : 'Erro ao buscar saldo de ATP.');
         }
       } finally {
         if (isMounted) {

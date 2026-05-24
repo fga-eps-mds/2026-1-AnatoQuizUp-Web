@@ -184,7 +184,7 @@ export const Header = () => {
                 <Coins size={18} />
               </div>
               <span className="text-xs font-black uppercase tracking-widest text-[#fffffe]/70">
-                Moedas
+                ATP
               </span>
             </div>
             <span className="text-lg font-black text-[#FDE68A] tabular-nums">

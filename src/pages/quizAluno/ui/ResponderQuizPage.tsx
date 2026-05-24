@@ -396,7 +396,7 @@ export const ResponderQuizPage = () => {
                   style={{ animation: 'coins-reward-rise 900ms ease-out both' }}
                 >
                   <Coins className="w-4 h-4" />
-                  +{feedback.moedasConcedidas} moedas
+                  +{feedback.moedasConcedidas} ATP
                 </div>
               )}
             </div>
