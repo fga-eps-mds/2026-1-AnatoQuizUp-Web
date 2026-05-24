@@ -59,10 +59,12 @@ import {
   criarLista,
   excluirLista,
   listarListas,
+  baixarPdfLista
 } from '../../entities/lista/api/listaApi';
 import type { ListaQuestao } from '../../entities/lista/model/types';
 
 jest.mock('../../entities/lista/api/listaApi');
+
 const mockedListar = listarListas as jest.MockedFunction<typeof listarListas>;
 const mockedCriar = criarLista as jest.MockedFunction<typeof criarLista>;
 const mockedAtualizar = atualizarLista as jest.MockedFunction<typeof atualizarLista>;
@@ -169,14 +171,23 @@ describe('ListarListas', () => {
     expect(screen.getByTestId('modal-turmas-lista')).toHaveTextContent('Lista 1');
   });
 
-  it('deve avisar que a geracao de PDF ainda esta pendente', async () => {
-    render(<ListarListas />);
+  it('deve iniciar o download do PDF e mostrar o toast de carregamento', async () => {
+    window.URL.createObjectURL = jest.fn().mockReturnValue('blob:http://localhost/mock-url');
+    window.URL.revokeObjectURL = jest.fn();
 
+    (baixarPdfLista as jest.Mock).mockResolvedValue('base64-falsa-para-teste');
+
+    render(<ListarListas />);
+    
     await screen.findByText('Lista 1');
 
     fireEvent.click(screen.getByRole('button', { name: /PDF/i }));
 
-    expect(screen.getByText('Geracao de PDF ainda depende do endpoint no Quiz-Service.')).toBeInTheDocument();
+    expect(screen.getByText('Gerando PDF...')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(baixarPdfLista).toHaveBeenCalledWith('1');
+    });
   });
 
   it('deve abrir o modal de exclusao e excluir a lista', async () => {

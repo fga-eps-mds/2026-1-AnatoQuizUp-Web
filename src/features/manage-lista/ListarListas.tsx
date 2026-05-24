@@ -17,6 +17,7 @@ import {
   criarLista,
   excluirLista,
   listarListas,
+  baixarPdfLista,
 } from '../../entities/lista/api/listaApi';
 import { ModalExcluirLista } from './ModalExcluirLista';
 import { ModalGerenciarQuestoesLista } from './ModalGerenciarQuestoesLista';
@@ -145,8 +146,26 @@ export const ListarListas = () => {
     }
   };
 
-  const handlePdfPendente = () => {
-    mostrarToast('Geracao de PDF ainda depende do endpoint no Quiz-Service.', 'error');
+  const handleBaixarPdf = async (listaId: string, nomeLista: string) => {
+    try {
+      mostrarToast('Gerando PDF...', 'success'); 
+
+      const base64Data = await baixarPdfLista(listaId);
+      
+      const pdfUrl = `data:application/pdf;base64,${base64Data}`;
+      
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `${nomeLista.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      mostrarToast('PDF baixado com sucesso!', 'success');
+    } catch (error) {
+      console.error(error);
+      mostrarToast('Erro ao gerar o PDF da lista.', 'error');
+    }
   };
 
   const totalListas = listas.length;
@@ -302,7 +321,7 @@ export const ListarListas = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={handlePdfPendente}
+                          onClick={() => handleBaixarPdf(lista.id, lista.nome)}
                           title="Geracao de PDF pendente no servico"
                           className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                         >

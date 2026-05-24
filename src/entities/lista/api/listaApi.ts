@@ -174,3 +174,8 @@ export const desvincularTurmaLista = async (
   );
   return normalizarLista(response.data.dados);
 };
+
+export const baixarPdfLista = async (listaId: string): Promise<string> => {
+  const response = await httpClient.get<{ base64: string }>(`/lista/${listaId}/pdf`);
+  return response.data.base64;
+};
