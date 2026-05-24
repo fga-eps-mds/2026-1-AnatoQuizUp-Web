@@ -34,33 +34,65 @@ export const QuizReviewPage = () => {
         "A artéria pulmonar transporta sangue venoso do coração aos pulmões.",
       isCorrect: false,
     },
+    {
+      id: 3,
+      question: "Qual vaso leva sangue ao pulmão?",
+      selected: "Aorta",
+      correct: "Artéria pulmonar",
+      explanation:
+        "A artéria pulmonar transporta sangue venoso do coração aos pulmões.",
+      isCorrect: false,
+    },
+    {
+      id: 4,
+      question: "Qual vaso leva sangue ao pulmão?",
+      selected: "Aorta",
+      correct: "Artéria pulmonar",
+      explanation:
+        "A artéria pulmonar transporta sangue venoso do coração aos pulmões.",
+      isCorrect: false,
+    },
+    {
+      id: 5,
+      question: "Qual vaso leva sangue ao pulmão?",
+      selected: "Aorta",
+      correct: "Artéria pulmonar",
+      explanation:
+        "A artéria pulmonar transporta sangue venoso do coração aos pulmões.",
+      isCorrect: false,
+    },
   ];
 
   return (
     <main className="flex-1 overflow-y-auto bg-[#FFFFFE] px-4 py-5 md:px-6">
       {/* Header */}
-      <div className="mb-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-3 flex items-center gap-2 text-[#00214D] cursor-pointer"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="text-xl font-bold md:text-2xl">
-            {quiz.title}
-          </span>
-        </button>
+      <div className="mb-4">
+        <div className="flex items-start gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-1 flex h-10 w-10 items-center justify-center text-[#00214D] transition hover:opacity-70 cursor-pointer"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
 
-        <p className="ml-7 text-xs text-[#1B2D45]/60 md:text-sm">
-          {quiz.subtitle}
-        </p>
+          <div>
+            <h1 className="text-xl font-bold text-[#00214D] md:text-2xl">
+              {quiz.title}
+            </h1>
+
+            <p className="text-sm text-[#1B2D45]/60">
+              {quiz.subtitle}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-8 flex items-center justify-between gap-3 md:gap-16">
+      <div className="mb-4 flex items-center justify-between gap-3 p-3 md:gap-16 md:p-5">
         {/* Data */}
         <div className="flex items-center gap-3">
           <div className="rounded-2xl bg-[#00EBC7]/10 p-2 md:p-3">
-            <CalendarDays className="h-5 w-5 text-[#00A991] md:h-6 md:w-6" />
+            <CalendarDays className="h-4 w-4 text-[#00A991] md:h-6 md:w-6" />
           </div>
 
           <div>
@@ -94,7 +126,7 @@ export const QuizReviewPage = () => {
         {/* Acertos */}
         <div className="flex items-center gap-3">
           <div className="rounded-2xl bg-[#00EBC7]/10 p-2 md:p-3">
-            <Check className="h-5 w-5 text-[#00A991] md:h-6 md:w-6" />
+            <Check className="h-4 w-4 text-[#00A991] md:h-6 md:w-6" />
           </div>
 
           <div>
@@ -111,7 +143,7 @@ export const QuizReviewPage = () => {
         {/* Erros */}
         <div className="flex items-center gap-3">
           <div className="rounded-2xl bg-[#FF5470]/10 p-2 md:p-3">
-            <X className="h-5 w-5 text-[#FF5470] md:h-6 md:w-6" />
+            <X className="h-4 w-4 text-[#FF5470] md:h-6 md:w-6" />
           </div>
 
           <div>
@@ -126,7 +158,7 @@ export const QuizReviewPage = () => {
         </div>
       </div>
       {/* Questions */}
-      <div className="rounded-3xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-[#E5E7EB] bg-white p-5 shadow-sm max-h-[550px] overflow-y-auto">
         <div className="flex flex-col gap-4">
           {questions.map((question) => (
             <div
@@ -208,7 +240,7 @@ export const QuizReviewPage = () => {
                     Explicação
                   </p>
 
-                  <p className="text-sm leading-6 text-[#1B2D45]/70">
+                  <p className="text-sm leading-5 text-[#1B2D45]/70">
                     {question.explanation}
                   </p>
                 </div>
@@ -217,10 +249,11 @@ export const QuizReviewPage = () => {
           ))}
         </div>
       </div>
-      <div className="mt-8 flex justify-center md:justify-end">
+      <div className="mt-4 flex justify-center md:justify-end">
         <button
           onClick={() => navigate(-1)}
-          className="rounded-2xl bg-[#00EBC7] px-8 py-4 font-semibold text-[#00214D] transition hover:brightness-95"
+          className="rounded-2xl bg-[#00EBC7] px-8 py-4 font-semibold text-[#00214D] transition hover:brightness-95 cursor-pointer hover:scale-[1.02]
+active:scale-[0.98]"
         >
           Retornar
         </button>
