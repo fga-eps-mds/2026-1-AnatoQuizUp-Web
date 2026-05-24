@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, XCircle, BookOpen, Clock, AlertCircle } from '
 import type { ItemHistoricoQuiz } from '../../../features/historico-quiz/types';
 
 type QuestaoAgrupadaLocal = {
+  questaoId: string;
   questao: ItemHistoricoQuiz['questao'];
   tentativasLocais: number;
   acertosLocais: number;
@@ -13,8 +14,14 @@ type QuestaoAgrupadaLocal = {
 export const HistoricoDetalhesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const sessao = location.state?.sessao as { id: string; data: string; tema: string; dificuldade: string; itens: ItemHistoricoQuiz[] };
+
+  const sessao = location.state?.sessao as {
+    id: string;
+    data: string;
+    tema: string;
+    dificuldade: string;
+    itens: ItemHistoricoQuiz[];
+  };
 
   if (!sessao) {
     return <Navigate to="/aluno/historico" replace />;
@@ -24,26 +31,27 @@ export const HistoricoDetalhesPage = () => {
     sessao.itens.reduce((acc, item) => {
       if (!acc[item.questaoId]) {
         acc[item.questaoId] = {
+          questaoId: item.questaoId,
           questao: item.questao,
           tentativasLocais: 0,
           acertosLocais: 0,
           distribuicaoLocal: {},
-          ultimoHorario: item.criadoEm
+          ultimoHorario: item.criadoEm,
         };
       }
-      
+
       const grupo = acc[item.questaoId];
       grupo.tentativasLocais += 1;
-      
+
       const letra = item.respostaMarcada;
       grupo.distribuicaoLocal[letra] = (grupo.distribuicaoLocal[letra] || 0) + 1;
-      
+
       if (letra === item.questao.respostaCorreta) {
         grupo.acertosLocais += 1;
       }
-      
+
       return acc;
-    }, {} as Record<string, QuestaoAgrupadaLocal>)
+    }, {} as Record<string, QuestaoAgrupadaLocal>),
   );
 
   const totalRespostasSessao = sessao.itens.length;
@@ -53,8 +61,7 @@ export const HistoricoDetalhesPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 pb-24">
       <div className="max-w-4xl mx-auto">
-        
-        <button 
+        <button
           onClick={() => navigate('/aluno/historico')}
           className="flex items-center gap-2 text-[11px] text-[#0A1128]/50 hover:text-[#0A1128] font-black uppercase tracking-wide mb-6 transition-colors"
         >
@@ -70,17 +77,17 @@ export const HistoricoDetalhesPage = () => {
             </div>
             <h1 className="text-3xl font-black text-[#0A1128]">Revisão da Questão</h1>
           </div>
-          
+
           <div className="bg-white px-6 py-4 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-6">
-             <div>
-                <p className="text-[10px] uppercase font-bold text-[#0A1128]/40 tracking-wider">Tentativas Totais</p>
-                <p className="text-xl font-black text-[#0A1128]">{totalRespostasSessao}x</p>
-             </div>
-             <div className="w-px h-8 bg-gray-200" />
-             <div>
-                <p className="text-[10px] uppercase font-bold text-[#0A1128]/40 tracking-wider">Taxa de Acerto</p>
-                <p className={`text-xl font-black ${taxaSessao >= 50 ? 'text-[#14D5C2]' : 'text-rose-500'}`}>{taxaSessao}%</p>
-             </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-[#0A1128]/40 tracking-wider">Tentativas Totais</p>
+              <p className="text-xl font-black text-[#0A1128]">{totalRespostasSessao}x</p>
+            </div>
+            <div className="w-px h-8 bg-gray-200" />
+            <div>
+              <p className="text-[10px] uppercase font-bold text-[#0A1128]/40 tracking-wider">Taxa de Acerto</p>
+              <p className={`text-xl font-black ${taxaSessao >= 50 ? 'text-[#14D5C2]' : 'text-rose-500'}`}>{taxaSessao}%</p>
+            </div>
           </div>
         </div>
 
@@ -88,13 +95,12 @@ export const HistoricoDetalhesPage = () => {
           {questoesAgrupadas.map((itemLocal, index) => {
             const taxaQuestao = Math.round((itemLocal.acertosLocais / itemLocal.tentativasLocais) * 100);
 
-            const alternativas = itemLocal.questao.alternativas 
-              ? Object.entries(itemLocal.questao.alternativas).filter(([, val]) => val !== null && val !== "")
+            const alternativas = itemLocal.questao.alternativas
+              ? Object.entries(itemLocal.questao.alternativas).filter(([, val]) => val !== null && val !== '')
               : [];
 
             return (
-              <div key={index} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6">
-                
+              <div key={itemLocal.questaoId} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-full bg-[#0A1128] text-white flex items-center justify-center font-black text-sm">
@@ -123,13 +129,13 @@ export const HistoricoDetalhesPage = () => {
                   <div className="flex items-center gap-2 text-[10px] font-bold text-[#0A1128]/40 uppercase tracking-wider mb-1 mt-2">
                     Alternativas e suas respostas
                   </div>
-                  
+
                   {alternativas.map(([key, texto]) => {
                     const letra = key.replace('alternativa', '');
                     const isCorreta = letra === itemLocal.questao.respostaCorreta;
                     const vezesEscolhidaLocal = itemLocal.distribuicaoLocal[letra] || 0;
                     const foiEscolhidaNaSessao = vezesEscolhidaLocal > 0;
-                    
+
                     let cardStyle = 'border-gray-100 bg-white text-[#0A1128]/70';
                     if (isCorreta) {
                       cardStyle = 'border-[#14D5C2] bg-white text-[#0A1128]';
@@ -145,19 +151,19 @@ export const HistoricoDetalhesPage = () => {
                           </div>
                           <span className="font-bold leading-relaxed">{texto}</span>
                         </div>
-                        
+
                         <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-200/50">
                           {isCorreta && (
-                             <span className="text-[10px] font-black text-[#14D5C2] uppercase tracking-wider px-3 py-1">
-                               Resposta Correta
-                             </span>
+                            <span className="text-[10px] font-black text-[#14D5C2] uppercase tracking-wider px-3 py-1">
+                              Resposta Correta
+                            </span>
                           )}
                           {foiEscolhidaNaSessao && !isCorreta && (
-                             <span className="text-[10px] font-black text-rose-700 uppercase tracking-wider px-3 py-1">
-                               Escolhida {vezesEscolhidaLocal}x
-                             </span>
+                            <span className="text-[10px] font-black text-rose-700 uppercase tracking-wider px-3 py-1">
+                              Escolhida {vezesEscolhidaLocal}x
+                            </span>
                           )}
-                          {isCorreta ? <CheckCircle2 className="w-6 h-6 text-[#14D5C2]" /> : (foiEscolhidaNaSessao ? <XCircle className="w-6 h-6 text-rose-500" /> : <div className="w-6 h-6" />)}
+                          {isCorreta ? <CheckCircle2 className="w-6 h-6 text-[#14D5C2]" /> : foiEscolhidaNaSessao ? <XCircle className="w-6 h-6 text-rose-500" /> : <div className="w-6 h-6" />}
                         </div>
                       </div>
                     );
@@ -177,7 +183,6 @@ export const HistoricoDetalhesPage = () => {
             );
           })}
         </div>
-
       </div>
     </div>
   );

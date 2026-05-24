@@ -160,9 +160,10 @@ export const HistoricoPage = () => {
             ) : (
               <div className="flex flex-col gap-3">
                 {sessoesAgrupadas.map((sessao) => (
-                  <div
+                  <button
                     key={sessao.id}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 rounded-xl border border-gray-100 hover:border-[#14D5C2] hover:shadow-md transition-all bg-white cursor-pointer group"
+                    type="button"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 rounded-xl border border-gray-100 hover:border-[#14D5C2] hover:shadow-md transition-all bg-white cursor-pointer group w-full text-left"
                     onClick={() => navigate('/aluno/historico/detalhes', { state: { sessao } })}
                   >
                     <div className="col-span-3 flex items-center gap-4">
@@ -194,7 +195,7 @@ export const HistoricoPage = () => {
                         <ChevronRight className="w-5 h-5" />
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
