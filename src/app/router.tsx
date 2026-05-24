@@ -12,7 +12,7 @@ import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
 import { TurmasPage } from "../pages/turma/ui/TurmaPage";
-
+import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
 
 import { HistoricoPage } from "../pages/historicoAluno/ui/HistoricoPage";
@@ -118,6 +118,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <CreateQuestionPage openCreateModal />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professor/lista"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <ListaPage />
             </ProtectedRoute>
           }
         />
