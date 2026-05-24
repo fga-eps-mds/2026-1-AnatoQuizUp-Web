@@ -1,4 +1,9 @@
-import { buscarQuestoesQuiz, responderQuestaoQuiz, buscarQuantidadeDeQuestoesPorTema } from './randomQuizService';
+import {
+  buscarQuestoesQuiz,
+  responderQuestaoQuiz,
+  buscarQuantidadeDeQuestoesPorTema,
+  buscarSaldoMoedas,
+} from './randomQuizService';
 import { httpClient } from '../../shared/api/httpClient';
 import type { ApiQuestionDifficulty, ApiQuestionType, QuestionAlternativeKey } from '../manage-questions';
 
@@ -45,7 +50,14 @@ describe('randomQuizService', () => {
 
   describe('responderQuestaoQuiz', () => {
     it('deve responder questão com sucesso', async () => {
-      const mockFeedback = { correcao: true, saibaMais: 'teste' };
+      const mockFeedback = {
+        correcao: true,
+        saibaMais: 'teste',
+        respostaCorreta: 'A',
+        moedasConcedidas: 10,
+        saldoMoedas: 10,
+        moedasJaConcedidas: false,
+      };
       (httpClient.post as jest.Mock).mockResolvedValue({ data: mockFeedback });
 
       const payload = {
@@ -70,6 +82,24 @@ describe('randomQuizService', () => {
       (httpClient.post as jest.Mock).mockRejectedValue(new Error('Server Error'));
 
       await expect(responderQuestaoQuiz(payload)).rejects.toThrow('Erro simulado pelo mock');
+    });
+  });
+
+  describe('buscarSaldoMoedas', () => {
+    it('deve buscar saldo de ATP com sucesso', async () => {
+      const mockSaldo = { saldoMoedas: 75 };
+      (httpClient.get as jest.Mock).mockResolvedValue({ data: mockSaldo });
+
+      const result = await buscarSaldoMoedas();
+
+      expect(httpClient.get).toHaveBeenCalledWith('/quiz/moedas');
+      expect(result).toEqual(mockSaldo);
+    });
+
+    it('deve cair no catch e disparar erro ao falhar na busca de saldo', async () => {
+      (httpClient.get as jest.Mock).mockRejectedValue(new Error('API Down'));
+
+      await expect(buscarSaldoMoedas()).rejects.toThrow('Erro simulado pelo mock');
     });
   });
 

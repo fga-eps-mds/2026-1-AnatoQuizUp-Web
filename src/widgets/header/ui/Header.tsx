@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
 import type { Role } from "../../../entities/user/model/types";
-import { useStudentCoinsStore } from "../../../features/student-coins";
+import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
 
 type NavItem = {
   key: string;

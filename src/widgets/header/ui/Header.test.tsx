@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import type { AuthState, Role, User } from '../../../entities/user/model/types';
+import { useStudentCoinsStore } from '../../../features/student-coins/model/useStudentCoinsStore';
 import { Header } from './Header';
 
 const useAuthMock = useAuth as jest.Mock;
@@ -43,6 +44,10 @@ const renderHeader = (auth: Partial<AuthState>, route = '/home') => {
 };
 
 describe('Header', () => {
+  beforeEach(() => {
+    useStudentCoinsStore.getState().reset();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -65,6 +70,24 @@ describe('Header', () => {
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent('/login');
     });
+  });
+
+  it('renders ATP balance for students', () => {
+    useStudentCoinsStore.getState().setSaldoMoedas(125);
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true });
+
+    expect(screen.getByText('ATP')).toBeInTheDocument();
+    expect(screen.getAllByText('125')).toHaveLength(2);
+  });
+
+  it('does not render ATP balance for professors', () => {
+    useStudentCoinsStore.getState().setSaldoMoedas(125);
+
+    renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
+
+    expect(screen.queryByText('ATP')).not.toBeInTheDocument();
+    expect(screen.queryByText('125')).not.toBeInTheDocument();
   });
 
   it('toggles professor student-view navigation state', async () => {

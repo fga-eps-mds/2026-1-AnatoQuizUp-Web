@@ -5,7 +5,7 @@ import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, Chevr
 import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/random-quiz/randomQuizService';
 import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
 import type { ApiQuestionDifficulty } from '../../../features/manage-questions';
-import { useStudentCoinsStore } from '../../../features/student-coins';
+import { useStudentCoinsStore } from '../../../features/student-coins/model/useStudentCoinsStore';
 
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
