@@ -1,7 +1,7 @@
 import { httpClient } from '../../shared/api/httpClient';
 import type { QuestionListParams } from '../manage-questions';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
-import type { ListQuizQuestionResponse, QuantidadeQuestoesTema, QuantidadeQuestoesTemaResponse, QuestaoQuizAnwser, QuestaoQuizFeedback } from './types';
+import type { ListQuizQuestionResponse, QuantidadeQuestoesTema, QuantidadeQuestoesTemaResponse, QuestaoQuizAnwser, QuestaoQuizFeedback, SaldoMoedasResponse } from './types';
 
 const QUIZ_ENDPOINT = '/quiz';
 
@@ -29,6 +29,17 @@ export const responderQuestaoQuiz = async (
             params 
         );
         return data
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
+}
+
+export const buscarSaldoMoedas = async (): Promise<SaldoMoedasResponse> => {
+    try {
+        const { data } = await httpClient.get<SaldoMoedasResponse>(
+            `${QUIZ_ENDPOINT}/moedas`
+        );
+        return data;
     } catch (error) {
         throw new Error(extractErrorMessage(error));
     }

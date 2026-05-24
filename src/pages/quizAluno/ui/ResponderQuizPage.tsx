@@ -5,6 +5,7 @@ import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, Chevr
 import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/random-quiz/randomQuizService';
 import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
 import type { ApiQuestionDifficulty } from '../../../features/manage-questions';
+import { useStudentCoinsStore } from '../../../features/student-coins';
 
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export const ResponderQuizPage = () => {
   const [searchParams] = useSearchParams();
   const temaQuery = searchParams.get('tema') || '';
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
+  const setSaldoMoedas = useStudentCoinsStore((state) => state.setSaldoMoedas);
 
   const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
   const [feedback, setFeedback] = useState<QuestaoQuizFeedback & { respostaCorreta?: string } | null>(null);
@@ -140,6 +142,7 @@ export const ResponderQuizPage = () => {
       });
 
       setFeedback(response);
+      setSaldoMoedas(response.saldoMoedas);
       setJaRespondeu(true);
       setIsPaused(true);
 
