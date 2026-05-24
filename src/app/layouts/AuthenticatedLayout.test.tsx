@@ -2,6 +2,10 @@ jest.mock('../../widgets/header', () => ({
   Header: () => <header>App header</header>,
 }));
 
+jest.mock('../../features/student-coins', () => ({
+  StudentCoinsBootstrap: () => null,
+}));
+
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthenticatedLayout } from './AuthenticatedLayout';
