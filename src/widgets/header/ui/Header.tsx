@@ -102,6 +102,7 @@ export const Header = () => {
       icon: BookOpen,
       onSelect: () => navigate("/aluno/turmas"),
       isActive: location.pathname.startsWith("/aluno/turmas"),
+    }
       
     const listasItem: NavItem = {
       key: "listas",
