@@ -84,7 +84,7 @@ export const ModalGerenciarQuestoesLista = ({
   );
 
   const temas = useMemo(
-    () => [...new Set(questoes.map((questao) => questao.topic).filter(Boolean))].sort(),
+    () => [...new Set(questoes.map((questao) => questao.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [questoes],
   );
 
