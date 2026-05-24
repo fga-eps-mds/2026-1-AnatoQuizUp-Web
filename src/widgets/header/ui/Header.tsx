@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen } from "lucide-react";
+
+import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen, List, Calendar } from "lucide-react";
+
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
@@ -69,6 +71,22 @@ export const Header = () => {
         isRouteActive("/home") ||
         isRouteActive("/"),
     };
+
+    const studentQuestaoItem: NavItem = {
+      key: "aluno-questoes",
+      label: "Questões",
+      icon: Newspaper,
+      onSelect: () => navigate("/aluno/quiz/escolha"),
+      isActive: location.pathname.startsWith("/aluno/quiz"),
+    };
+    
+    const studentHistoricoItem: NavItem = {
+      key: "aluno-historico",
+      label: "Histórico",
+      icon: Calendar,
+      onSelect: () => navigate("/aluno/historico"),
+      isActive: location.pathname.startsWith("/aluno/historico"),
+    };
     
     const turmasItem: NavItem = {
       key: "turmas",
@@ -84,6 +102,13 @@ export const Header = () => {
       icon: BookOpen,
       onSelect: () => navigate("/aluno/turmas"),
       isActive: location.pathname.startsWith("/aluno/turmas"),
+      
+    const listasItem: NavItem = {
+      key: "listas",
+      label: "Listas",
+      icon: List,
+      onSelect: () => navigate("/professor/lista"),
+      isActive: location.pathname.startsWith("/professor/listas"),
     };
 
     switch (role) {
@@ -108,6 +133,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          listasItem,
           turmasItem, 
         ];
       case "ADMIN":
@@ -122,6 +148,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/questoes") ||
               location.pathname.startsWith("/professor/criar-questao"),
           },
+          listasItem,
           turmasItem,
           {
             key: "admin-users",
@@ -133,7 +160,7 @@ export const Header = () => {
         ];
       case "STUDENT":
       default:
-        return [homeItem, minhasTurmasAlunoItem];
+        return [homeItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
     }
   };
 
@@ -154,17 +181,16 @@ export const Header = () => {
       <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+          const estiloItem = item.isActive 
+            ? "bg-[#F97316] text-white shadow-md" 
+            : "text-[#fffffe]/80 hover:bg-[#00214d] hover:text-[#71edc8]";
+
           return (
             <button
               key={item.key}
               onClick={() => handleSelect(item)}
               aria-current={item.isActive ? "page" : undefined}
-              className={
-                "flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left " +
-                (item.isActive
-                  ? "bg-[#F97316] text-white shadow-md"
-                  : "text-[#fffffe]/80 hover:bg-[#00214d] hover:text-[#71edc8]")
-              }
+              className={`flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
             >
               <Icon size={22} />
               <span>{item.label}</span>

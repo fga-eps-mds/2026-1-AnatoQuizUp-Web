@@ -15,7 +15,12 @@ import { TurmasPage } from "../pages/turma/ui/TurmaPage";
 import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 
+import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
+
+import { HistoricoPage } from "../pages/historicoAluno/ui/HistoricoPage";
+
+import { HistoricoDetalhesPage } from "../pages/historicoAluno/ui/HistoricoDetalhesPage";
 
 export const AppRouter = () => {
   return (
@@ -93,6 +98,25 @@ export const AppRouter = () => {
         />
 
         <Route 
+          path="/aluno/historico"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <HistoricoPage />
+            </ProtectedRoute>
+          } 
+        />
+
+
+        <Route 
+          path="/aluno/historico/detalhes"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <HistoricoDetalhesPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
           path="/professor/home"
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR']}>
@@ -115,6 +139,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <CreateQuestionPage openCreateModal />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professor/lista"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <ListaPage />
             </ProtectedRoute>
           }
         />
