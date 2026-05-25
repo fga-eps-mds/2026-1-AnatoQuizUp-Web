@@ -73,6 +73,14 @@ jest.mock('../pages/turma/ui/TurmaPage', () => ({
   TurmasPage: () => <main>Turmas route</main>,
 }));
 
+jest.mock('../pages/aluno/minhas-turmas', () => ({
+  MinhasTurmasAlunoPage: () => <main>Minhas turmas aluno route</main>,
+}));
+
+jest.mock('../pages/aluno/turma', () => ({
+  TurmaDetalheAlunoPage: () => <main>Detalhe turma aluno route</main>,
+}));
+
 const renderAppAt = (path: string) => {
   window.history.pushState({}, '', path);
   return render(<App />);

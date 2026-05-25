@@ -1,5 +1,5 @@
 import { httpClient } from '../../../shared/api/httpClient';
-import type { ResultadoBuscaAlunos, UsuarioResumo } from '../model/types';
+import type { ResultadoBuscaAlunos, UsuarioPublico, UsuarioResumo } from '../model/types';
 
 type RespostaApi<T> = {
   mensagem?: string;
@@ -30,5 +30,10 @@ export const buscarUsuariosPorIds = async (ids: string[]) => {
     },
   });
 
+  return response.data.dados;
+};
+
+export const buscarUsuarioPorId = async (id: string): Promise<UsuarioPublico> => {
+  const response = await httpClient.get<RespostaApi<UsuarioPublico>>(`/usuarios/${id}`);
   return response.data.dados;
 };
