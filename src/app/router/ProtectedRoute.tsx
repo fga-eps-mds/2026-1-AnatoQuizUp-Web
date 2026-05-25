@@ -1,26 +1,49 @@
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
-import type { Role } from '../../entities/user/model/types'; 
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    allowedRoles?: Role[];
+    allowedRoles?: string[]; 
 }
 
 export const ProtectedRoute = ({children, allowedRoles}: ProtectedRouteProps) => {
     const { isAuthenticated, isLoading, user } = useAuth();
+    const location = useLocation(); 
 
     if (isLoading) {
         return null;
     }
 
-    if(!isAuthenticated){
-        return <Navigate to='/login' replace/>;
+    if (!isAuthenticated) {
+        return <Navigate to='/login' replace />;
     }
 
-    if(allowedRoles && user && !allowedRoles.includes(user.role)) {
-        console.warn('Acesso não autorizado');
-        return <Navigate to='/home' replace/>;
+    if (allowedRoles && user) {
+        const roleBackend = String(user.role).toUpperCase();
+        
+        const roleMap: Record<string, string> = {
+            'ALUNO': 'STUDENT',
+            'PROFESSOR': 'PROFESSOR',
+            'ADMINISTRADOR': 'ADMIN'
+        };
+
+        const roleFrontend = roleMap[roleBackend] || roleBackend;
+
+        const temPermissao = allowedRoles.includes(roleFrontend) || allowedRoles.includes(roleBackend);
+
+        if (!temPermissao) {
+            console.warn(`[Redirecionamento] Acesso negado. Usuário: ${roleBackend}. Exigido: ${allowedRoles}`);
+            
+            if (roleFrontend === 'ADMIN' && location.pathname === '/home') {
+                 return <>{children}</>;
+            }
+
+            if (roleFrontend === 'STUDENT') return <Navigate to='/aluno/home' replace />;
+            if (roleFrontend === 'PROFESSOR') return <Navigate to='/professor/home' replace />;
+            if (roleFrontend === 'ADMIN') return <Navigate to='/admin/home' replace />;
+            
+            return <Navigate to='/home' replace />;
+        }
     }
 
     return <>{children}</>;

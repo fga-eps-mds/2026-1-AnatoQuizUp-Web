@@ -5,7 +5,6 @@ import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Ca
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
-import type { Role } from "../../../entities/user/model/types";
 import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
 
 type NavItem = {
@@ -27,6 +26,7 @@ export const Header = () => {
 
   useEffect(() => {
     if (!isDrawerOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         drawerRef.current &&
@@ -35,7 +35,9 @@ export const Header = () => {
         setIsDrawerOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDrawerOpen]);
 
@@ -53,7 +55,7 @@ export const Header = () => {
 
   const isRouteActive = (path: string) => location.pathname === path;
 
-  const buildNavItems = (role: Role): NavItem[] => {
+  const buildNavItems = (role: string): NavItem[] => {
     const homeItem: NavItem = {
       key: "home",
       label: "Início",
@@ -103,8 +105,8 @@ export const Header = () => {
       icon: BookOpen,
       onSelect: () => navigate("/aluno/turmas"),
       isActive: location.pathname.startsWith("/aluno/turmas"),
-    }
-      
+    };
+
     const listasItem: NavItem = {
       key: "listas",
       label: "Listas",
@@ -138,9 +140,20 @@ export const Header = () => {
           listasItem,
           turmasItem,
         ];
+
       case "ADMIN":
+      case "ADMINISTRADOR":
         return [
-          homeItem,
+          {
+            key: "admin-home",
+            label: "Início",
+            icon: Home,
+            onSelect: () => navigate("/admin/home"),
+            isActive:
+              isRouteActive("/admin/home") ||
+              isRouteActive("/home") ||
+              isRouteActive("/"),
+          },
           {
             key: "questoes",
             label: "Questões",
@@ -156,10 +169,13 @@ export const Header = () => {
             key: "admin-users",
             label: "Gerenciar Usuários",
             icon: Users,
-            onSelect: () => navigate("/admin/usuarios"),
-            isActive: isRouteActive("/admin/usuarios"),
+            onSelect: () => navigate("/admin/dashboard"),
+            isActive:
+              isRouteActive("/admin/dashboard") ||
+              isRouteActive("/admin/usuarios"),
           },
         ];
+
       case "STUDENT":
       default:
         return [homeItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
@@ -232,6 +248,7 @@ export const Header = () => {
             </span>
           </div>
         </div>
+
         <button
           onClick={() => void handleLogout()}
           className="flex cursor-pointer items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"
