@@ -44,41 +44,29 @@ export const ResponderQuizPage = () => {
     })
       .then((response) => {
         if (!deveAtualizarEstado) return;
-
         setQuestoes(response.dados);
         setPaginaAtual(1);
         setIndiceAtual(0);
       })
-      .catch((error) => {
-        console.error('Erro ao buscar questões:', error);
-      })
+      .catch((error) => console.error('Erro ao buscar questões:', error))
       .finally(() => {
-        if (!deveAtualizarEstado) return;
-
-        setIsLoading(false);
+        if (deveAtualizarEstado) setIsLoading(false);
       });
 
-    return () => {
-      deveAtualizarEstado = false;
-    };
+    return () => { deveAtualizarEstado = false; };
   }, [temaQuery, dificuldadeQuery]);
 
   useEffect(() => {
     let timer: number | undefined;
-
     if (!isPaused && !isLoading && questoes.length > 0) {
       timer = window.setInterval(() => setSegundos(s => s + 1), 1000);
     }
-
-    return () => {
-      if (timer) window.clearInterval(timer);
-    };
+    return () => { if (timer) window.clearInterval(timer); };
   }, [isPaused, isLoading, questoes.length]);
 
   const formatarTempo = (totalSegundos: number) => {
     const m = Math.floor(totalSegundos / 60).toString().padStart(2, '0');
     const s = (totalSegundos % 60).toString().padStart(2, '0');
-
     return `${m}:${s}`;
   };
 
@@ -98,11 +86,7 @@ export const ResponderQuizPage = () => {
           <XCircle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
           <h2 className="text-xl font-black text-[#0A1128] mb-2">Nenhuma questão encontrada</h2>
           <p className="text-[#0A1128]/60 mb-6">Não conseguimos encontrar questões para o tema selecionado no momento.</p>
-
-          <button
-            onClick={() => navigate('/aluno/quiz/escolha')}
-            className="bg-[#14D5C2] text-white px-6 py-3 rounded-full font-bold w-full"
-          >
+          <button onClick={() => navigate('/aluno/quiz/escolha')} className="bg-[#14D5C2] text-white px-6 py-3 rounded-full font-bold w-full">
             Voltar e escolher outro
           </button>
         </div>
@@ -127,7 +111,9 @@ export const ResponderQuizPage = () => {
   const taxaAcerto = questoesRespondidas === 0 ? 0 : (acertos / questoesRespondidas) * 100;
 
   const alternativasFormatadas = questaoAtual?.alternativas
-    ? Object.entries(questaoAtual.alternativas).map(([id, texto]) => ({ id, texto }))
+    ? Object.entries(questaoAtual.alternativas)
+      .filter(([, texto]) => texto !== null && texto !== "")
+      .map(([id, texto]) => ({ id: id.replace('alternativa', ''), texto }))
     : [];
 
   const handleConfirmar = async () => {
@@ -135,7 +121,6 @@ export const ResponderQuizPage = () => {
 
     try {
       setIsRespondendo(true);
-
       const response = await responderQuestaoQuiz({
         questaoId: questaoAtual.id,
         tipo: questaoAtual.tipo,
@@ -146,7 +131,6 @@ export const ResponderQuizPage = () => {
       setSaldoMoedas(response.saldoMoedas);
       setJaRespondeu(true);
       setIsPaused(true);
-
       setQuestoesRespondidas(prev => prev + 1);
 
       if (response.correcao) {
@@ -168,10 +152,8 @@ export const ResponderQuizPage = () => {
 
     if (indiceAtual >= questoes.length - 1) {
       setIsLoading(true);
-
       try {
         const proxPagina = paginaAtual + 1;
-
         const response = await buscarQuestoesQuiz({
           tema: temaQuery,
           dificuldade: dificuldadeQuery as ApiQuestionDifficulty,
@@ -190,7 +172,6 @@ export const ResponderQuizPage = () => {
             page: 1,
             limit,
           });
-
           setQuestoes(responseInicial.dados);
           setPaginaAtual(1);
           setIndiceAtual(0);
@@ -227,7 +208,6 @@ export const ResponderQuizPage = () => {
                 <span>Taxa de Acerto</span>
                 <span>{Math.round(taxaAcerto)}%</span>
               </div>
-
               <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all duration-500 ease-out ${taxaAcerto >= 50 ? 'bg-[#14D5C2]' : taxaAcerto > 0 ? 'bg-amber-400' : 'bg-gray-300'}`}
@@ -244,13 +224,11 @@ export const ResponderQuizPage = () => {
             <div className="text-right border-l border-gray-100 pl-6 flex items-center gap-4">
               <div>
                 <p className="text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider mb-0.5">Tempo</p>
-
                 <div className="flex items-center gap-1.5 justify-end">
                   <Clock className="w-3.5 h-3.5 text-[#0A1128]/50" />
                   <span className="text-sm font-black text-[#0A1128]">{formatarTempo(segundos)}</span>
                 </div>
               </div>
-
               <button
                 onClick={() => !jaRespondeu && setIsPaused(!isPaused)}
                 disabled={jaRespondeu}
@@ -267,11 +245,7 @@ export const ResponderQuizPage = () => {
             <PauseCircle className="w-16 h-16 text-[#14D5C2] mb-4 opacity-50" />
             <h2 className="text-2xl font-black text-[#0A1128] mb-2">Treino Pausado</h2>
             <p className="text-[#0A1128]/60 mb-8 max-w-md">O tempo foi interrompido. A questão está oculta para que possa descansar.</p>
-
-            <button
-              onClick={() => setIsPaused(false)}
-              className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-wide hover:brightness-95 transition-all shadow-md shadow-[#14D5C2]/30"
-            >
+            <button onClick={() => setIsPaused(false)} className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-wide shadow-md">
               Retomar Treino
             </button>
           </div>
@@ -288,12 +262,7 @@ export const ResponderQuizPage = () => {
 
             {questaoAtual.imagem && (
               <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex justify-center">
-                <img
-                  src={questaoAtual.imagem}
-                  alt="Imagem da questão"
-                  className="w-full max-h-[420px] object-contain"
-                  loading="lazy"
-                />
+                <img src={questaoAtual.imagem} alt="Imagem da questão" className="w-full max-h-[420px] object-contain" loading="lazy" />
               </div>
             )}
 
@@ -328,20 +297,11 @@ export const ResponderQuizPage = () => {
                 }
 
                 return (
-                  <button
-                    key={alt.id}
-                    disabled={jaRespondeu}
-                    onClick={() => setAlternativaSelecionada(alt.id)}
-                    className={estilosBase}
-                  >
+                  <button key={alt.id} disabled={jaRespondeu} onClick={() => setAlternativaSelecionada(alt.id)} className={estilosBase}>
                     <div className="flex items-center gap-4">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-black ${iconClass}`}>
-                        {alt.id}
-                      </div>
-
+                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-black ${iconClass}`}>{alt.id}</div>
                       <span>{alt.texto}</span>
                     </div>
-
                     {jaRespondeu && acertou && isSelecionada && <Check className="w-5 h-5 text-[#14D5C2]" />}
                     {jaRespondeu && !acertou && isSelecionada && <XCircle className="w-5 h-5 text-rose-500" />}
                     {jaRespondeu && !acertou && isCorretaPeloFeedback && <Check className="w-5 h-5 text-[#14D5C2] opacity-80" />}
@@ -355,7 +315,6 @@ export const ResponderQuizPage = () => {
                 <span className="flex items-center gap-2 text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider">
                   Dificuldade: <span className="bg-[#E6FCFA] text-[#14D5C2] px-2 py-0.5 rounded">{questaoAtual.dificuldade}</span>
                 </span>
-
                 <button className="flex items-center gap-1.5 text-[10px] text-rose-500/70 hover:text-rose-500 font-bold uppercase tracking-wider transition-colors">
                   <Flag className="w-3 h-3" /> Reportar
                 </button>
@@ -363,18 +322,11 @@ export const ResponderQuizPage = () => {
 
               <div>
                 {jaRespondeu ? (
-                  <button
-                    onClick={handleProxima}
-                    className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all flex items-center gap-2 shadow-md shadow-[#14D5C2]/30"
-                  >
+                  <button onClick={handleProxima} className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 flex items-center gap-2 shadow-md">
                     Próxima <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <button
-                    onClick={handleConfirmar}
-                    disabled={!alternativaSelecionada || isRespondendo}
-                    className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#14D5C2]/30"
-                  >
+                  <button onClick={handleConfirmar} disabled={!alternativaSelecionada || isRespondendo} className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 disabled:opacity-50 shadow-md">
                     {isRespondendo ? 'Enviando...' : 'Confirmar'}
                   </button>
                 )}
