@@ -20,6 +20,7 @@ describe('App/Router/ProtectedRoute', () => {
         <Routes>
           <Route path="/login" element={<div data-testid="login-page">Página de Login</div>} />
           <Route path="/home" element={<div data-testid="home-page">Página Home</div>} />
+          <Route path="/aluno/home" element={<div data-testid="aluno-home-page">Página do Aluno</div>} />
           <Route path="/rota-protegida" element={ui} />
         </Routes>
       </MemoryRouter>
@@ -68,7 +69,7 @@ describe('App/Router/ProtectedRoute', () => {
     expect(screen.getByTestId('conteudo-secreto')).toBeInTheDocument();
   });
 
-  it('deve redirecionar para /home se o usuário estiver logado, mas não tiver a Role necessária', () => {
+  it('deve redirecionar aluno para /aluno/home se não tiver a Role necessária', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
@@ -82,7 +83,7 @@ describe('App/Router/ProtectedRoute', () => {
     );
 
     expect(screen.queryByTestId('painel-professor')).not.toBeInTheDocument();
-    expect(screen.getByTestId('home-page')).toBeInTheDocument();
+    expect(screen.getByTestId('aluno-home-page')).toBeInTheDocument();
   });
 
   it('deve renderizar o conteúdo se o usuário logado tiver a Role necessária', () => {

@@ -17,10 +17,12 @@ import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
-
 import { HistoricoPage } from "../pages/historicoAluno/ui/HistoricoPage";
-
 import { HistoricoDetalhesPage } from "../pages/historicoAluno/ui/HistoricoDetalhesPage";
+
+// Telas do Admin
+import { AdminDashboardPage } from "../pages/admin/ui/AdminDashboardPage";
+import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 
 export const AppRouter = () => {
   return (
@@ -69,7 +71,6 @@ export const AppRouter = () => {
           }
         />
 
-        {/* ROTA: ESCOLHA O QUIZ */}
         <Route 
           path="/aluno/quiz/escolha"
           element={
@@ -79,15 +80,6 @@ export const AppRouter = () => {
           } 
         />
 
-        {/* ROTA: RESPONDER O QUIZ (A que estava faltando!) */}
-        <Route
-          path="/aluno/quiz/escolha"
-          element={
-            <ProtectedRoute allowedRoles={['STUDENT']}>
-              <EscolhaQuizPage />
-            </ProtectedRoute>
-          } 
-        />
         <Route 
           path="/aluno/quiz/responder"
           element={
@@ -105,7 +97,6 @@ export const AppRouter = () => {
             </ProtectedRoute>
           } 
         />
-
 
         <Route 
           path="/aluno/historico/detalhes"
@@ -157,6 +148,25 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <TurmasPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* --- ROTAS DO ADMIN --- */}
+        <Route
+          path="/admin/home"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <HomeAdminPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboardPage />
             </ProtectedRoute>
           }
         />

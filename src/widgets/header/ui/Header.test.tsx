@@ -141,11 +141,13 @@ describe('Header', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/turmas');
   });
 
-  it('renders the active turmas item for admin', () => {
-    renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/turmas');
+it('does not render turmas item for admin', () => {
+  renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/turmas');
 
-    expect(screen.getByRole('button', { name: /Turmas/i })).toHaveAttribute('aria-current', 'page');
-  });
+  expect(screen.queryByRole('button', { name: /Turmas/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Início/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Gerenciar Usuários/i })).toBeInTheDocument();
+});
 
   it('navigates students to minhas turmas page', async () => {
     const testUser = userEvent.setup();

@@ -6,17 +6,24 @@ export const HomePage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  const role = String(user?.role ?? '').toUpperCase();
+
   if (isAuthenticated) {
-    if (user?.role === 'PROFESSOR') {
+    if (role === 'PROFESSOR') {
       return <Navigate to="/professor/home" replace />;
     }
+
+    if (role === 'ADMIN' || role === 'ADMINISTRADOR') {
+      return <Navigate to="/admin/home" replace />;
+    }
+
     return <Navigate to="/aluno/home" replace />;
   }
 
   return (
     <ProfileHome
-      isAuthenticated={false}
-      profileLabel=""
+      isAuthenticated={isAuthenticated}
+      profileLabel={user?.name || ''}
       onLogin={() => navigate('/login')}
     />
   );
