@@ -25,6 +25,14 @@ export type QuestaoQuizAnwser = {
 export type QuestaoQuizFeedback = {
   correcao: boolean;
   saibaMais: string | null;
+  respostaCorreta: QuestionAlternativeKey;
+  moedasConcedidas: number;
+  saldoMoedas: number;
+  moedasJaConcedidas: boolean;
+}
+
+export type SaldoMoedasResponse = {
+  saldoMoedas: number;
 }
 
 export type Dificuldade = "FACIL" | "MEDIA" | "DIFICIL"

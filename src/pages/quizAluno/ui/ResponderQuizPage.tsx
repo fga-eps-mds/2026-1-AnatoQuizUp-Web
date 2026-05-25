@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2, Flag } from 'lucide-react';
+import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2, Flag, Coins } from 'lucide-react';
 
 import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/random-quiz/randomQuizService';
 import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
 import type { ApiQuestionDifficulty } from '../../../features/manage-questions';
+import { useStudentCoinsStore } from '../../../features/student-coins/model/useStudentCoinsStore';
 
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export const ResponderQuizPage = () => {
   const [searchParams] = useSearchParams();
   const temaQuery = searchParams.get('tema') || '';
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
+  const setSaldoMoedas = useStudentCoinsStore((state) => state.setSaldoMoedas);
 
   const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
   const [feedback, setFeedback] = useState<QuestaoQuizFeedback & { respostaCorreta?: string } | null>(null);
@@ -104,12 +106,14 @@ export const ResponderQuizPage = () => {
   }
 
   const acertou = feedback?.correcao ?? false;
+  const deveMostrarGanhoMoedas = acertou && (feedback?.moedasConcedidas ?? 0) > 0;
+
   const taxaAcerto = questoesRespondidas === 0 ? 0 : (acertos / questoesRespondidas) * 100;
 
   const alternativasFormatadas = questaoAtual?.alternativas
     ? Object.entries(questaoAtual.alternativas)
-        .filter(([, texto]) => texto !== null && texto !== "")
-        .map(([id, texto]) => ({ id: id.replace('alternativa', ''), texto }))
+      .filter(([, texto]) => texto !== null && texto !== "")
+      .map(([id, texto]) => ({ id: id.replace('alternativa', ''), texto }))
     : [];
 
   const handleConfirmar = async () => {
@@ -124,6 +128,7 @@ export const ResponderQuizPage = () => {
       });
 
       setFeedback(response);
+      setSaldoMoedas(response.saldoMoedas);
       setJaRespondeu(true);
       setIsPaused(true);
       setQuestoesRespondidas(prev => prev + 1);
@@ -331,11 +336,26 @@ export const ResponderQuizPage = () => {
         )}
 
         {jaRespondeu && feedback?.saibaMais && (
-          <div className={`rounded-xl p-6 border animate-fade-in ${acertou ? 'bg-[#E6FCFA] border-[#14D5C2]' : 'bg-rose-50 border-rose-200'}`}>
-            <h3 className={`text-sm font-black mb-2 uppercase tracking-wide ${acertou ? 'text-[#0E9384]' : 'text-rose-700'}`}>
-              {acertou ? 'Resposta Correta!' : 'Resposta Incorreta!'}
-            </h3>
-            <p className="text-sm font-medium leading-relaxed text-[#0A1128]/80">{feedback.saibaMais}</p>
+          <div className={`rounded-xl p-6 border animate-fade-in relative overflow-hidden ${acertou ? 'bg-[#E6FCFA] border-[#14D5C2]' : 'bg-rose-50 border-rose-200'}`}>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className={`text-sm font-black uppercase tracking-wide ${acertou ? 'text-[#0E9384]' : 'text-rose-700'}`}>
+                {acertou ? 'Resposta Correta!' : 'Resposta Incorreta!'}
+              </h3>
+
+              {deveMostrarGanhoMoedas && (
+                <div
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#F59E0B] px-3 py-1.5 text-xs font-black text-[#0A1128] shadow-lg shadow-[#F59E0B]/20"
+                  style={{ animation: 'coins-reward-rise 900ms ease-out both' }}
+                >
+                  <Coins className="w-4 h-4" />
+                  +{feedback.moedasConcedidas} ATP
+                </div>
+              )}
+            </div>
+
+            <p className="text-sm font-medium leading-relaxed text-[#0A1128]/80">
+              {feedback.saibaMais}
+            </p>
           </div>
         )}
       </div>

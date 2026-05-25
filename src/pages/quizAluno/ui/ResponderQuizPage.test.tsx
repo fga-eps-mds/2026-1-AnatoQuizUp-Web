@@ -6,6 +6,7 @@ import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { ResponderQuizPage } from './ResponderQuizPage';
 import * as randomQuizService from '../../../features/random-quiz/randomQuizService';
+import { useStudentCoinsStore } from '../../../features/student-coins/model/useStudentCoinsStore';
 
 jest.mock('../../../features/random-quiz/randomQuizService');
 
@@ -15,9 +16,29 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+const feedback = (
+  overrides: Partial<{
+    correcao: boolean;
+    saibaMais: string | null;
+    respostaCorreta: 'A' | 'B' | 'C' | 'D' | 'E';
+    moedasConcedidas: number;
+    saldoMoedas: number;
+    moedasJaConcedidas: boolean;
+  }> = {},
+) => ({
+  correcao: true,
+  saibaMais: 'Certo!',
+  respostaCorreta: 'A' as const,
+  moedasConcedidas: 10,
+  saldoMoedas: 10,
+  moedasJaConcedidas: false,
+  ...overrides,
+});
+
 describe('ResponderQuizPage - Treino Infinito', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useStudentCoinsStore.getState().reset();
     jest.useFakeTimers();
   });
 
@@ -56,7 +77,13 @@ describe('ResponderQuizPage - Treino Infinito', () => {
     await waitFor(() => expect(screen.getByText('Q1?')).toBeInTheDocument());
 
     fireEvent.click(screen.getByText('Alt B'));
-    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce({ correcao: false, saibaMais: 'Errado!' });
+    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce(feedback({
+      correcao: false,
+      saibaMais: 'Errado!',
+      respostaCorreta: 'A',
+      moedasConcedidas: 0,
+      saldoMoedas: 0,
+    }));
     fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
     
     await waitFor(() => expect(screen.getByRole('button', { name: /Próxima/i })).toBeInTheDocument());
@@ -68,11 +95,61 @@ describe('ResponderQuizPage - Treino Infinito', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Alt C'));
-    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce({ correcao: true, saibaMais: 'Certo!' });
+    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce(feedback({
+      respostaCorreta: 'C',
+      moedasConcedidas: 25,
+      saldoMoedas: 25,
+    }));
     fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
     
     await waitFor(() => expect(screen.getByRole('button', { name: /Próxima/i })).toBeInTheDocument());
     expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('deve exibir ganho de ATP e atualizar saldo global ao acertar', async () => {
+    (randomQuizService.buscarQuestoesQuiz as jest.Mock).mockResolvedValue({
+      dados: [{ id: '1', enunciado: 'Q ATP?', tipo: 'MULTIPLA_ESCOLHA', alternativas: { A: 'Alt A' }, dificuldade: 'FACIL' }],
+      metadados: { total: 1 },
+    });
+    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce(feedback({
+      respostaCorreta: 'A',
+      moedasConcedidas: 10,
+      saldoMoedas: 40,
+    }));
+
+    render(<MemoryRouter><ResponderQuizPage /></MemoryRouter>);
+
+    await waitFor(() => expect(screen.getByText('Q ATP?')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Alt A'));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
+
+    await waitFor(() => expect(screen.getByText('+10 ATP')).toBeInTheDocument());
+    expect(useStudentCoinsStore.getState().saldoMoedas).toBe(40);
+  });
+
+  it('nao deve exibir ganho de ATP quando acerto nao concede recompensa', async () => {
+    (randomQuizService.buscarQuestoesQuiz as jest.Mock).mockResolvedValue({
+      dados: [{ id: '1', enunciado: 'Q sem ATP?', tipo: 'MULTIPLA_ESCOLHA', alternativas: { A: 'Alt A' }, dificuldade: 'FACIL' }],
+      metadados: { total: 1 },
+    });
+    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce(feedback({
+      respostaCorreta: 'A',
+      moedasConcedidas: 0,
+      saldoMoedas: 40,
+      moedasJaConcedidas: true,
+    }));
+
+    render(<MemoryRouter><ResponderQuizPage /></MemoryRouter>);
+
+    await waitFor(() => expect(screen.getByText('Q sem ATP?')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Alt A'));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
+
+    await waitFor(() => expect(screen.getByText('Resposta Correta!')).toBeInTheDocument());
+    expect(screen.queryByText(/\+0 ATP/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\+\d+ ATP/i)).not.toBeInTheDocument();
   });
 
   it('deve disparar erro inicial no useEffect', async () => {
@@ -121,7 +198,7 @@ const botaoAlternativa = screen.getAllByRole('button').find(btn => btn.textConte
         fireEvent.click(botaoAlternativa);
     }
 
-    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce({ correcao: true });
+    (randomQuizService.responderQuestaoQuiz as jest.Mock).mockResolvedValueOnce(feedback({ respostaCorreta: 'A' }));
     fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
     await waitFor(() => expect(screen.getByRole('button', { name: /Próxima/i })).toBeInTheDocument());
 

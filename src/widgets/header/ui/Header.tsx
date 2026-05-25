@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-
-import { Eye, Home, LogOut, Menu, Users, X, Newspaper, BookOpen, List, Calendar } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
 import type { Role } from "../../../entities/user/model/types";
+import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
 
 type NavItem = {
   key: string;
@@ -18,6 +18,7 @@ type NavItem = {
 
 export const Header = () => {
   const { user, logout } = useAuth();
+  const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
   const navigate = useNavigate();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -60,7 +61,7 @@ export const Header = () => {
       onSelect: () => navigate("/home"),
       isActive: isRouteActive("/home") || isRouteActive("/"),
     };
-    
+
     const homeProfessorItem: NavItem = {
       key: "home",
       label: "Início",
@@ -79,7 +80,7 @@ export const Header = () => {
       onSelect: () => navigate("/aluno/quiz/escolha"),
       isActive: location.pathname.startsWith("/aluno/quiz"),
     };
-    
+
     const studentHistoricoItem: NavItem = {
       key: "aluno-historico",
       label: "Histórico",
@@ -87,7 +88,7 @@ export const Header = () => {
       onSelect: () => navigate("/aluno/historico"),
       isActive: location.pathname.startsWith("/aluno/historico"),
     };
-    
+
     const turmasItem: NavItem = {
       key: "turmas",
       label: "Turmas",
@@ -135,7 +136,7 @@ export const Header = () => {
               location.pathname.startsWith("/professor/criar-questao"),
           },
           listasItem,
-          turmasItem, 
+          turmasItem,
         ];
       case "ADMIN":
         return [
@@ -167,6 +168,7 @@ export const Header = () => {
 
   const navItems = buildNavItems(user.role);
   const initial = user.name?.charAt(0).toUpperCase() || "U";
+  const shouldShowCoins = user.role === "STUDENT";
 
   const handleSelect = (item: NavItem) => {
     item.onSelect();
@@ -182,8 +184,8 @@ export const Header = () => {
       <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const estiloItem = item.isActive 
-            ? "bg-[#F97316] text-white shadow-md" 
+          const estiloItem = item.isActive
+            ? "bg-[#F97316] text-white shadow-md"
             : "text-[#fffffe]/80 hover:bg-[#00214d] hover:text-[#71edc8]";
 
           return (
@@ -201,6 +203,22 @@ export const Header = () => {
       </nav>
 
       <div className="border-t border-[#00214d] p-4 flex flex-col gap-3">
+        {shouldShowCoins && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-[#fffffe]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-[#0A1128] flex items-center justify-center shrink-0">
+                <Coins size={18} />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest text-[#fffffe]/70">
+                ATP
+              </span>
+            </div>
+            <span className="text-lg font-black text-[#FDE68A] tabular-nums">
+              {saldoMoedas}
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
             {initial}
@@ -232,14 +250,24 @@ export const Header = () => {
         <button onClick={() => navigate("/home")} className="flex items-center">
           <img src={logo} alt="AnatoQuizUp" className="h-10" />
         </button>
-        <button
-          onClick={() => setIsDrawerOpen(true)}
-          className="p-2 text-[#fffffe] hover:text-[#71edc8] transition-colors"
-          aria-label="Abrir menu"
-          aria-expanded={isDrawerOpen}
-        >
-          <Menu size={24} />
-        </button>
+
+        <div className="flex items-center gap-2">
+          {shouldShowCoins && (
+            <div className="h-9 min-w-20 px-3 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#FDE68A] flex items-center justify-center gap-1.5">
+              <Coins size={16} />
+              <span className="text-sm font-black tabular-nums">{saldoMoedas}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="p-2 text-[#fffffe] hover:text-[#71edc8] transition-colors"
+            aria-label="Abrir menu"
+            aria-expanded={isDrawerOpen}
+          >
+            <Menu size={24} />
+          </button>
+        </div>
       </div>
 
       <aside className="hidden md:flex w-64 bg-[#0A1128] text-[#fffffe] flex-col sticky top-0 h-screen shrink-0">
