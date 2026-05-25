@@ -155,17 +155,6 @@ export const Header = () => {
               isRouteActive("/"),
           },
           {
-            key: "questoes",
-            label: "Questões",
-            icon: Newspaper,
-            onSelect: () => navigate("/professor/questoes"),
-            isActive:
-              location.pathname.startsWith("/professor/questoes") ||
-              location.pathname.startsWith("/professor/criar-questao"),
-          },
-          listasItem,
-          turmasItem,
-          {
             key: "admin-users",
             label: "Gerenciar Usuários",
             icon: Users,
