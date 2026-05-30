@@ -14,6 +14,7 @@ import { CreateQuestionPage } from "../pages/professor/criar-questao";
 import { TurmasPage } from "../pages/turma/ui/TurmaPage";
 import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
+import { TurmaDetalhesPage } from "../pages/TurmaDetalhes";
 
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
@@ -148,6 +149,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <TurmasPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/turmas/:id"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <TurmaDetalhesPage />
             </ProtectedRoute>
           }
         />
