@@ -11,6 +11,7 @@ import type { Turma } from '../../../entities/turmas/model/types';
 import { CardsResumo } from '../../../features/dashboard-turmas/ui/CardsResumo';
 import { GraficoTemas } from '../../../features/dashboard-turmas/ui/GraficoTemas';
 import { EmptyState } from '../../../features/dashboard-turmas/ui/EmptyState';
+import { TabelaDesempenhoIndividual } from '../../../features/dashboard-turmas/ui/TabelaDesempenhoIndividual';
 
 export const TurmaDetalhesPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -138,9 +139,7 @@ export const TurmaDetalhesPage = () => {
                     <Users size={20} className="text-gray-400" />
                     Desempenho Individual
                   </h3>
-                  <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
-                    [ Área reservada para a dupla: Tabela de Alunos (Visão Micro) ]
-                  </div>
+                  <TabelaDesempenhoIndividual turmaId={id!} />
                 </div>
               </div>
 

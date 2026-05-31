@@ -13,3 +13,16 @@ export interface DashboardMacro {
   taxaMediaAcertos: number;
   desempenhoPorTema: TemaDesempenho[];
 }
+
+export interface DesempenhoAluno {
+  alunoId: string;
+  totalRespondidas: number;
+  totalAcertos: number;
+  taxaAcerto: number;
+  ultimaAtividade: string | null;
+  desempenhoPorTema: TemaDesempenho[];
+}
+
+export interface DashboardIndividual {
+  alunos: DesempenhoAluno[];
+}
