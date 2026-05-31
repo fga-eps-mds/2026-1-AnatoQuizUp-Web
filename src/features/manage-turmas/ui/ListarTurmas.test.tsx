@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { ListaTurmas } from './ListarTurmas';
 import {
   atualizarTurma,
@@ -148,7 +149,7 @@ describe('ListaTurmas Feature', () => {
   });
 
   it('deve carregar e renderizar a lista de turmas na montagem inicial', async () => {
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
 
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
     expect(listarTurmas).toHaveBeenCalledWith({
@@ -166,7 +167,7 @@ describe('ListaTurmas Feature', () => {
   it('deve mostrar mensagem de lista vazia quando nao houver turmas', async () => {
     (listarTurmas as jest.Mock).mockResolvedValue([]);
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
 
     expect(await screen.findByText('Nenhuma turma encontrada.')).toBeInTheDocument();
   });
@@ -175,7 +176,7 @@ describe('ListaTurmas Feature', () => {
     const erroMock = new Error('Falha na rede');
     (listarTurmas as jest.Mock).mockRejectedValue(erroMock);
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Erro ao carregar turmas', erroMock);
@@ -186,7 +187,7 @@ describe('ListaTurmas Feature', () => {
   it('deve disparar nova busca ao digitar no campo de pesquisa', async () => {
     const user = userEvent.setup();
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
 
     const inputBusca = screen.getByPlaceholderText('Buscar turma');
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
@@ -204,7 +205,7 @@ describe('ListaTurmas Feature', () => {
   it('deve disparar nova busca ao alterar filtros de ano, semestre e status', async () => {
     const user = userEvent.setup();
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
 
@@ -226,7 +227,7 @@ describe('ListaTurmas Feature', () => {
     const user = userEvent.setup();
     (criarTurma as jest.Mock).mockResolvedValue(mockTurmas[0]);
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
     await screen.findByText('Anatomia Sistemica');
 
     await user.click(screen.getByRole('button', { name: /Nova Turma/i }));
@@ -244,7 +245,7 @@ describe('ListaTurmas Feature', () => {
     const user = userEvent.setup();
     (atualizarTurma as jest.Mock).mockResolvedValue(mockTurmas[0]);
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
     await screen.findByText('Anatomia Sistemica');
 
     await user.click(screen.getAllByRole('button', { name: /Editar/i })[0]);
@@ -262,7 +263,7 @@ describe('ListaTurmas Feature', () => {
   it('deve abrir modal de alunos e atualizar listagem apos alteracao', async () => {
     const user = userEvent.setup();
 
-    render(<ListaTurmas />);
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
     await screen.findByText('Anatomia Sistemica');
 
     await user.click(screen.getAllByRole('button', { name: /Alunos/i })[0]);
@@ -278,7 +279,7 @@ describe('ListaTurmas Feature', () => {
     it('deve abrir o modal ao clicar em excluir e permitir cancelar', async () => {
       const user = userEvent.setup();
 
-      render(<ListaTurmas />);
+      render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
       await screen.findByText('Anatomia Sistemica');
 
       await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
@@ -295,7 +296,7 @@ describe('ListaTurmas Feature', () => {
       const user = userEvent.setup();
       (excluirTurma as jest.Mock).mockResolvedValue(undefined);
 
-      render(<ListaTurmas />);
+      render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
       await screen.findByText('Anatomia Sistemica');
 
       await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
@@ -312,7 +313,7 @@ describe('ListaTurmas Feature', () => {
       const erroExclusao = new Error('Falha ao excluir');
       (excluirTurma as jest.Mock).mockRejectedValue(erroExclusao);
 
-      render(<ListaTurmas />);
+      render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
       await screen.findByText('Anatomia Sistemica');
 
       await user.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
