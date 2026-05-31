@@ -196,6 +196,7 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
               </div>
               <button
                 type="button"
+                aria-label="Fechar detalhes do aluno"
                 onClick={() => setSelected(null)}
                 className="rounded-lg p-2 text-gray-400 hover:bg-gray-100"
               >
