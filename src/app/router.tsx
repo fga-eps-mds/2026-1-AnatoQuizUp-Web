@@ -21,9 +21,10 @@ import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
 import { HistoricoPage } from "../pages/historicoAluno/ui/HistoricoPage";
 import { HistoricoDetalhesPage } from "../pages/historicoAluno/ui/HistoricoDetalhesPage";
 
-// Telas do Admin
 import { AdminDashboardPage } from "../pages/admin/ui/AdminDashboardPage";
 import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
+
+import { DashboardAlunoPage } from "../pages/dashboardAluno";
 
 export const AppRouter = () => {
   return (
@@ -50,6 +51,16 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <HomeAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* NOVA ROTA DO DASHBOARD */}
+        <Route
+          path="/aluno/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <DashboardAlunoPage />
             </ProtectedRoute>
           }
         />
