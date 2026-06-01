@@ -23,7 +23,7 @@ const AVATAR_COLORS = [
 ];
 
 function avatarColor(id: string): string {
-  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const hash = id.split('').reduce((acc, c) => acc + (c.codePointAt(0) ?? 0), 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
@@ -31,7 +31,7 @@ function initials(nome: string): string {
   const parts = nome.trim().split(' ').filter(Boolean);
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (parts[0][0] + parts.at(-1)![0]).toUpperCase();
 }
 
 function formatarData(iso: string | null): string {

@@ -142,4 +142,69 @@ describe('TabelaDesempenhoIndividual', () => {
 
     expect(screen.getByText('Nenhuma questão respondida ainda.')).toBeInTheDocument();
   });
+
+  it('deve formatar a última atividade como "Hoje", "Ontem", data antiga e traço', async () => {
+    const agora = new Date();
+    const ontem = new Date(agora);
+    ontem.setDate(agora.getDate() - 1);
+
+    mockBuscarIndividual.mockResolvedValue({
+      alunos: [
+        { ...alunoStats, alunoId: 'a-hoje', ultimaAtividade: agora.toISOString() },
+        { ...alunoStats, alunoId: 'a-ontem', ultimaAtividade: ontem.toISOString() },
+        { ...alunoStats, alunoId: 'a-antigo', ultimaAtividade: '2020-01-15T10:00:00.000Z' },
+        { ...alunoStats, alunoId: 'a-sem', ultimaAtividade: null },
+      ],
+    });
+    mockBuscarUsuarios.mockResolvedValue([]);
+
+    render(<TabelaDesempenhoIndividual turmaId="turma-123" />);
+
+    expect(await screen.findByText(/^Hoje,/)).toBeInTheDocument();
+    expect(screen.getByText(/^Ontem,/)).toBeInTheDocument();
+    expect(screen.getByText('15/01/2020')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('deve aplicar as faixas de cor para taxas alta, média e baixa', async () => {
+    mockBuscarIndividual.mockResolvedValue({
+      alunos: [
+        { ...alunoStats, alunoId: 'a-alta', taxaAcerto: 85 },
+        { ...alunoStats, alunoId: 'a-media', taxaAcerto: 50 },
+        { ...alunoStats, alunoId: 'a-baixa', taxaAcerto: 20 },
+      ],
+    });
+    mockBuscarUsuarios.mockResolvedValue([]);
+
+    render(<TabelaDesempenhoIndividual turmaId="turma-123" />);
+
+    expect(await screen.findByText('85%')).toBeInTheDocument();
+    expect(screen.getByText('50%')).toBeInTheDocument();
+    expect(screen.getByText('20%')).toBeInTheDocument();
+  });
+
+  it('deve exibir "Aluno desconhecido" quando o usuário não é encontrado', async () => {
+    mockBuscarIndividual.mockResolvedValue({ alunos: [{ ...alunoStats, alunoId: 'sem-usuario' }] });
+    mockBuscarUsuarios.mockResolvedValue([]);
+
+    render(<TabelaDesempenhoIndividual turmaId="turma-123" />);
+
+    expect(await screen.findByText('Aluno desconhecido')).toBeInTheDocument();
+    expect(screen.getByText('sem-usuario')).toBeInTheDocument();
+  });
+
+  it('deve logar erro no console quando a busca falha', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const erro = new Error('Falha de rede');
+    mockBuscarIndividual.mockRejectedValue(erro);
+
+    render(<TabelaDesempenhoIndividual turmaId="turma-123" />);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Erro ao carregar desempenho individual:', erro);
+    });
+
+    expect(await screen.findByText('Nenhum aluno encontrado na turma.')).toBeInTheDocument();
+    consoleSpy.mockRestore();
+  });
 });
