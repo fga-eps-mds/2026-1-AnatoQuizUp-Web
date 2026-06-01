@@ -11,6 +11,11 @@ jest.mock('../../../entities/turmas/api/turmaApi', () => ({
 
 jest.mock('../../../entities/dashboardTurma/api/dashboardTurmaApi', () => ({
   buscarDashboardMacro: jest.fn(),
+  buscarDesempenhoIndividual: jest.fn(),
+}));
+
+jest.mock('../../../entities/usuarios/api/usuarioApi', () => ({
+  buscarUsuariosPorIds: jest.fn(),
 }));
 
 const mockTurma = {
