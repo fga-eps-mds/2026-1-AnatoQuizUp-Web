@@ -6,6 +6,7 @@ import {
   desfazerAmizade,
   enviarSolicitacao,
   listarAmigos,
+  listarConvitesEnviados,
   listarConvitesRecebidos,
   recusarConvite,
 } from './friendshipService';
@@ -98,6 +99,17 @@ describe('friendshipService', () => {
 
     expect(httpClient.get).toHaveBeenCalledWith('/amizade/convites/recebidos', {
       params: { page: 1 },
+    });
+    expect(resultado).toEqual(respostaPaginada);
+  });
+
+  it('deve listar convites enviados', async () => {
+    (httpClient.get as jest.Mock).mockResolvedValue({ data: respostaPaginada });
+
+    const resultado = await listarConvitesEnviados({ limit: 10 });
+
+    expect(httpClient.get).toHaveBeenCalledWith('/amizade/convites/enviados', {
+      params: { limit: 10 },
     });
     expect(resultado).toEqual(respostaPaginada);
   });

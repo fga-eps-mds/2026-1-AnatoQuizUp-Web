@@ -58,6 +58,21 @@ export const listarConvitesRecebidos = async (
   }
 };
 
+export const listarConvitesEnviados = async (
+  params?: ListarConvitesParams,
+): Promise<RespostaPaginada<ResumoAmizade>> => {
+  try {
+    const { data } = await httpClient.get<RespostaPaginada<ResumoAmizade>>(
+      `${AMIZADE_ENDPOINT}/convites/enviados`,
+      { params },
+    );
+
+    return data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
 export const aceitarConvite = async (id: string): Promise<MensagemResponse> => {
   try {
     const { data } = await httpClient.patch<MensagemResponse>(
