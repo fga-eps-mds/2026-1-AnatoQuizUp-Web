@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useAuth } from '../../../app/providers/AuthProvider';
 import {
   aceitarConvite,
   alterarVisibilidade,
@@ -63,6 +64,7 @@ const montarIniciais = (nome: string) => {
 };
 
 export const AmigosPage = () => {
+  const { user } = useAuth();
   const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>('buscar');
   const [termoBusca, setTermoBusca] = useState('');
   const [resultadosBusca, setResultadosBusca] = useState<ResumoAmigo[]>([]);
@@ -79,7 +81,7 @@ export const AmigosPage = () => {
   const [carregandoAmigos, setCarregandoAmigos] = useState(true);
   const [erroAmigos, setErroAmigos] = useState<string | null>(null);
   const [processandoAmizadeId, setProcessandoAmizadeId] = useState<string | null>(null);
-  const [perfilVisivel, setPerfilVisivel] = useState(true);
+  const [perfilVisivel, setPerfilVisivel] = useState(user?.visivel ?? true);
   const [alterandoPrivacidade, setAlterandoPrivacidade] = useState(false);
   const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
 
@@ -143,6 +145,12 @@ export const AmigosPage = () => {
       ativo = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (user?.visivel !== undefined) {
+      setPerfilVisivel(user.visivel);
+    }
+  }, [user?.visivel]);
 
   const handleBuscarColegas = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -310,52 +318,6 @@ export const AmigosPage = () => {
             tone="blue"
           />
         </div>
-
-        <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                <ShieldCheck size={22} />
-              </span>
-              <div>
-                <h2 className="text-lg font-black text-[#0A1128]">Privacidade da rede</h2>
-                <p className="mt-2 max-w-2xl text-sm font-medium text-[#0A1128]/60">
-                  {perfilVisivel
-                    ? 'Seu perfil aparece na busca de outros alunos.'
-                    : 'Seu perfil nao aparece na busca de outros alunos.'}
-                </p>
-                {erroPrivacidade && (
-                  <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
-                    {erroPrivacidade}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-black text-[#0A1128]/60">
-                {perfilVisivel ? 'Visivel' : 'Privado'}
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={perfilVisivel}
-                aria-label="Alternar privacidade da rede"
-                disabled={alterandoPrivacidade}
-                onClick={() => void handleAlterarVisibilidade()}
-                className={`relative h-8 w-14 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                  perfilVisivel ? 'bg-[#00A88F]' : 'bg-[#0A1128]/25'
-                }`}
-              >
-                <span
-                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
-                    perfilVisivel ? 'left-7' : 'left-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </section>
 
         <div className="w-full overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
           <div className="grid grid-cols-3">
@@ -685,6 +647,52 @@ export const AmigosPage = () => {
             </div>
           </section>
         )}
+
+        <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <ShieldCheck size={22} />
+              </span>
+              <div>
+                <h2 className="text-lg font-black text-[#0A1128]">Privacidade da rede</h2>
+                <p className="mt-2 max-w-2xl text-sm font-medium text-[#0A1128]/60">
+                  {perfilVisivel
+                    ? 'Seu perfil aparece na busca de outros alunos.'
+                    : 'Seu perfil nao aparece na busca de outros alunos.'}
+                </p>
+                {erroPrivacidade && (
+                  <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
+                    {erroPrivacidade}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black text-[#0A1128]/60">
+                {perfilVisivel ? 'Visivel' : 'Privado'}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={perfilVisivel}
+                aria-label="Alternar privacidade da rede"
+                disabled={alterandoPrivacidade}
+                onClick={() => void handleAlterarVisibilidade()}
+                className={`relative h-8 w-14 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  perfilVisivel ? 'bg-[#00A88F]' : 'bg-[#0A1128]/25'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+                    perfilVisivel ? 'left-7' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
   );
