@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -73,6 +73,14 @@ export const Header = () => {
         isRouteActive("/professor/home") ||
         isRouteActive("/home") ||
         isRouteActive("/"),
+    };
+
+    const studentDashboardItem: NavItem = {
+      key: "aluno-dashboard",
+      label: "Dashboard",
+      icon: PieChart,
+      onSelect: () => navigate("/aluno/dashboard"),
+      isActive: location.pathname.startsWith("/aluno/dashboard"),
     };
 
     const studentQuestaoItem: NavItem = {
@@ -167,7 +175,7 @@ export const Header = () => {
 
       case "STUDENT":
       default:
-        return [homeItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
+        return [homeItem, studentDashboardItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
     }
   };
 
