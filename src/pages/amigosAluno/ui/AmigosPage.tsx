@@ -146,12 +146,6 @@ export const AmigosPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (user?.visivel !== undefined) {
-      setPerfilVisivel(user.visivel);
-    }
-  }, [user?.visivel]);
-
   const handleBuscarColegas = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
