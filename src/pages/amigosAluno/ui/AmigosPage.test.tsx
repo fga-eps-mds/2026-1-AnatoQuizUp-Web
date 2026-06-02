@@ -493,4 +493,157 @@ describe('AmigosPage', () => {
       'true',
     );
   });
+
+  it('nao adiciona amigo duplicado quando ja existe na lista', async () => {
+    const user = userEvent.setup();
+    listarAmigosMock.mockResolvedValue({
+      dados: [amizadeAtiva],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    listarConvitesRecebidosMock.mockResolvedValue({
+      dados: [amizadeAtiva],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Convites/i }));
+    await screen.findByText('Rafael Oliveira');
+    await user.click(screen.getByRole('button', { name: /Aceitar/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Nenhum amigo adicionado')).not.toBeInTheDocument();
+    });
+  });
+
+  it('trata erro ao aceitar convite', async () => {
+    const user = userEvent.setup();
+    listarConvitesRecebidosMock.mockResolvedValue({
+      dados: [conviteRecebido],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    aceitarConviteMock.mockRejectedValue(new Error('Erro ao aceitar convite'));
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Convites/i }));
+    await screen.findByText('Isabela Costa');
+    await user.click(screen.getByRole('button', { name: /Aceitar/i }));
+
+    expect(await screen.findByText('Erro ao aceitar convite')).toBeInTheDocument();
+    expect(screen.getByText('Isabela Costa')).toBeInTheDocument();
+  });
+
+  it('trata erro ao recusar convite', async () => {
+    const user = userEvent.setup();
+    listarConvitesRecebidosMock.mockResolvedValue({
+      dados: [conviteRecebido],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    recusarConviteMock.mockRejectedValue(new Error('Erro ao recusar convite'));
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Convites/i }));
+    await screen.findByText('Isabela Costa');
+    await user.click(screen.getByRole('button', { name: /Recusar/i }));
+
+    expect(await screen.findByText('Erro ao recusar convite')).toBeInTheDocument();
+    expect(screen.getByText('Isabela Costa')).toBeInTheDocument();
+  });
+
+  it('trata erro ao desfazer amizade', async () => {
+    const user = userEvent.setup();
+    listarAmigosMock.mockResolvedValue({
+      dados: [amizadeAtiva],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    desfazerAmizadeMock.mockRejectedValue(new Error('Erro ao desfazer amizade'));
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+    await screen.findByText('Rafael Oliveira');
+    await user.click(screen.getByRole('button', { name: /Desfazer amizade/i }));
+
+    expect(await screen.findByText('Erro ao desfazer amizade')).toBeInTheDocument();
+    expect(screen.getByText('Rafael Oliveira')).toBeInTheDocument();
+  });
+
+  it('trata erro ao buscar colegas', async () => {
+    const user = userEvent.setup();
+    buscarColegasMock.mockRejectedValue(new Error('Erro na busca'));
+
+    render(<AmigosPage />);
+
+    await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
+    await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+
+    expect(await screen.findByText('Erro na busca')).toBeInTheDocument();
+  });
+
+  it('trata erro ao enviar solicitacao de amizade', async () => {
+    const user = userEvent.setup();
+    buscarColegasMock.mockResolvedValue({
+      dados: [
+        {
+          id: 'aluno-1',
+          nome: 'Lucas Mendes',
+          nickname: 'lucas',
+          curso: 'Medicina',
+          semestre: '3',
+        },
+      ],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    enviarSolicitacaoMock.mockRejectedValue(new Error('Erro ao enviar solicitacao'));
+
+    render(<AmigosPage />);
+
+    await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
+    await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+    await user.click(await screen.findByRole('button', { name: /Adicionar amigo/i }));
+
+    expect(await screen.findByText('Erro ao enviar solicitacao')).toBeInTheDocument();
+  });
+
+  it('nao realiza busca quando termo esta vazio', async () => {
+    const user = userEvent.setup();
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+
+    expect(buscarColegas).not.toHaveBeenCalled();
+  });
 });
