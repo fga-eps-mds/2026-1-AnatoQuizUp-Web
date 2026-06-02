@@ -1,5 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+// Mock AuthProvider to prevent import.meta errors
+jest.mock('../../../app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    user: {
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      visivel: true,
+    },
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 import {
   aceitarConvite,
   alterarVisibilidade,
