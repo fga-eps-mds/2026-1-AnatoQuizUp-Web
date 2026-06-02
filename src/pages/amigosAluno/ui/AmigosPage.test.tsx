@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   aceitarConvite,
+  alterarVisibilidade,
   buscarColegas,
   desfazerAmizade,
   enviarSolicitacao,
@@ -14,6 +15,7 @@ import { AmigosPage } from './AmigosPage';
 
 jest.mock('../../../features/friendship', () => ({
   aceitarConvite: jest.fn(),
+  alterarVisibilidade: jest.fn(),
   buscarColegas: jest.fn(),
   desfazerAmizade: jest.fn(),
   enviarSolicitacao: jest.fn(),
@@ -24,6 +26,7 @@ jest.mock('../../../features/friendship', () => ({
 }));
 
 const aceitarConviteMock = aceitarConvite as jest.Mock;
+const alterarVisibilidadeMock = alterarVisibilidade as jest.Mock;
 const buscarColegasMock = buscarColegas as jest.Mock;
 const desfazerAmizadeMock = desfazerAmizade as jest.Mock;
 const enviarSolicitacaoMock = enviarSolicitacao as jest.Mock;
@@ -113,6 +116,9 @@ describe('AmigosPage', () => {
     desfazerAmizadeMock.mockResolvedValue({
       mensagem: 'Amizade desfeita com sucesso',
     });
+    alterarVisibilidadeMock.mockResolvedValue({
+      mensagem: 'Visibilidade alterada com sucesso',
+    });
   });
 
   it('renderiza a pagina de rede do aluno', () => {
@@ -123,6 +129,10 @@ describe('AmigosPage', () => {
     expect(screen.getByText('amigos')).toBeInTheDocument();
     expect(screen.getByText('convites pendentes')).toBeInTheDocument();
     expect(screen.getByText('Perfil visivel')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /Alternar privacidade da rede/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     expect(screen.getByRole('button', { name: /Buscar colegas/i })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -435,5 +445,38 @@ describe('AmigosPage', () => {
       expect(screen.queryByText('Rafael Oliveira')).not.toBeInTheDocument();
     });
     expect(screen.getByText(/Nenhum amigo adicionado/i)).toBeInTheDocument();
+  });
+
+  it('altera privacidade para perfil privado', async () => {
+    const user = userEvent.setup();
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('switch', { name: /Alternar privacidade da rede/i }));
+
+    expect(alterarVisibilidade).toHaveBeenCalledWith(false);
+    expect(screen.getByText('Perfil privado')).toBeInTheDocument();
+    expect(screen.getAllByText('Privado')).toHaveLength(2);
+    expect(screen.getByRole('switch', { name: /Alternar privacidade da rede/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('restaura estado de privacidade quando a atualizacao falha', async () => {
+    const user = userEvent.setup();
+    alterarVisibilidadeMock.mockRejectedValue(new Error('Falha ao salvar privacidade'));
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('switch', { name: /Alternar privacidade da rede/i }));
+
+    expect(alterarVisibilidade).toHaveBeenCalledWith(false);
+    expect(await screen.findByText('Falha ao salvar privacidade')).toBeInTheDocument();
+    expect(screen.getByText('Perfil visivel')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /Alternar privacidade da rede/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
   });
 });

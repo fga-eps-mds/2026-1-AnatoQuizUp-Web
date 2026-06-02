@@ -4,6 +4,7 @@ import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'l
 import type { LucideIcon } from 'lucide-react';
 import {
   aceitarConvite,
+  alterarVisibilidade,
   buscarColegas,
   desfazerAmizade,
   enviarSolicitacao,
@@ -78,6 +79,9 @@ export const AmigosPage = () => {
   const [carregandoAmigos, setCarregandoAmigos] = useState(true);
   const [erroAmigos, setErroAmigos] = useState<string | null>(null);
   const [processandoAmizadeId, setProcessandoAmizadeId] = useState<string | null>(null);
+  const [perfilVisivel, setPerfilVisivel] = useState(true);
+  const [alterandoPrivacidade, setAlterandoPrivacidade] = useState(false);
+  const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -231,6 +235,25 @@ export const AmigosPage = () => {
     }
   };
 
+  const handleAlterarVisibilidade = async () => {
+    const proximoValor = !perfilVisivel;
+
+    setPerfilVisivel(proximoValor);
+    setAlterandoPrivacidade(true);
+    setErroPrivacidade(null);
+
+    try {
+      await alterarVisibilidade(proximoValor);
+    } catch (error) {
+      setPerfilVisivel(!proximoValor);
+      setErroPrivacidade(
+        error instanceof Error ? error.message : 'Erro ao atualizar privacidade.',
+      );
+    } finally {
+      setAlterandoPrivacidade(false);
+    }
+  };
+
   const handleRecusarConvite = async (id: string) => {
     setProcessandoConviteId(id);
     setErroConvites(null);
@@ -277,12 +300,62 @@ export const AmigosPage = () => {
           />
           <CardResumo
             icon={ShieldCheck}
-            label="Perfil visivel"
-            value="Ativo"
-            description="Outros alunos podem encontrar voce"
+            label={perfilVisivel ? 'Perfil visivel' : 'Perfil privado'}
+            value={perfilVisivel ? 'Ativo' : 'Privado'}
+            description={
+              perfilVisivel
+                ? 'Outros alunos podem encontrar voce'
+                : 'Voce nao aparece nos resultados'
+            }
             tone="blue"
           />
         </div>
+
+        <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <ShieldCheck size={22} />
+              </span>
+              <div>
+                <h2 className="text-lg font-black text-[#0A1128]">Privacidade da rede</h2>
+                <p className="mt-2 max-w-2xl text-sm font-medium text-[#0A1128]/60">
+                  {perfilVisivel
+                    ? 'Seu perfil aparece na busca de outros alunos.'
+                    : 'Seu perfil nao aparece na busca de outros alunos.'}
+                </p>
+                {erroPrivacidade && (
+                  <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
+                    {erroPrivacidade}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black text-[#0A1128]/60">
+                {perfilVisivel ? 'Visivel' : 'Privado'}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={perfilVisivel}
+                aria-label="Alternar privacidade da rede"
+                disabled={alterandoPrivacidade}
+                onClick={() => void handleAlterarVisibilidade()}
+                className={`relative h-8 w-14 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  perfilVisivel ? 'bg-[#00A88F]' : 'bg-[#0A1128]/25'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+                    perfilVisivel ? 'left-7' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </section>
 
         <div className="w-full overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
           <div className="grid grid-cols-3">
