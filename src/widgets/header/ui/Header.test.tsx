@@ -67,6 +67,7 @@ describe('Header', () => {
     await testUser.click(screen.getByRole('button', { name: /Sair da conta/i }));
 
     expect(logout).toHaveBeenCalledTimes(1);
+
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent('/login');
     });
@@ -97,7 +98,10 @@ describe('Header', () => {
 
     await testUser.click(screen.getByRole('button', { name: /Ver como aluno/i }));
 
-    expect(screen.getByRole('button', { name: /Sair da visão de aluno/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /Sair da visão de aluno/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   it('navigates professors to the question bank', async () => {
@@ -113,7 +117,10 @@ describe('Header', () => {
   it('renders the active admin users item', () => {
     renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/admin/usuarios');
 
-    expect(screen.getByRole('button', { name: /Gerenciar Usuários/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /Gerenciar Usuários/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   it('opens and closes the mobile drawer', async () => {
@@ -141,13 +148,32 @@ describe('Header', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/turmas');
   });
 
-it('does not render turmas item for admin', () => {
-  renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/turmas');
+  it('does not render turmas item for admin', () => {
+    renderHeader({ user: makeUser('ADMIN'), isAuthenticated: true }, '/turmas');
 
-  expect(screen.queryByRole('button', { name: /Turmas/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Início/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Gerenciar Usuários/i })).toBeInTheDocument();
-});
+    expect(screen.queryByRole('button', { name: /Turmas/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Início/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Gerenciar Usuários/i })).toBeInTheDocument();
+  });
+
+  it('navigates students to dashboard page', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/aluno/home');
+
+    await testUser.click(screen.getByRole('button', { name: /Dashboard|Evolução/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/dashboard');
+  });
+
+  it('renders the active dashboard item for student', () => {
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/aluno/dashboard');
+
+    expect(screen.getByRole('button', { name: /Dashboard|Evolução/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
 
   it('navigates students to minhas turmas page', async () => {
     const testUser = userEvent.setup();
@@ -165,9 +191,10 @@ it('does not render turmas item for admin', () => {
       '/aluno/turmas/turma-1',
     );
 
-    expect(
-      screen.getByRole('button', { name: /Minhas Turmas/i }),
-    ).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /Minhas Turmas/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   it('closes the mobile drawer when clicking the close button (X)', async () => {
@@ -201,12 +228,12 @@ it('does not render turmas item for admin', () => {
 
   it('navigates to home when clicking the mobile logo', async () => {
     const testUser = userEvent.setup();
-    
+
     renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/outra-rota');
 
     const logos = screen.getAllByAltText('AnatoQuizUp');
-    const mobileLogoButton = logos[0].closest('button'); 
-    
+    const mobileLogoButton = logos[0].closest('button');
+
     if (mobileLogoButton) {
       await testUser.click(mobileLogoButton);
     }

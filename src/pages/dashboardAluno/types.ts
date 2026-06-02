@@ -1,3 +1,5 @@
+export type StatusTemaDashboard = "Tranquilo" | "Atenção" | "Crítico";
+
 export interface TemaDashboard {
   temaId: string;
   nome: string;
@@ -5,7 +7,7 @@ export interface TemaDashboard {
   acertos: number;
   erros: number;
   taxaAcerto: number;
-  status: "Tranquilo" | "Atenção" | "Crítico" | string;
+  status: StatusTemaDashboard;
 }
 
 export interface DashboardAlunoResponse {
