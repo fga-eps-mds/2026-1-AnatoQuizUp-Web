@@ -1,5 +1,5 @@
 import { httpClient } from '../../../shared/api/httpClient';
-import { buscarAlunos, buscarUsuariosPorIds } from './usuarioApi';
+import { buscarAlunos, buscarUsuarioPorId, buscarUsuariosPorIds } from './usuarioApi';
 
 jest.mock('../../../shared/api/httpClient', () => ({
   httpClient: {
@@ -57,5 +57,21 @@ describe('usuarioApi', () => {
 
     expect(httpClient.get).not.toHaveBeenCalled();
     expect(resultado).toEqual([]);
+  });
+
+  it('deve buscar usuario publico por id', async () => {
+    const usuarioPublico = {
+      id: 'prof-1',
+      nome: 'Maria Souza',
+      papel: 'PROFESSOR',
+    };
+    (httpClient.get as jest.Mock).mockResolvedValue({
+      data: { mensagem: 'Usuario encontrado', dados: usuarioPublico },
+    });
+
+    const resultado = await buscarUsuarioPorId('prof-1');
+
+    expect(httpClient.get).toHaveBeenCalledWith('/usuarios/prof-1');
+    expect(resultado).toEqual(usuarioPublico);
   });
 });

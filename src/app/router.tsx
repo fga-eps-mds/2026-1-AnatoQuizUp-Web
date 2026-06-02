@@ -12,12 +12,19 @@ import { HomeProfessorPage } from "../pages/homeProfessor";
 import { QuestionsPage } from "../pages/questao";
 import { CreateQuestionPage } from "../pages/professor/criar-questao";
 import { TurmasPage } from "../pages/turma/ui/TurmaPage";
+import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
+import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
+import { TurmaDetalhesPage } from "../pages/TurmaDetalhes";
+
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
-
 import { HistoricoPage } from "../pages/historicoAluno/ui/HistoricoPage";
-
 import { HistoricoDetalhesPage } from "../pages/historicoAluno/ui/HistoricoDetalhesPage";
+
+import { AdminDashboardPage } from "../pages/admin/ui/AdminDashboardPage";
+import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
+
+import { DashboardAlunoPage } from "../pages/dashboardAluno";
 
 export const AppRouter = () => {
   return (
@@ -39,16 +46,43 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route 
+        <Route
           path="/aluno/home"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <HomeAlunoPage />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        {/* ROTA: ESCOLHA O QUIZ */}
+        {/* NOVA ROTA DO DASHBOARD */}
+        <Route
+          path="/aluno/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <DashboardAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/turmas"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <MinhasTurmasAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/turmas/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <TurmaDetalheAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route 
           path="/aluno/quiz/escolha"
           element={
@@ -58,15 +92,6 @@ export const AppRouter = () => {
           } 
         />
 
-        {/* ROTA: RESPONDER O QUIZ (A que estava faltando!) */}
-        <Route
-          path="/aluno/quiz/escolha"
-          element={
-            <ProtectedRoute allowedRoles={['STUDENT']}>
-              <EscolhaQuizPage />
-            </ProtectedRoute>
-          } 
-        />
         <Route 
           path="/aluno/quiz/responder"
           element={
@@ -84,7 +109,6 @@ export const AppRouter = () => {
             </ProtectedRoute>
           } 
         />
-
 
         <Route 
           path="/aluno/historico/detalhes"
@@ -136,6 +160,34 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
               <TurmasPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/turmas/:id"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <TurmaDetalhesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* --- ROTAS DO ADMIN --- */}
+        <Route
+          path="/admin/home"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <HomeAdminPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboardPage />
             </ProtectedRoute>
           }
         />

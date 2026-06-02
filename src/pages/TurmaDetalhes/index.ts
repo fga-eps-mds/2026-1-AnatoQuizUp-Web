@@ -1,0 +1,1 @@
+export {TurmaDetalhesPage} from './ui/TurmaDetalhesPage'

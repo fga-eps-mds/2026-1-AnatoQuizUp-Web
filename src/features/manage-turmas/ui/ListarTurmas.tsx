@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Edit, Plus, Search, Trash2, Users } from 'lucide-react';
 import type { SalvarTurmaPayload, StatusTurma, Turma } from '../../../entities/turmas/model/types';
+import { Link} from 'react-router-dom'; 
 import {
   atualizarTurma,
   criarTurma,
@@ -248,7 +249,11 @@ export const ListaTurmas = () => {
           <tbody className="divide-y divide-gray-200">
             {turmas.map((turma) => (
               <tr key={turma.id} className="hover:bg-gray-50/50">
-                <td className="px-6 py-4 font-bold text-gray-900">{turma.nome}</td>
+                <td className="px-6 py-4 font-bold text-gray-900">
+                  <Link to={`/turmas/${turma.id}`} className="hover:text-teal-600 hover:underline">
+                    {turma.nome}
+                  </Link>
+                </td>
                 <td className="px-6 py-4">{turma.ano}.{turma.semestre}</td>
                 <td className="px-6 py-4">{turma.descricao}</td>
                 <td className="px-6 py-4">

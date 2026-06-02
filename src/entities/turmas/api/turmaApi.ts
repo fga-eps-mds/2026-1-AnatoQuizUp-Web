@@ -64,3 +64,9 @@ export const vincularAlunoTurma = async (turmaId: string, alunoId: string) => {
 export const desvincularAlunoTurma = async (turmaId: string, alunoId: string) => {
   await httpClient.delete(`/turmas/${turmaId}/alunos/${alunoId}`);
 };
+
+
+export const buscarTurmaPorId = async (id: string) => {
+  const response = await httpClient.get<RespostaApi<TurmaApi>>(`/turmas/${id}`);
+  return normalizarTurma(response.data.dados);
+};

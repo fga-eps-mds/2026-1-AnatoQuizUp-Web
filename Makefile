@@ -75,7 +75,7 @@ dev-stack: ## Imprime instrucoes para subir Backend + BFF + Web (3 terminais)
 	@echo "Para rodar a stack completa, abra 3 terminais e rode:"
 	@echo ""
 	@echo "  Terminal 1 (Backend):"
-	@echo "    cd ../2026-1-AnatoQuizUp-Backend && make dev"
+	@echo "    cd ../2026-1-AnatoQuizUp-Usuario-Service && make dev"
 	@echo ""
 	@echo "  Terminal 2 (BFF):"
 	@echo "    cd ../2026-1-AnatoQuizUp-API && make dev"

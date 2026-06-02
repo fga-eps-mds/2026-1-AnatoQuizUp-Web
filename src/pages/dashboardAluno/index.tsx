@@ -1,0 +1,1 @@
+export { DashboardAlunoPage } from "./DashboardAlunoPage";

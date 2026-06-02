@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
-import type { Role } from "../../../entities/user/model/types";
 import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
 
 type NavItem = {
@@ -27,6 +26,7 @@ export const Header = () => {
 
   useEffect(() => {
     if (!isDrawerOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         drawerRef.current &&
@@ -35,7 +35,9 @@ export const Header = () => {
         setIsDrawerOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDrawerOpen]);
 
@@ -53,7 +55,7 @@ export const Header = () => {
 
   const isRouteActive = (path: string) => location.pathname === path;
 
-  const buildNavItems = (role: Role): NavItem[] => {
+  const buildNavItems = (role: string): NavItem[] => {
     const homeItem: NavItem = {
       key: "home",
       label: "Início",
@@ -71,6 +73,14 @@ export const Header = () => {
         isRouteActive("/professor/home") ||
         isRouteActive("/home") ||
         isRouteActive("/"),
+    };
+
+    const studentDashboardItem: NavItem = {
+      key: "aluno-dashboard",
+      label: "Dashboard",
+      icon: PieChart,
+      onSelect: () => navigate("/aluno/dashboard"),
+      isActive: location.pathname.startsWith("/aluno/dashboard"),
     };
 
     const studentQuestaoItem: NavItem = {
@@ -95,6 +105,14 @@ export const Header = () => {
       icon: BookOpen,
       onSelect: () => navigate("/turmas"),
       isActive: location.pathname.startsWith("/turmas"),
+    };
+
+    const minhasTurmasAlunoItem: NavItem = {
+      key: "minhas-turmas",
+      label: "Minhas Turmas",
+      icon: BookOpen,
+      onSelect: () => navigate("/aluno/turmas"),
+      isActive: location.pathname.startsWith("/aluno/turmas"),
     };
 
     const listasItem: NavItem = {
@@ -130,31 +148,34 @@ export const Header = () => {
           listasItem,
           turmasItem,
         ];
+
       case "ADMIN":
+      case "ADMINISTRADOR":
         return [
-          homeItem,
           {
-            key: "questoes",
-            label: "Questões",
-            icon: Newspaper,
-            onSelect: () => navigate("/professor/questoes"),
+            key: "admin-home",
+            label: "Início",
+            icon: Home,
+            onSelect: () => navigate("/admin/home"),
             isActive:
-              location.pathname.startsWith("/professor/questoes") ||
-              location.pathname.startsWith("/professor/criar-questao"),
+              isRouteActive("/admin/home") ||
+              isRouteActive("/home") ||
+              isRouteActive("/"),
           },
-          listasItem,
-          turmasItem,
           {
             key: "admin-users",
             label: "Gerenciar Usuários",
             icon: Users,
-            onSelect: () => navigate("/admin/usuarios"),
-            isActive: isRouteActive("/admin/usuarios"),
+            onSelect: () => navigate("/admin/dashboard"),
+            isActive:
+              isRouteActive("/admin/dashboard") ||
+              isRouteActive("/admin/usuarios"),
           },
         ];
+
       case "STUDENT":
       default:
-        return [homeItem, studentQuestaoItem, studentHistoricoItem];
+        return [homeItem, studentDashboardItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
     }
   };
 
@@ -224,6 +245,7 @@ export const Header = () => {
             </span>
           </div>
         </div>
+
         <button
           onClick={() => void handleLogout()}
           className="flex cursor-pointer items-center gap-3 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#fffffe]/60 hover:text-red-400 transition-colors rounded-lg"

@@ -1,6 +1,6 @@
 # AnatoQuizUp Web
 
-Frontend do projeto **AnatoQuizUp** — SPA em React + Vite + Tailwind. Consome **somente o BFF** (não acessa o Backend diretamente).
+Frontend do projeto **AnatoQuizUp** — SPA em React + Vite + Tailwind. Consome **somente o BFF** (não acessa o Usuario-Service nem o Quiz-Service diretamente).
 
 ## Stack
 
@@ -22,7 +22,7 @@ Frontend do projeto **AnatoQuizUp** — SPA em React + Vite + Tailwind. Consome 
 | GNU Make | opcional | Windows: `choco install make` |
 | BFF rodando em `localhost:4000` | — | siga o README de `2026-1-AnatoQuizUp-BFF` antes |
 
-> O Frontend **não fala** com o Backend diretamente. Você precisa do **BFF** rodando para fluxos autenticados funcionarem.
+> O Frontend **não fala** com Usuario-Service ou Quiz-Service diretamente. Você precisa do **BFF** rodando para fluxos autenticados funcionarem.
 
 ## Setup local — passo a passo
 
@@ -39,7 +39,7 @@ cd 2026-1-AnatoQuizUp-Web
 Copy-Item .env.example .env
 ```
 
-O `.env` deve apontar para o **BFF** (porta 4000), não para o Backend:
+O `.env` deve apontar para o **BFF** (porta 4000), não para os serviços de domínio:
 
 ```dotenv
 VITE_API_URL=http://localhost:4000/api/v1
@@ -57,13 +57,16 @@ npm run dev   # vite em http://localhost:5173
 
 ## Stack completa de desenvolvimento
 
-Para rodar a aplicação fim-a-fim, você precisa de **três processos** em três terminais:
+Para rodar a aplicação fim-a-fim, você precisa de **quatro processos** em quatro terminais:
 
 | Terminal | Repo | Porta | Comando |
 |---|---|---|---|
-| 1 | `2026-1-AnatoQuizUp-Backend` | 3333 | `npm run dev` (com Postgres no Docker) |
-| 2 | `2026-1-AnatoQuizUp-BFF` | 4000 | `npm run dev` |
-| 3 | `2026-1-AnatoQuizUp-Web` (este) | 5173 | `npm run dev` |
+| 1 | `2026-1-AnatoQuizUp-Usuario-Service` | 3333 | `npm run dev` (com Postgres `:5432` no Docker) |
+| 2 | `2026-1-AnatoQuizUp-Quiz-Service` | 3334 | `npm run dev` (com Postgres `:5433` + MinIO no Docker) |
+| 3 | `2026-1-AnatoQuizUp-BFF` | 4000 | `npm run dev` |
+| 4 | `2026-1-AnatoQuizUp-Web` (este) | 5173 | `npm run dev` |
+
+> Para passo-a-passo completo (envs, docker, smoke tests, troubleshooting), veja `2026-1-AnatoQuizUp-Doc/docs/contribuicao/setup-local.md`.
 
 Atalho prático no Web:
 
@@ -91,15 +94,28 @@ make clean      # apaga dist/ e coverage/
 src/
 ├── app/                     # configuração global, providers, rotas, layouts, estilos
 ├── pages/                   # telas acessadas por rota
+│   ├── aluno/{minhas-turmas, turma}/    # visão do aluno
+│   ├── forgot-password/, reset-password/
+│   ├── home/, homeAluno/, homeProfessor/
+│   ├── login/, register/, professor-register/
+│   ├── professor/criar-questao/
+│   ├── questao/                          # banco de questões
+│   └── turma/                            # gestão de turmas (professor/admin)
 ├── widgets/                 # blocos compostos de interface (header, sidebar, ...)
 ├── features/                # funcionalidades orientadas ao usuário
 │   ├── auth-by-credencials/
+│   ├── manage-questions/
+│   ├── manage-turmas/
+│   ├── minhas-turmas/
 │   ├── recover-password/
+│   ├── register-professor/
 │   └── register-student/
 ├── entities/                # modelos centrais do domínio
-│   └── user/
+│   ├── turmas/
+│   ├── user/                # ainda em inglês (débito conhecido)
+│   └── usuarios/
 ├── shared/                  # genérico/técnico
-│   ├── api/                 # httpClient (axios), services
+│   ├── api/                 # httpClient (axios, com refresh-token rotation), services
 │   ├── assets/
 │   ├── config/env.ts        # API_BASE_URL e USE_MOCKS
 │   ├── constants/
@@ -124,7 +140,7 @@ src/
 | Sintoma | Causa | Solução |
 |---|---|---|
 | Network error ao tentar login | BFF não está rodando | Suba o BFF em `localhost:4000` |
-| Login devolve 401 mesmo com credenciais certas | `JWT_SECRET_KEY` divergente entre BFF e Backend | Confira que estão idênticos nos dois `.env` |
+| Login devolve 401 mesmo com credenciais certas | `JWT_SECRET_KEY` divergente entre BFF e Usuario-Service | Confira que estão idênticos nos dois `.env` |
 | `VITE_API_URL` mudou mas o front continua chamando URL antiga | Vite cacheia a build | Stop `npm run dev`, apague `node_modules/.vite/` e suba de novo |
 | Erro 503 com `IA_INDISPONIVEL` em `/ia/...` | Esperado | AI Service ainda não foi implementado nesta release; mantenha placeholders |
 | CORS bloqueando localhost | `CORS_ORIGINS` do BFF não inclui `http://localhost:5173` | Editar `.env` do BFF |
