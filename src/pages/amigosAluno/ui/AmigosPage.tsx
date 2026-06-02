@@ -5,7 +5,9 @@ import type { LucideIcon } from 'lucide-react';
 import {
   aceitarConvite,
   buscarColegas,
+  desfazerAmizade,
   enviarSolicitacao,
+  listarAmigos,
   listarConvitesEnviados,
   listarConvitesRecebidos,
   recusarConvite,
@@ -51,30 +53,6 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
   </article>
 );
 
-const PainelPlaceholder = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}) => (
-  <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
-    <div className="flex items-start gap-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#71edc8]/20 text-[#00A88F]">
-        <Icon size={22} />
-      </span>
-      <div>
-        <h2 className="text-lg font-black text-[#0A1128]">{title}</h2>
-        <p className="mt-2 max-w-2xl text-sm font-medium text-[#0A1128]/60">
-          {description}
-        </p>
-      </div>
-    </div>
-  </section>
-);
-
 const montarIniciais = (nome: string) => {
   const partes = nome.trim().split(/\s+/).filter(Boolean);
   const primeira = partes[0]?.[0] ?? '';
@@ -96,6 +74,10 @@ export const AmigosPage = () => {
   const [carregandoConvites, setCarregandoConvites] = useState(true);
   const [erroConvites, setErroConvites] = useState<string | null>(null);
   const [processandoConviteId, setProcessandoConviteId] = useState<string | null>(null);
+  const [amigos, setAmigos] = useState<ResumoAmizade[]>([]);
+  const [carregandoAmigos, setCarregandoAmigos] = useState(true);
+  const [erroAmigos, setErroAmigos] = useState<string | null>(null);
+  const [processandoAmizadeId, setProcessandoAmizadeId] = useState<string | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -129,7 +111,29 @@ export const AmigosPage = () => {
       }
     };
 
+    const carregarAmigos = async () => {
+      setCarregandoAmigos(true);
+      setErroAmigos(null);
+
+      try {
+        const resposta = await listarAmigos({ limit: 100 });
+
+        if (ativo) {
+          setAmigos(resposta.dados);
+        }
+      } catch (error) {
+        if (ativo) {
+          setErroAmigos(error instanceof Error ? error.message : 'Erro ao carregar amigos.');
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoAmigos(false);
+        }
+      }
+    };
+
     void carregarConvites();
+    void carregarAmigos();
 
     return () => {
       ativo = false;
@@ -182,17 +186,48 @@ export const AmigosPage = () => {
     );
   };
 
-  const handleAceitarConvite = async (id: string) => {
-    setProcessandoConviteId(id);
+  const adicionarAmigoDaSolicitacao = (convite: ResumoAmizade) => {
+    setAmigos((amigosAtuais) => {
+      if (amigosAtuais.some((amizade) => amizade.id === convite.id)) {
+        return amigosAtuais;
+      }
+
+      return [
+        {
+          ...convite,
+          statusAmizade: 'ATIVO',
+        },
+        ...amigosAtuais,
+      ];
+    });
+  };
+
+  const handleAceitarConvite = async (convite: ResumoAmizade) => {
+    setProcessandoConviteId(convite.id);
     setErroConvites(null);
 
     try {
-      await aceitarConvite(id);
-      removerConviteDaLista(id);
+      await aceitarConvite(convite.id);
+      removerConviteDaLista(convite.id);
+      adicionarAmigoDaSolicitacao(convite);
     } catch (error) {
       setErroConvites(error instanceof Error ? error.message : 'Erro ao aceitar convite.');
     } finally {
       setProcessandoConviteId(null);
+    }
+  };
+
+  const handleDesfazerAmizade = async (id: string) => {
+    setProcessandoAmizadeId(id);
+    setErroAmigos(null);
+
+    try {
+      await desfazerAmizade(id);
+      setAmigos((amigosAtuais) => amigosAtuais.filter((amizade) => amizade.id !== id));
+    } catch (error) {
+      setErroAmigos(error instanceof Error ? error.message : 'Erro ao desfazer amizade.');
+    } finally {
+      setProcessandoAmizadeId(null);
     }
   };
 
@@ -229,7 +264,7 @@ export const AmigosPage = () => {
           <CardResumo
             icon={Users}
             label="amigos"
-            value="0"
+            value={String(amigos.length)}
             description="Conexoes confirmadas"
             tone="teal"
           />
@@ -465,7 +500,7 @@ export const AmigosPage = () => {
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <button
                               type="button"
-                              onClick={() => void handleAceitarConvite(convite.id)}
+                              onClick={() => void handleAceitarConvite(convite)}
                               disabled={processando}
                               className="min-h-11 rounded-xl bg-[#00A88F] px-5 text-sm font-black text-white transition hover:bg-[#008f7a] disabled:cursor-not-allowed disabled:bg-[#0A1128]/20"
                             >
@@ -490,11 +525,92 @@ export const AmigosPage = () => {
         )}
 
         {abaAtiva === 'amigos' && (
-          <PainelPlaceholder
-            icon={UserRoundPlus}
-            title="Meus amigos"
-            description="Acompanhe suas conexoes confirmadas e remova amizades quando necessario."
-          />
+          <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#71edc8]/20 text-[#00A88F]">
+                <UserRoundPlus size={22} />
+              </span>
+              <div className="w-full min-w-0">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-[#0A1128]">Meus amigos</h2>
+                    <p className="mt-2 max-w-2xl text-sm font-medium text-[#0A1128]/60">
+                      Acompanhe suas conexoes confirmadas e remova amizades quando necessario.
+                    </p>
+                  </div>
+                  <span className="inline-flex w-fit rounded-full bg-[#71edc8]/20 px-3 py-1 text-xs font-black text-[#008f7a]">
+                    {amigos.length} amigos
+                  </span>
+                </div>
+
+                {erroAmigos && (
+                  <p className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
+                    {erroAmigos}
+                  </p>
+                )}
+
+                <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {carregandoAmigos && (
+                    <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60 md:col-span-2 xl:col-span-3">
+                      Carregando amigos...
+                    </p>
+                  )}
+
+                  {!carregandoAmigos && amigos.length === 0 && !erroAmigos && (
+                    <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60 md:col-span-2 xl:col-span-3">
+                      Nenhum amigo adicionado.
+                    </p>
+                  )}
+
+                  {!carregandoAmigos &&
+                    amigos.map((amizade) => {
+                      const processando = processandoAmizadeId === amizade.id;
+
+                      return (
+                        <article
+                          key={amizade.id}
+                          className="flex min-h-[168px] flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
+                              {montarIniciais(amizade.amigo.nome)}
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="truncate text-base font-black text-[#0A1128]">
+                                {amizade.amigo.nome}
+                              </h4>
+                              <p className="text-sm font-semibold text-[#0A1128]/55">
+                                {amizade.amigo.nickname
+                                  ? `@${amizade.amigo.nickname}`
+                                  : 'Sem nickname'}
+                              </p>
+                              <p className="text-xs font-semibold text-[#0A1128]/45">
+                                {[
+                                  amizade.amigo.curso,
+                                  amizade.amigo.semestre &&
+                                    `${amizade.amigo.semestre} semestre`,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' - ') || 'Dados academicos nao informados'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => void handleDesfazerAmizade(amizade.id)}
+                            disabled={processando}
+                            className="mt-5 min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
+                          >
+                            {processando ? 'Removendo...' : 'Desfazer amizade'}
+                          </button>
+                        </article>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </section>
         )}
       </section>
     </main>

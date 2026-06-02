@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import {
   aceitarConvite,
   buscarColegas,
+  desfazerAmizade,
   enviarSolicitacao,
+  listarAmigos,
   listarConvitesEnviados,
   listarConvitesRecebidos,
   recusarConvite,
@@ -13,7 +15,9 @@ import { AmigosPage } from './AmigosPage';
 jest.mock('../../../features/friendship', () => ({
   aceitarConvite: jest.fn(),
   buscarColegas: jest.fn(),
+  desfazerAmizade: jest.fn(),
   enviarSolicitacao: jest.fn(),
+  listarAmigos: jest.fn(),
   listarConvitesEnviados: jest.fn(),
   listarConvitesRecebidos: jest.fn(),
   recusarConvite: jest.fn(),
@@ -21,7 +25,9 @@ jest.mock('../../../features/friendship', () => ({
 
 const aceitarConviteMock = aceitarConvite as jest.Mock;
 const buscarColegasMock = buscarColegas as jest.Mock;
+const desfazerAmizadeMock = desfazerAmizade as jest.Mock;
 const enviarSolicitacaoMock = enviarSolicitacao as jest.Mock;
+const listarAmigosMock = listarAmigos as jest.Mock;
 const listarConvitesEnviadosMock = listarConvitesEnviados as jest.Mock;
 const listarConvitesRecebidosMock = listarConvitesRecebidos as jest.Mock;
 const recusarConviteMock = recusarConvite as jest.Mock;
@@ -40,6 +46,19 @@ const conviteRecebido = {
     nickname: 'isabela',
     curso: 'Medicina',
     semestre: '5',
+  },
+};
+
+const amizadeAtiva = {
+  ...conviteRecebido,
+  id: 'amizade-ativa-1',
+  statusAmizade: 'ATIVO',
+  amigo: {
+    id: 'aluno-2',
+    nome: 'Rafael Oliveira',
+    nickname: 'rafael',
+    curso: 'Medicina',
+    semestre: '4',
   },
 };
 
@@ -76,11 +95,23 @@ describe('AmigosPage', () => {
         totalPages: 0,
       },
     });
+    listarAmigosMock.mockResolvedValue({
+      dados: [],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+      },
+    });
     aceitarConviteMock.mockResolvedValue({
       mensagem: 'Convite aceito com sucesso',
     });
     recusarConviteMock.mockResolvedValue({
       mensagem: 'Convite recusado com sucesso',
+    });
+    desfazerAmizadeMock.mockResolvedValue({
+      mensagem: 'Amizade desfeita com sucesso',
     });
   });
 
@@ -97,6 +128,7 @@ describe('AmigosPage', () => {
       'true',
     );
     expect(screen.getByRole('heading', { name: /Buscar colegas/i })).toBeInTheDocument();
+    expect(listarAmigos).toHaveBeenCalledWith({ limit: 100 });
   });
 
   it('alterna entre as abas da tela', async () => {
@@ -309,6 +341,29 @@ describe('AmigosPage', () => {
     expect(screen.getByText(/Nenhum convite pendente/i)).toBeInTheDocument();
   });
 
+  it('adiciona convite aceito na lista de amigos localmente', async () => {
+    const user = userEvent.setup();
+    listarConvitesRecebidosMock.mockResolvedValue({
+      dados: [conviteRecebido],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Convites/i }));
+    await screen.findByText('Isabela Costa');
+    await user.click(screen.getByRole('button', { name: /Aceitar/i }));
+    await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+
+    expect(await screen.findByText('Isabela Costa')).toBeInTheDocument();
+    expect(screen.getByText('1 amigos')).toBeInTheDocument();
+  });
+
   it('recusa convite recebido e remove da lista', async () => {
     const user = userEvent.setup();
     listarConvitesRecebidosMock.mockResolvedValue({
@@ -332,5 +387,53 @@ describe('AmigosPage', () => {
       expect(screen.queryByText('Isabela Costa')).not.toBeInTheDocument();
     });
     expect(screen.getByText(/Nenhum convite pendente/i)).toBeInTheDocument();
+  });
+
+  it('lista amigos na aba meus amigos', async () => {
+    const user = userEvent.setup();
+    listarAmigosMock.mockResolvedValue({
+      dados: [amizadeAtiva],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+
+    expect(listarAmigos).toHaveBeenCalledWith({ limit: 100 });
+    expect(await screen.findByText('Rafael Oliveira')).toBeInTheDocument();
+    expect(screen.getByText('@rafael')).toBeInTheDocument();
+    expect(screen.getByText('1 amigos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Desfazer amizade/i })).toBeInTheDocument();
+  });
+
+  it('desfaz amizade e remove amigo da lista', async () => {
+    const user = userEvent.setup();
+    listarAmigosMock.mockResolvedValue({
+      dados: [amizadeAtiva],
+      metadados: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+
+    render(<AmigosPage />);
+
+    await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+    await screen.findByText('Rafael Oliveira');
+    await user.click(screen.getByRole('button', { name: /Desfazer amizade/i }));
+
+    expect(desfazerAmizade).toHaveBeenCalledWith('amizade-ativa-1');
+    await waitFor(() => {
+      expect(screen.queryByText('Rafael Oliveira')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(/Nenhum amigo adicionado/i)).toBeInTheDocument();
   });
 });
