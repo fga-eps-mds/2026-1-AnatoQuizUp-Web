@@ -28,6 +28,7 @@ interface BackendUsuarioAutenticado {
   instituicao?: string | null;
   curso?: string | null;
   periodo?: string | null;
+  visivel?: boolean;
 }
 
 interface BackendMeResponse {
@@ -63,6 +64,7 @@ const mapUsuarioAutenticado = (usuario: BackendUsuarioAutenticado): User => ({
   institution: usuario.instituicao ?? null,
   course: usuario.curso ?? null,
   period: mapPeriodo(usuario.periodo),
+  visivel: usuario.visivel ?? true,
 });
 
 const extractErrorMessage = (err: unknown): string | null => {

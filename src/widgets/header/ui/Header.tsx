@@ -115,6 +115,14 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/aluno/turmas"),
     };
 
+    const studentAmigosItem: NavItem = {
+      key: "aluno-amigos",
+      label: "Amigos",
+      icon: Users,
+      onSelect: () => navigate("/aluno/amigos"),
+      isActive: location.pathname.startsWith("/aluno/amigos"),
+    };
+
     const listasItem: NavItem = {
       key: "listas",
       label: "Listas",
@@ -175,7 +183,14 @@ export const Header = () => {
 
       case "STUDENT":
       default:
-        return [homeItem, studentDashboardItem, studentQuestaoItem, minhasTurmasAlunoItem, studentHistoricoItem];
+        return [
+          homeItem,
+          studentDashboardItem,
+          studentQuestaoItem,
+          minhasTurmasAlunoItem,
+          studentAmigosItem,
+          studentHistoricoItem,
+        ];
     }
   };
 

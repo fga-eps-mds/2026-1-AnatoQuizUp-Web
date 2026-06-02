@@ -154,6 +154,7 @@ describe('loginWithCredencials', () => {
       institution: 'Universidade de Brasilia',
       course: 'Medicina',
       period: 3,
+      visivel: true,
     });
   });
 

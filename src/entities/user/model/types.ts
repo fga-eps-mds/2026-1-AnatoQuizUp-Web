@@ -13,6 +13,7 @@ export interface User {
   institution?: string | null;
   course?: string | null;
   period?: number | null;
+  visivel?: boolean;
 }
 
 export interface AuthState {
