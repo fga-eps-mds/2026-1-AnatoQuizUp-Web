@@ -197,6 +197,25 @@ describe('Header', () => {
     );
   });
 
+  it('navigates students to amigos page', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true });
+
+    await testUser.click(screen.getByRole('button', { name: /Amigos/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/amigos');
+  });
+
+  it('renders the active amigos item for student', () => {
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/aluno/amigos');
+
+    expect(screen.getByRole('button', { name: /Amigos/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
   it('closes the mobile drawer when clicking the close button (X)', async () => {
     const testUser = userEvent.setup();
 
