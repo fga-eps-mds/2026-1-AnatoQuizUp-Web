@@ -39,3 +39,22 @@ export interface CriarListaPayload {
 export interface AtualizarListaPayload {
   nome: string;
 }
+
+export interface VinculoListaTurma {
+  id: string;
+  listaQuestaoId: string;
+  nome: string;
+  quantidadeQuestoes: number;
+  prazo: string | null;
+  gabaritoLiberado: boolean;
+}
+
+export interface VincularListaTurmaPayload {
+  prazo?: string | null;
+  gabaritoLiberado?: boolean;
+}
+
+export interface AtualizarVinculoListaTurmaPayload {
+  prazo?: string | null;
+  gabaritoLiberado?: boolean;
+}

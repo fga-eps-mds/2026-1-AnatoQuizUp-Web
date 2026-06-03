@@ -5,6 +5,7 @@ jest.mock('../../../shared/config/env', () => ({
 
 import { httpClient } from '../../../shared/api/httpClient';
 import {
+  atualizarVinculoListaTurma,
   atualizarLista,
   buscarLista,
   criarLista,
@@ -12,7 +13,9 @@ import {
   desvincularTurmaLista,
   excluirLista,
   listarListas,
+  listarVinculosDaTurma,
   reordenarQuestoesLista,
+  vincularListaTurma,
   vincularQuestoesLista,
   vincularTurmasLista,
 } from './listaApi';
@@ -211,6 +214,111 @@ describe('listaApi', () => {
 
     expect(mockedHttpClient.post).toHaveBeenCalledWith('/lista/1/turmas', {
       turmasIds: ['t1'],
+    });
+  });
+
+  it('deve vincular uma lista a uma turma com configuracao', async () => {
+    mockedHttpClient.post.mockResolvedValueOnce({
+      data: {
+        dados: {
+          id: 'lista-1',
+          nome: 'Lista',
+          criadoEm: '2026-05-22T19:57:18.617Z',
+          itens: [{ id: 'item-1', questaoId: 'q1', ordem: 1 }],
+          turmas: [
+            {
+              id: 'vinculo-1',
+              listaQuestaoId: 'lista-1',
+              turmaId: 't1',
+              prazo: '2026-06-10T23:59:00.000Z',
+              gabaritoLiberado: true,
+            },
+          ],
+        },
+      },
+    });
+
+    const resultado = await vincularListaTurma('lista-1', 't1', {
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
+    });
+
+    expect(mockedHttpClient.post).toHaveBeenCalledWith('/lista/lista-1/turmas', {
+      turmaId: 't1',
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
+    });
+    expect(resultado).toEqual({
+      id: 'vinculo-1',
+      listaQuestaoId: 'lista-1',
+      nome: 'Lista',
+      quantidadeQuestoes: 1,
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
+    });
+  });
+
+  it('deve listar vinculos de uma turma', async () => {
+    mockedHttpClient.get.mockResolvedValueOnce({
+      data: {
+        dados: [
+          {
+            id: 'vinculo-1',
+            listaQuestaoId: 'lista-1',
+            nome: 'Lista',
+            quantidadeQuestoes: 3,
+            prazo: null,
+            gabaritoLiberado: false,
+          },
+        ],
+      },
+    });
+
+    const resultado = await listarVinculosDaTurma('t1');
+
+    expect(mockedHttpClient.get).toHaveBeenCalledWith('/lista/turma/t1/vinculos');
+    expect(resultado).toEqual([
+      {
+        id: 'vinculo-1',
+        listaQuestaoId: 'lista-1',
+        nome: 'Lista',
+        quantidadeQuestoes: 3,
+        prazo: null,
+        gabaritoLiberado: false,
+      },
+    ]);
+  });
+
+  it('deve atualizar prazo e gabarito de um vinculo lista-turma', async () => {
+    mockedHttpClient.patch.mockResolvedValueOnce({
+      data: {
+        dados: {
+          id: 'vinculo-1',
+          listaQuestaoId: 'lista-1',
+          nome: 'Lista',
+          quantidadeQuestoes: 3,
+          prazo: '2026-06-10T23:59:00.000Z',
+          gabaritoLiberado: true,
+        },
+      },
+    });
+
+    const resultado = await atualizarVinculoListaTurma('lista-1', 't1', {
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
+    });
+
+    expect(mockedHttpClient.patch).toHaveBeenCalledWith('/lista/lista-1/turmas/t1', {
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
+    });
+    expect(resultado).toEqual({
+      id: 'vinculo-1',
+      listaQuestaoId: 'lista-1',
+      nome: 'Lista',
+      quantidadeQuestoes: 3,
+      prazo: '2026-06-10T23:59:00.000Z',
+      gabaritoLiberado: true,
     });
   });
 
