@@ -10,11 +10,16 @@ import {
   LayoutList,
   Link2,
   Loader2,
+  Lock,
+  Unlock,
   Users,
 } from 'lucide-react';
 
 import { buscarDashboardMacro } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
-import { listarVinculosDaTurma } from '../../../entities/lista/api/listaApi';
+import {
+  atualizarVinculoListaTurma,
+  listarVinculosDaTurma,
+} from '../../../entities/lista/api/listaApi';
 import { buscarTurmaPorId } from '../../../entities/turmas/api/turmaApi'; 
 
 import type { DashboardMacro } from '../../../entities/dashboardTurma/model/types';
@@ -25,6 +30,7 @@ import { CardsResumo } from '../../../features/dashboard-turmas/ui/CardsResumo';
 import { GraficoTemas } from '../../../features/dashboard-turmas/ui/GraficoTemas';
 import { EmptyState } from '../../../features/dashboard-turmas/ui/EmptyState';
 import { TabelaDesempenhoIndividual } from '../../../features/dashboard-turmas/ui/TabelaDesempenhoIndividual';
+import { CardDesempenhoListas } from '../../../features/dashboard-turmas/ui/CardDesempenhoListas';
 import { ModalVincularLista } from '../../../features/manage-turmas/ui/ModalVincularLista';
 
 type ToastType = 'success' | 'error';
@@ -60,6 +66,7 @@ export const TurmaDetalhesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingListas, setIsLoadingListas] = useState(false);
   const [erroListas, setErroListas] = useState<string | null>(null);
+  const [idEmOperacao, setIdEmOperacao] = useState<string | null>(null);
   const [isModalVincularListaOpen, setIsModalVincularListaOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -129,6 +136,43 @@ export const TurmaDetalhesPage = () => {
   const handleAtualizarListas = () => {
     void carregarVinculosListas();
   };
+
+  const handleAlternarGabarito = async (vinculo: VinculoListaTurma) => {
+    if (!id) return;
+
+    setIdEmOperacao(vinculo.id);
+    try {
+      const vinculoAtualizado = await atualizarVinculoListaTurma(vinculo.listaQuestaoId, id, {
+        gabaritoLiberado: !vinculo.gabaritoLiberado,
+      });
+
+      setVinculosListas((atuais) =>
+        atuais.map((item) => (item.id === vinculoAtualizado.id ? vinculoAtualizado : item)),
+      );
+      mostrarToast(
+        vinculoAtualizado.gabaritoLiberado
+          ? 'Gabarito liberado para a turma.'
+          : 'Gabarito ocultado para a turma.',
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar gabarito da lista', error);
+      mostrarToast('Nao foi possivel atualizar o gabarito.', 'error');
+    } finally {
+      setIdEmOperacao(null);
+    }
+  };
+
+  const renderCardDesempenhoListas = () => (
+    <div className="lg:col-span-4">
+      <div className="h-full rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-900">
+          <LayoutList size={20} className="text-gray-400" />
+          Desempenho por Lista
+        </h3>
+        <CardDesempenhoListas turmaId={id!} />
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return <div className="flex h-64 items-center justify-center text-gray-500">Carregando detalhes da turma...</div>;
@@ -227,7 +271,12 @@ export const TurmaDetalhesPage = () => {
           <CardsResumo dados={dashboardData} />
 
           {dashboardData.totalQuestoesRespondidas === 0 ? (
-            <EmptyState />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-8">
+                <EmptyState />
+              </div>
+              {renderCardDesempenhoListas()}
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               
@@ -244,17 +293,7 @@ export const TurmaDetalhesPage = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-4">
-                <div className="h-full rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-900">
-                    <LayoutList size={20} className="text-gray-400" />
-                    Desempenho por Lista
-                  </h3>
-                  <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400 text-center px-4">
-                    [ Área reservada para a dupla:<br/>Listas Vinculadas ]
-                  </div>
-                </div>
-              </div>
+              {renderCardDesempenhoListas()}
 
             </div>
           )}
@@ -341,15 +380,29 @@ export const TurmaDetalhesPage = () => {
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        <button
+                          type="button"
+                          onClick={() => void handleAlternarGabarito(vinculo)}
+                          disabled={idEmOperacao === vinculo.id}
+                          className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
                             vinculo.gabaritoLiberado
-                              ? 'bg-teal-100 text-teal-800'
-                              : 'bg-gray-100 text-gray-700'
+                              ? 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'
+                              : 'border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
                           }`}
                         >
-                          {vinculo.gabaritoLiberado ? 'Liberado' : 'Bloqueado'}
-                        </span>
+                          {idEmOperacao === vinculo.id ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : vinculo.gabaritoLiberado ? (
+                            <Unlock size={13} />
+                          ) : (
+                            <Lock size={13} />
+                          )}
+                          {idEmOperacao === vinculo.id
+                            ? 'Atualizando...'
+                            : vinculo.gabaritoLiberado
+                              ? 'Gabarito liberado'
+                              : 'Gabarito oculto'}
+                        </button>
                       </td>
                     </tr>
                   ))}
