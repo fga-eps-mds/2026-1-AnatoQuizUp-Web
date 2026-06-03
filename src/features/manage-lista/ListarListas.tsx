@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   Trash2,
-  Users,
 } from 'lucide-react';
 import type { ListaQuestao, StatusLista } from '../../entities/lista/model/types';
 import {
@@ -21,7 +20,6 @@ import {
 } from '../../entities/lista/api/listaApi';
 import { ModalExcluirLista } from './ModalExcluirLista';
 import { ModalGerenciarQuestoesLista } from './ModalGerenciarQuestoesLista';
-import { ModalGerenciarTurmasLista } from './ModalGerenciarTurmasLista';
 import { ModalLista } from './ModalLista';
 
 type TipoToast = 'success' | 'error';
@@ -49,7 +47,6 @@ export const ListarListas = () => {
   const [modoModalLista, setModoModalLista] = useState<'create' | 'edit'>('create');
   const [listaSelecionada, setListaSelecionada] = useState<ListaQuestao | null>(null);
   const [listaParaQuestoes, setListaParaQuestoes] = useState<ListaQuestao | null>(null);
-  const [listaParaTurmas, setListaParaTurmas] = useState<ListaQuestao | null>(null);
   const [listaParaExcluir, setListaParaExcluir] = useState<ListaQuestao | null>(null);
   const [isSavingLista, setIsSavingLista] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -313,14 +310,6 @@ export const ListarListas = () => {
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => setListaParaTurmas(lista)}
-                          className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
-                        >
-                          <Users className="h-3.5 w-3.5" />
-                          Turmas
-                        </button>
-                        <button
-                          type="button"
                           onClick={() => handleBaixarPdf(lista.id, lista.nome)}
                           title="Geracao de PDF pendente no servico"
                           className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
@@ -368,14 +357,6 @@ export const ListarListas = () => {
         isOpen={!!listaParaQuestoes}
         lista={listaParaQuestoes}
         onClose={() => setListaParaQuestoes(null)}
-        onAfterChange={solicitarAtualizacao}
-        onFeedback={mostrarToast}
-      />
-
-      <ModalGerenciarTurmasLista
-        isOpen={!!listaParaTurmas}
-        lista={listaParaTurmas}
-        onClose={() => setListaParaTurmas(null)}
         onAfterChange={solicitarAtualizacao}
         onFeedback={mostrarToast}
       />

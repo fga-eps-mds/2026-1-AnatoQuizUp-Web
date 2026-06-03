@@ -39,18 +39,6 @@ jest.mock('./ModalGerenciarQuestoesLista', () => ({
   ),
 }));
 
-jest.mock('./ModalGerenciarTurmasLista', () => ({
-  ModalGerenciarTurmasLista: ({
-    isOpen,
-    lista,
-  }: {
-    isOpen: boolean;
-    lista: { nome?: string } | null;
-  }) => (
-    isOpen ? <div data-testid="modal-turmas-lista">{lista?.nome}</div> : null
-  ),
-}));
-
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ListarListas } from './ListarListas';
@@ -161,14 +149,12 @@ describe('ListarListas', () => {
     expect(screen.getByTestId('modal-questoes-lista')).toHaveTextContent('Lista 1');
   });
 
-  it('deve abrir a modal de vincular e desvincular turmas', async () => {
+  it('nao deve permitir publicar lista pela tela de listas', async () => {
     render(<ListarListas />);
 
     await screen.findByText('Lista 1');
 
-    fireEvent.click(screen.getByRole('button', { name: /Turmas/i }));
-
-    expect(screen.getByTestId('modal-turmas-lista')).toHaveTextContent('Lista 1');
+    expect(screen.queryByRole('button', { name: /Turmas/i })).not.toBeInTheDocument();
   });
 
   it('deve iniciar o download do PDF e mostrar o toast de carregamento', async () => {

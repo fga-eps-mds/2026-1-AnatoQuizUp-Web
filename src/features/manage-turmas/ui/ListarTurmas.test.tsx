@@ -86,6 +86,39 @@ jest.mock('./ModalGerenciarAlunos', () => ({
   },
 }));
 
+jest.mock('./ModalVincularLista', () => ({
+  ModalVincularLista: ({
+    isOpen,
+    turma,
+    onClose,
+    onAfterChange,
+    onFeedback,
+  }: {
+    isOpen: boolean;
+    turma: Turma | null;
+    onClose: () => void;
+    onAfterChange: () => void;
+    onFeedback: (message: string, type: 'success' | 'error') => void;
+  }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div data-testid="mock-modal-vincular-lista">
+        <span>{turma?.nome}</span>
+        <button onClick={onClose}>Fechar vincular lista</button>
+        <button
+          onClick={() => {
+            onFeedback('Lista vinculada com sucesso.', 'success');
+            onAfterChange();
+          }}
+        >
+          Simular alteracao listas
+        </button>
+      </div>
+    );
+  },
+}));
+
 jest.mock('./ModalExcluirTurma', () => ({
   ModalExcluirTurma: ({
     isOpen,
@@ -272,6 +305,21 @@ describe('ListaTurmas Feature', () => {
     await user.click(screen.getByRole('button', { name: /Simular alteracao alunos/i }));
 
     expect(await screen.findByRole('status')).toHaveTextContent('Aluno vinculado com sucesso.');
+    await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(2));
+  });
+
+  it('deve abrir modal de vincular lista e atualizar listagem apos alteracao', async () => {
+    const user = userEvent.setup();
+
+    render(<MemoryRouter><ListaTurmas /></MemoryRouter>);
+    await screen.findByText('Anatomia Sistemica');
+
+    await user.click(screen.getAllByRole('button', { name: /Vincular lista/i })[0]);
+    expect(screen.getByTestId('mock-modal-vincular-lista')).toHaveTextContent('Anatomia Sistemica');
+
+    await user.click(screen.getByRole('button', { name: /Simular alteracao listas/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Lista vinculada com sucesso.');
     await waitFor(() => expect(listarTurmas).toHaveBeenCalledTimes(2));
   });
 
