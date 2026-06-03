@@ -62,6 +62,12 @@ jest.mock('../../../features/manage-turmas/ui/ModalVincularLista', () => ({
     ) : null,
 }));
 
+jest.mock('../../../features/manage-turmas/ui/AbaAlunos', () => ({
+  AbaAlunos: ({ turmaId }: { turmaId: string }) => (
+    <div data-testid="aba-alunos">Aba alunos da turma {turmaId}</div>
+  ),
+}));
+
 const mockTurma = {
   id: 'turma-123',
   nome: 'Turma A',
@@ -190,6 +196,7 @@ describe('TurmaDetalhesPage', () => {
     await user.click(abaAlunos);
 
     expect(screen.queryByText('Desempenho Individual')).not.toBeInTheDocument();
+    expect(screen.getByTestId('aba-alunos')).toHaveTextContent('Aba alunos da turma turma-123');
   });
 
   it('deve listar as listas publicadas da turma na aba Listas', async () => {

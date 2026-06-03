@@ -31,6 +31,7 @@ import { GraficoTemas } from '../../../features/dashboard-turmas/ui/GraficoTemas
 import { EmptyState } from '../../../features/dashboard-turmas/ui/EmptyState';
 import { TabelaDesempenhoIndividual } from '../../../features/dashboard-turmas/ui/TabelaDesempenhoIndividual';
 import { CardDesempenhoListas } from '../../../features/dashboard-turmas/ui/CardDesempenhoListas';
+import { AbaAlunos } from '../../../features/manage-turmas/ui/AbaAlunos';
 import { ModalVincularLista } from '../../../features/manage-turmas/ui/ModalVincularLista';
 
 type ToastType = 'success' | 'error';
@@ -299,6 +300,8 @@ export const TurmaDetalhesPage = () => {
           )}
         </>
       )}
+
+      {activeTab === 'alunos' && <AbaAlunos turmaId={id!} />}
 
       {activeTab === 'listas' && (
         <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
