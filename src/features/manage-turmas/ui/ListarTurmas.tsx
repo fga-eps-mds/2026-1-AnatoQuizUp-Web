@@ -253,17 +253,17 @@ export const ListaTurmas = () => {
         <span className="text-sm text-gray-500">{turmas.length} resultado(s)</span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm text-gray-600">
+      <div className="w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="w-full min-w-[800px] text-left text-sm text-gray-600">
           <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
             <tr>
               <th className="px-6 py-4">Turma</th>
               <th className="px-6 py-4">Semestre</th>
-              <th className="px-6 py-4">Descricao</th>
+              <th className="px-6 py-4">Descrição</th>
               <th className="px-6 py-4">Alunos</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Criada em</th>
-              <th className="px-6 py-4">Acoes</th>
+              <th className="px-6 py-4">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">

@@ -20,11 +20,11 @@ import {
   atualizarVinculoListaTurma,
   listarVinculosDaTurma,
 } from '../../../entities/lista/api/listaApi';
-import { buscarTurmaPorId } from '../../../entities/turmas/api/turmaApi'; 
+import { buscarTurmaPorId, atualizarTurma } from '../../../entities/turmas/api/turmaApi'; 
 
 import type { DashboardMacro } from '../../../entities/dashboardTurma/model/types';
 import type { VinculoListaTurma } from '../../../entities/lista/model/types';
-import type { Turma } from '../../../entities/turmas/model/types';
+import type { SalvarTurmaPayload, Turma } from '../../../entities/turmas/model/types';
 
 import { CardsResumo } from '../../../features/dashboard-turmas/ui/CardsResumo';
 import { GraficoTemas } from '../../../features/dashboard-turmas/ui/GraficoTemas';
@@ -33,6 +33,7 @@ import { TabelaDesempenhoIndividual } from '../../../features/dashboard-turmas/u
 import { CardDesempenhoListas } from '../../../features/dashboard-turmas/ui/CardDesempenhoListas';
 import { AbaAlunos } from '../../../features/manage-turmas/ui/AbaAlunos';
 import { ModalVincularLista } from '../../../features/manage-turmas/ui/ModalVincularLista';
+import { ModalTurma } from '../../../features/manage-turmas/ui/ModalTurma'; // <--- IMPORTAÇÃO DO MODAL AQUI
 
 type ToastType = 'success' | 'error';
 
@@ -71,6 +72,10 @@ export const TurmaDetalhesPage = () => {
   const [isModalVincularListaOpen, setIsModalVincularListaOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  // --- ESTADOS DO MODAL DE EDITAR TURMA ---
+  const [isModalTurmaOpen, setIsModalTurmaOpen] = useState(false);
+  const [isSavingTurma, setIsSavingTurma] = useState(false);
+
   const mostrarToast = useCallback((message: string, type: ToastType = 'success') => {
     setToast({ id: Date.now(), message, type });
   }, []);
@@ -90,7 +95,6 @@ export const TurmaDetalhesPage = () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        // Busca os dados da turma E do dashboard ao mesmo tempo
         const [turmaResponse, dashResponse] = await Promise.all([
           buscarTurmaPorId(id), 
           buscarDashboardMacro(id)
@@ -118,7 +122,7 @@ export const TurmaDetalhesPage = () => {
       setVinculosListas(dados);
     } catch (error) {
       console.error('Erro ao carregar listas da turma', error);
-      setErroListas('Nao foi possivel carregar as listas publicadas.');
+      setErroListas('Não foi possível carregar as listas publicadas.');
     } finally {
       setIsLoadingListas(false);
     }
@@ -157,9 +161,36 @@ export const TurmaDetalhesPage = () => {
       );
     } catch (error) {
       console.error('Erro ao atualizar gabarito da lista', error);
-      mostrarToast('Nao foi possivel atualizar o gabarito.', 'error');
+      mostrarToast('Não foi possível atualizar o gabarito.', 'error');
     } finally {
       setIdEmOperacao(null);
+    }
+  };
+
+  // --- HANDLERS DO MODAL DE EDITAR TURMA ---
+  const handleAbrirModalEditarTurma = () => {
+    setIsModalTurmaOpen(true);
+  };
+
+  const handleFecharModalTurma = () => {
+    if (isSavingTurma) return;
+    setIsModalTurmaOpen(false);
+  };
+
+  const handleSalvarTurma = async (payload: SalvarTurmaPayload) => {
+    if (!id) return;
+    setIsSavingTurma(true);
+
+    try {
+      const turmaAtualizada = await atualizarTurma(id, payload);
+      setTurma(turmaAtualizada); // Atualiza os dados na tela em tempo real
+      mostrarToast('Turma atualizada com sucesso.');
+      setIsModalTurmaOpen(false);
+    } catch (error) {
+      console.error('Erro ao editar turma', error);
+      mostrarToast('Não foi possível editar a turma.', 'error');
+    } finally {
+      setIsSavingTurma(false);
     }
   };
 
@@ -213,7 +244,7 @@ export const TurmaDetalhesPage = () => {
       </div>
 
       <div className="mb-4 text-xs font-medium text-gray-400">
-        <Link to="/turmas" className="hover:text-teal-500">Turmas</Link> &gt; <span className="text-gray-600">{turma.nome}</span>
+        <Link to="/turmas" className="hover:text-teal-500 cursor-pointer">Turmas</Link> &gt; <span className="text-gray-600">{turma.nome}</span>
       </div>
 
       <div className="mb-6 rounded-xl border border-gray-100 bg-white pt-6 shadow-sm">
@@ -239,7 +270,10 @@ export const TurmaDetalhesPage = () => {
             </div>
           </div>
           
-          <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
+          <button 
+            onClick={handleAbrirModalEditarTurma} 
+            className="cursor-pointer flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
             <Edit size={16} />
             Editar turma
           </button>
@@ -248,19 +282,19 @@ export const TurmaDetalhesPage = () => {
         <div className="mt-6 flex border-t border-gray-100 px-6">
           <button 
             onClick={() => setActiveTab('alunos')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'alunos' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
+            className={`cursor-pointer flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'alunos' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
           >
             <Users size={18} /> Alunos
           </button>
           <button 
             onClick={() => setActiveTab('listas')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'listas' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
+            className={`cursor-pointer flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'listas' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
           >
             <LayoutList size={18} /> Listas
           </button>
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'dashboard' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
+            className={`cursor-pointer flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'dashboard' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
           >
             <Activity size={18} /> Dashboard
           </button>
@@ -280,9 +314,7 @@ export const TurmaDetalhesPage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              
               <div className="flex flex-col gap-6 lg:col-span-8">
-                {/* A sua parte: Temas */}
                 <GraficoTemas temas={dashboardData.desempenhoPorTema} />
                 
                 <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -293,9 +325,7 @@ export const TurmaDetalhesPage = () => {
                   <TabelaDesempenhoIndividual turmaId={id!} />
                 </div>
               </div>
-
               {renderCardDesempenhoListas()}
-
             </div>
           )}
         </>
@@ -316,7 +346,7 @@ export const TurmaDetalhesPage = () => {
             <button
               type="button"
               onClick={() => setIsModalVincularListaOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+              className="cursor-pointer flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
             >
               <Link2 size={16} />
               Vincular lista
@@ -340,7 +370,7 @@ export const TurmaDetalhesPage = () => {
               <button
                 type="button"
                 onClick={handleAtualizarListas}
-                className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100"
+                className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100"
               >
                 Tentar novamente
               </button>
@@ -352,7 +382,7 @@ export const TurmaDetalhesPage = () => {
                 Nenhuma lista publicada nesta turma.
               </h4>
               <p className="mt-1 max-w-md text-sm text-gray-500">
-                Publique listas para liberar exercicios, definir prazo opcional e controlar o gabarito.
+                Publique listas para liberar exercícios, definir prazo opcional e controlar o gabarito.
               </p>
             </div>
           ) : (
@@ -361,7 +391,7 @@ export const TurmaDetalhesPage = () => {
                 <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-4 py-3">Lista</th>
-                    <th className="px-4 py-3">Questoes</th>
+                    <th className="px-4 py-3">Questões</th>
                     <th className="px-4 py-3">Prazo</th>
                     <th className="px-4 py-3">Gabarito</th>
                   </tr>
@@ -375,7 +405,7 @@ export const TurmaDetalhesPage = () => {
                           {vinculo.nome}
                         </span>
                       </td>
-                      <td className="px-4 py-4">{vinculo.quantidadeQuestoes} questao(oes)</td>
+                      <td className="px-4 py-4">{vinculo.quantidadeQuestoes} questões</td>
                       <td className="px-4 py-4">
                         <span className="flex items-center gap-2 text-gray-700">
                           <CalendarClock size={16} className="text-gray-400" />
@@ -387,7 +417,7 @@ export const TurmaDetalhesPage = () => {
                           type="button"
                           onClick={() => void handleAlternarGabarito(vinculo)}
                           disabled={idEmOperacao === vinculo.id}
-                          className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
+                          className={`cursor-pointer inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
                             vinculo.gabaritoLiberado
                               ? 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'
                               : 'border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -415,6 +445,16 @@ export const TurmaDetalhesPage = () => {
           )}
         </section>
       )}
+
+      <ModalTurma
+        key={`edit-${turma.id}-${isModalTurmaOpen ? 'open' : 'closed'}`}
+        isOpen={isModalTurmaOpen}
+        mode="edit"
+        turma={turma}
+        isLoading={isSavingTurma}
+        onClose={handleFecharModalTurma}
+        onSubmit={handleSalvarTurma}
+      />
 
       <ModalVincularLista
         isOpen={isModalVincularListaOpen}
