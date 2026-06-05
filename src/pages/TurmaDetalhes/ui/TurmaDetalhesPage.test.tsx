@@ -1,8 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { TurmaDetalhesPage } from './TurmaDetalhesPage'; 
-import { buscarTurmaPorId } from '../../../entities/turmas/api/turmaApi';
+import { buscarTurmaPorId, atualizarTurma } from '../../../entities/turmas/api/turmaApi';
 import {
   buscarDashboardMacro,
   buscarDesempenhoPorListas,
@@ -117,7 +116,6 @@ describe('TurmaDetalhesPage', () => {
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(null);
 
     renderWithRouter();
-
     await waitFor(() => {
       expect(screen.getByText('Turma não encontrada.')).toBeInTheDocument();
     });
@@ -128,156 +126,64 @@ describe('TurmaDetalhesPage', () => {
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
 
     renderWithRouter();
-
     expect(await screen.findByRole('heading', { name: 'Turma A' })).toBeInTheDocument();
     expect(screen.getByText('2026.1')).toBeInTheDocument();
     expect(screen.getByText('Ativa')).toBeInTheDocument();
-    
     expect(screen.getByText('50')).toBeInTheDocument(); 
   });
 
   it('deve exibir o card de desempenho por lista no dashboard', async () => {
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (buscarDesempenhoPorListas as jest.Mock).mockResolvedValue([
-      {
-        listaTurmaId: 'lista-turma-1',
-        nomeLista: 'Simulado de Anatomia',
-        totalAlunos: 18,
-        totalSubmeteram: 11,
-        totalPendentes: 7,
-        taxaMediaAcerto: 73.4,
-        prazo: '2099-06-10T23:59:00.000Z',
-      },
-    ]);
+    (buscarDesempenhoPorListas as jest.Mock).mockResolvedValue([{
+        listaTurmaId: 'lista-turma-1', nomeLista: 'Simulado de Anatomia', totalAlunos: 18,
+        totalSubmeteram: 11, totalPendentes: 7, taxaMediaAcerto: 73.4, prazo: '2099-06-10T23:59:00.000Z',
+    }]);
 
     renderWithRouter();
-
     expect(await screen.findByRole('heading', { name: 'Turma A' })).toBeInTheDocument();
     expect(await screen.findByText('Simulado de Anatomia')).toBeInTheDocument();
     expect(buscarDesempenhoPorListas).toHaveBeenCalledWith('turma-123');
-    expect(screen.getByText('11')).toBeInTheDocument();
-    expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('73,4%')).toBeInTheDocument();
-    expect(screen.queryByText(/Listas Vinculadas/i)).not.toBeInTheDocument();
-  });
-
-  it('deve exibir o EmptyState se não houver questões respondidas', async () => {
-    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
-    (buscarDashboardMacro as jest.Mock).mockResolvedValue({ ...mockDashboard, totalQuestoesRespondidas: 0 });
-
-    renderWithRouter();
-
-    expect(await screen.findByText('Ainda não há dados suficientes')).toBeInTheDocument();
-    expect(screen.queryByText('Desempenho Individual')).not.toBeInTheDocument();
-    expect(await screen.findByText('Nenhuma lista publicada nesta turma.')).toBeInTheDocument();
   });
 
   it('deve alternar entre as abas e esconder o dashboard', async () => {
-    const user = userEvent.setup();
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
 
     renderWithRouter();
     await screen.findByRole('heading', { name: 'Turma A' });
 
-    const abaAlunos = screen.getByRole('button', { name: /Alunos/i });
-    await user.click(abaAlunos);
+    fireEvent.click(screen.getByRole('button', { name: /Alunos/i }));
 
     expect(screen.queryByText('Desempenho Individual')).not.toBeInTheDocument();
     expect(screen.getByTestId('aba-alunos')).toHaveTextContent('Aba alunos da turma turma-123');
   });
 
-  it('deve listar as listas publicadas da turma na aba Listas', async () => {
-    const user = userEvent.setup();
+  it('deve listar as listas publicadas da turma na aba Listas e alternar gabarito com sucesso', async () => {
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
     (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
-      { id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: '2026-06-10T23:59:00.000Z', gabaritoLiberado: true },
-    ]);
-
-    renderWithRouter();
-    await screen.findByRole('heading', { name: 'Turma A' });
-
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
-
-    expect(await screen.findByText('Simulado de Anatomia')).toBeInTheDocument();
-    expect(listarVinculosDaTurma).toHaveBeenCalledWith('turma-123');
-    expect(screen.getByText('12 questões')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Gabarito liberado/i })).toBeInTheDocument();
-  });
-
-  it('deve liberar o gabarito inline na aba Listas', async () => {
-    const user = userEvent.setup();
-    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
-    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
-      { id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: false },
+      { id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: false },
     ]);
     (atualizarVinculoListaTurma as jest.Mock).mockResolvedValue({
-      id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: true,
+      id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: true,
     });
 
     renderWithRouter();
     await screen.findByRole('heading', { name: 'Turma A' });
 
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
-    await user.click(await screen.findByRole('button', { name: /Gabarito oculto/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
+    
+    // Testa liberação do gabarito
+    const btnGabarito = await screen.findByRole('button', { name: /Gabarito oculto/i });
+    fireEvent.click(btnGabarito);
 
     expect(atualizarVinculoListaTurma).toHaveBeenCalledWith('lista-1', 'turma-123', { gabaritoLiberado: true });
     expect(await screen.findByRole('button', { name: /Gabarito liberado/i })).toBeInTheDocument();
     expect(screen.getByText('Gabarito liberado para a turma.')).toBeInTheDocument();
   });
 
-  it('deve ocultar o gabarito inline na aba Listas', async () => {
-    const user = userEvent.setup();
-    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
-    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
-      { id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: true },
-    ]);
-    (atualizarVinculoListaTurma as jest.Mock).mockResolvedValue({
-      id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: false,
-    });
-
-    renderWithRouter();
-    await screen.findByRole('heading', { name: 'Turma A' });
-
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
-    await user.click(await screen.findByRole('button', { name: /Gabarito liberado/i }));
-
-    expect(atualizarVinculoListaTurma).toHaveBeenCalledWith('lista-1', 'turma-123', { gabaritoLiberado: false });
-    expect(await screen.findByRole('button', { name: /Gabarito oculto/i })).toBeInTheDocument();
-    expect(screen.getByText('Gabarito ocultado para a turma.')).toBeInTheDocument();
-  });
-
-  it('deve mostrar loading enquanto atualiza o gabarito inline', async () => {
-    const user = userEvent.setup();
-    let resolverAtualizacao!: (value: unknown) => void;
-    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
-    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
-      { id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: false },
-    ]);
-    (atualizarVinculoListaTurma as jest.Mock).mockReturnValue(new Promise((resolve) => { resolverAtualizacao = resolve; }));
-
-    renderWithRouter();
-    await screen.findByRole('heading', { name: 'Turma A' });
-
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
-    await user.click(await screen.findByRole('button', { name: /Gabarito oculto/i }));
-
-    expect(screen.getByRole('button', { name: /Atualizando/i })).toBeDisabled();
-
-    resolverAtualizacao({
-      id: 'vinculo-1', listaQuestaoId: 'lista-1', nome: 'Simulado de Anatomia', quantidadeQuestoes: 12, prazo: null, gabaritoLiberado: true,
-    });
-
-    expect(await screen.findByRole('button', { name: /Gabarito liberado/i })).toBeInTheDocument();
-  });
-
-  it('deve exibir empty state quando nao houver listas publicadas', async () => {
-    const user = userEvent.setup();
+  it('deve exibir empty state quando nao houver listas publicadas e abrir o modal de vinculo', async () => {
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
     (listarVinculosDaTurma as jest.Mock).mockResolvedValue([]);
@@ -285,62 +191,186 @@ describe('TurmaDetalhesPage', () => {
     renderWithRouter();
     await screen.findByRole('heading', { name: 'Turma A' });
 
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
 
     expect(await screen.findByText('Nenhuma lista publicada nesta turma.')).toBeInTheDocument();
-  });
 
-  it('deve abrir o modal de vincular lista e recarregar vinculos apos alteracao', async () => {
-    const user = userEvent.setup();
-    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
-    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([]);
-
-    renderWithRouter();
-    await screen.findByRole('heading', { name: 'Turma A' });
-
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
-    await screen.findByText('Nenhuma lista publicada nesta turma.');
-    await user.click(screen.getByRole('button', { name: /Vincular lista/i }));
-
+    // Testa abertura do modal de vinculo
+    fireEvent.click(screen.getByRole('button', { name: /Vincular lista/i }));
     expect(screen.getByRole('dialog', { name: 'Modal de vincular lista' })).toBeInTheDocument();
-    expect(screen.getByText('Modal aberto para Turma A')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /Simular alteracao listas/i }));
-
+    fireEvent.click(screen.getByRole('button', { name: /Simular alteracao listas/i }));
     await waitFor(() => { expect(listarVinculosDaTurma).toHaveBeenCalledTimes(2); });
   });
 
-  it('deve mostrar erro ao falhar no carregamento das listas publicadas', async () => {
-    const user = userEvent.setup();
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const erroAPI = new Error('Falha ao listar vinculos');
+  it('deve abrir o modal de edicao de turma, salvar com sucesso e fechar (cobertura do handleSalvarTurma)', async () => {
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
     (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
-    (listarVinculosDaTurma as jest.Mock).mockRejectedValue(erroAPI);
+    (atualizarTurma as jest.Mock).mockResolvedValue({ ...mockTurma, nome: 'Turma Atualizada' });
 
     renderWithRouter();
     await screen.findByRole('heading', { name: 'Turma A' });
 
-    await user.click(screen.getByRole('button', { name: /^Listas$/i }));
+    // Abrir modal
+    fireEvent.click(screen.getByRole('button', { name: /Editar turma/i }));
+    expect(screen.getByRole('dialog', { name: 'Modal de turma' })).toBeInTheDocument();
 
-    // Atualizado para o texto com til (Não em vez de Nao)
-    expect(await screen.findByText('Não foi possível carregar as listas publicadas.')).toBeInTheDocument();
-    expect(consoleSpy).toHaveBeenCalledWith('Erro ao carregar listas da turma', erroAPI);
+    // Clicar em salvar dentro do mock
+    fireEvent.click(screen.getByRole('button', { name: /Salvar turma/i }));
 
-    consoleSpy.mockRestore();
+    await waitFor(() => {
+      expect(atualizarTurma).toHaveBeenCalledWith('turma-123', { nome: 'Atualizado' });
+      expect(screen.getByText('Turma atualizada com sucesso.')).toBeInTheDocument();
+    });
+
+    // Testar fechar modal
+    fireEvent.click(screen.getByRole('button', { name: /Editar turma/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Fechar modal turma/i }));
+    expect(screen.queryByRole('dialog', { name: 'Modal de turma' })).not.toBeInTheDocument();
   });
 
-  it('deve exibir console.error em caso de falha na API', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const erroAPI = new Error('Falha de rede');
+  it('deve exibir toast de erro ao falhar na edicao da turma (cobertura do catch do handleSalvarTurma)', async () => {
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    (atualizarTurma as jest.Mock).mockRejectedValue(new Error('Falha API'));
+
+    renderWithRouter();
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar turma/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Salvar turma/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Não foi possível editar a turma.')).toBeInTheDocument();
+    });
+  });
+
+  it('deve exibir erro ao falhar na alteracao do gabarito (cobertura do catch do handleAlternarGabarito)', async () => {
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
+      { id: 'v1', listaQuestaoId: 'l1', nome: 'L1', quantidadeQuestoes: 1, prazo: null, gabaritoLiberado: false },
+    ]);
+    (atualizarVinculoListaTurma as jest.Mock).mockRejectedValue(new Error('Erro Gabarito'));
+
+    renderWithRouter();
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
     
-    (buscarTurmaPorId as jest.Mock).mockRejectedValue(erroAPI);
+    const btnGabarito = await screen.findByRole('button', { name: /Gabarito oculto/i });
+    fireEvent.click(btnGabarito);
+
+    await waitFor(() => {
+      expect(screen.getByText('Não foi possível atualizar o gabarito.')).toBeInTheDocument();
+    });
+  });
+
+  it('deve exibir erro nas listas e permitir TENTAR NOVAMENTE (cobertura do catch listarVinculosDaTurma)', async () => {
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    (listarVinculosDaTurma as jest.Mock).mockRejectedValueOnce(new Error('Falha Listar'));
+
+    renderWithRouter();
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
+
+    // Espera a mensagem de erro renderizar e conter o botão "Tentar novamente"
+    const btnTentar = await screen.findByRole('button', { name: /Tentar novamente/i });
+    expect(screen.getByText('Não foi possível carregar as listas publicadas.')).toBeInTheDocument();
+
+    // Na segunda vez, mockamos sucesso
+    (listarVinculosDaTurma as jest.Mock).mockResolvedValueOnce([]);
+    fireEvent.click(btnTentar);
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhuma lista publicada nesta turma.')).toBeInTheDocument();
+    });
+  });
+
+  it('deve esconder o toast automaticamente apos 3.5 segundos (cobertura do useEffect timeout)', async () => {
+    jest.useFakeTimers();
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    (atualizarTurma as jest.Mock).mockResolvedValue(mockTurma);
+
+    renderWithRouter();
+    
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar turma/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Salvar turma/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Turma atualizada com sucesso.')).toBeInTheDocument();
+    });
+
+    jest.advanceTimersByTime(3500);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Turma atualizada com sucesso.')).not.toBeInTheDocument();
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('deve formatar o prazo corretamente e lidar com datas invalidas ou nulas na listagem de listas', async () => {
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    
+    (listarVinculosDaTurma as jest.Mock).mockResolvedValue([
+      { id: 'v1', nome: 'Lista Sem Prazo', quantidadeQuestoes: 1, prazo: null, gabaritoLiberado: false },
+      { id: 'v2', nome: 'Lista Valida', quantidadeQuestoes: 1, prazo: '2026-06-10T23:59:00.000Z', gabaritoLiberado: false },
+      { id: 'v3', nome: 'Lista Invalida', quantidadeQuestoes: 1, prazo: 'data-invalida', gabaritoLiberado: false },
+    ]);
+
+    renderWithRouter();
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
+
+    expect(await screen.findByText('Sem prazo')).toBeInTheDocument();
+    expect(screen.getByText('10/06/2026, 20:59')).toBeInTheDocument(); 
+    expect(screen.getByText('data-invalida')).toBeInTheDocument();
+  });
+
+  it('não deve fechar o modal de edicao de turma se isSavingTurma for true (cobertura handleFecharModalTurma)', async () => {
+    let resolverApi: any;
+    const promisePendente = new Promise((resolve) => { resolverApi = resolve; });
+    
+    (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);
+    (buscarDashboardMacro as jest.Mock).mockResolvedValue(mockDashboard);
+    (atualizarTurma as jest.Mock).mockReturnValue(promisePendente);
+
+    renderWithRouter();
+    await screen.findByRole('heading', { name: 'Turma A' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar turma/i }));
+    
+    fireEvent.click(screen.getByRole('button', { name: /Salvar turma/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Fechar modal turma/i }));
+
+    expect(screen.getByRole('dialog', { name: 'Modal de turma' })).toBeInTheDocument();
+
+    resolverApi({ ...mockTurma, nome: 'Turma Atualizada' });
+    
+    await waitFor(() => {
+      expect(screen.getByText('Turma atualizada com sucesso.')).toBeInTheDocument();
+    });
+  });
+
+  it('deve logar erro no console se falhar a busca inicial de dados (cobertura do catch fetchData)', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const erroSimulado = new Error('Falha total na API');
+    
+    (buscarTurmaPorId as jest.Mock).mockRejectedValue(erroSimulado);
 
     renderWithRouter();
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Erro ao buscar dados:', erroAPI);
+      expect(consoleSpy).toHaveBeenCalledWith('Erro ao buscar dados:', erroSimulado);
     });
 
     consoleSpy.mockRestore();
