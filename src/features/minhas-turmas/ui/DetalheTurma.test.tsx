@@ -104,8 +104,17 @@ describe('DetalheTurma', () => {
   });
 
   it('nao deve tentar atualizar o estado se o componente for desmontado (cleanup do useEffect)', async () => {
-    let resolverApi: any;
-    const promiseApi = new Promise((resolve) => { resolverApi = resolve; });
+    type TurmaResponse = { 
+      data: { 
+        dados: { nome: string; professorId: string } 
+      } 
+    };
+    
+    let resolverApi: (value: TurmaResponse) => void;
+    
+    const promiseApi = new Promise<TurmaResponse>((resolve) => { 
+      resolverApi = resolve; 
+    });
     
     (httpClient.get as jest.Mock).mockReturnValue(promiseApi);
 
@@ -114,7 +123,9 @@ describe('DetalheTurma', () => {
     unmount();
     
     resolverApi({
-      data: { dados: { nome: 'Fantasma', professorId: 'prof-1' } }
+      data: { 
+        dados: { nome: 'Fantasma', professorId: 'prof-1' } 
+      }
     });
 
     await waitFor(() => {

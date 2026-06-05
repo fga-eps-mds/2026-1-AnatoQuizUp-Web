@@ -26,7 +26,7 @@ export const ModalLista = ({
   if (!isOpen) return null;
 
   const titulo = mode === 'create' ? 'Nova lista' : 'Editar lista';
-  const textoBotao = mode === 'create' ? 'Criar lista' : 'Salvar alteracoes';
+  const textoBotao = mode === 'create' ? 'Criar lista' : 'Salvar alterações';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,19 +64,19 @@ export const ModalLista = ({
             onClick={onClose}
             disabled={isLoading}
             aria-label="Fechar modal de lista"
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+            className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+        <label className="flex flex-col gap-2 text-sm font-bold text-gray-700">
           Nome da lista
           <input
             value={nome}
             onChange={(event) => setNome(event.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            placeholder="Simulado de Anatomia - 2026.1"
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            placeholder="Ex: Simulado de Anatomia - 2026.1"
           />
         </label>
 
@@ -85,7 +85,7 @@ export const ModalLista = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="cursor-pointer rounded-lg border-2 border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -93,7 +93,7 @@ export const ModalLista = ({
           <button
             type="submit"
             disabled={!isFormValido || isLoading}
-            className="flex items-center gap-2 rounded-lg bg-teal-400 px-4 py-2 text-sm font-bold text-teal-950 hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer flex items-center gap-2 rounded-lg bg-teal-500 px-4 py-2 text-sm font-bold text-white hover:bg-teal-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
           >
             <Save size={16} />
             {isLoading ? 'Salvando...' : textoBotao}
