@@ -373,7 +373,7 @@ describe('listaApi', () => {
             { id: 'v1', turmaId: 't1' } 
           ],
           itens: [
-            { id: 'i1', questaoId: 'q1', ordem: 1, questao: { id: 'q1' } as any } 
+            { id: 'i1', questaoId: 'q1', ordem: 1, questao: { id: 'q1' } as never } 
           ]
         }
       }

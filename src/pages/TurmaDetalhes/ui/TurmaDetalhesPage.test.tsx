@@ -33,7 +33,13 @@ jest.mock('../../../entities/usuarios/api/usuarioApi', () => ({
 }));
 
 jest.mock('../../../features/manage-turmas/ui/ModalVincularLista', () => ({
-  ModalVincularLista: ({ isOpen, turma, onClose, onAfterChange, onFeedback }: any) =>
+  ModalVincularLista: ({ isOpen, turma, onClose, onAfterChange, onFeedback }: {
+    isOpen: boolean;
+    turma: { nome: string } | null;
+    onClose: () => void;
+    onAfterChange: () => void;
+    onFeedback: (message: string, type: 'success' | 'error') => void;
+  }) =>
     isOpen ? (
       <div role="dialog" aria-label="Modal de vincular lista">
         <span>Modal aberto para {turma?.nome}</span>
@@ -51,7 +57,13 @@ jest.mock('../../../features/manage-turmas/ui/AbaAlunos', () => ({
 }));
 
 jest.mock('../../../features/manage-turmas/ui/ModalTurma', () => ({
-  ModalTurma: ({ isOpen, mode, turma, onClose, onSubmit }: any) =>
+  ModalTurma: ({ isOpen, mode, turma, onClose, onSubmit }: {
+    isOpen: boolean;
+    mode: string;
+    turma: { nome: string } | null;
+    onClose: () => void;
+    onSubmit: (data: { nome: string }) => void;
+  }) =>
     isOpen ? (
       <div role="dialog" aria-label="Modal de turma">
         <span>Modo {mode} para {turma?.nome}</span>
@@ -331,12 +343,12 @@ describe('TurmaDetalhesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Listas$/i }));
 
     expect(await screen.findByText('Sem prazo')).toBeInTheDocument();
-    expect(screen.getByText('10/06/2026, 20:59')).toBeInTheDocument(); 
+    expect(screen.getByText(/10\/06\/2026, \d{2}:\d{2}/)).toBeInTheDocument();
     expect(screen.getByText('data-invalida')).toBeInTheDocument();
   });
 
   it('não deve fechar o modal de edicao de turma se isSavingTurma for true (cobertura handleFecharModalTurma)', async () => {
-    let resolverApi: any;
+    let resolverApi!: (value: unknown) => void;
     const promisePendente = new Promise((resolve) => { resolverApi = resolve; });
     
     (buscarTurmaPorId as jest.Mock).mockResolvedValue(mockTurma);

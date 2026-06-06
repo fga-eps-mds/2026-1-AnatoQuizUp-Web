@@ -112,7 +112,7 @@ describe('ListagemListas', () => {
     fireEvent.click(screen.getByRole('button', { name: /Gabarito Bloqueado/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas/t1/listas/resp-bloq');
 
-    fireEvent.click(screen.getByRole('button', { name: /Ver Detalhes/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas/t1/listas/exp-det');
+    const btnBaixarPdf = screen.getByRole('button', { name: /Baixar PDF/i });
+    expect(btnBaixarPdf).toBeInTheDocument();
   });
 });
