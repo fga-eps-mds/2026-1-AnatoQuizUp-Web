@@ -30,5 +30,10 @@ export const resolucaoListaApi = {
   submeter: async (listaTurmaId: string) => {
     const res = await httpClient.post<RespostaApi<null>>(`/listasAluno/${listaTurmaId}/submeter`);
     return res.data;
-  }
+  },
+
+  baixarPdfAluno: async (listaTurmaId: string): Promise<string> => {
+    const response = await httpClient.get<{ base64: string }>(`/listasAluno/${listaTurmaId}/pdf`);
+    return response.data.base64;
+  },
 };

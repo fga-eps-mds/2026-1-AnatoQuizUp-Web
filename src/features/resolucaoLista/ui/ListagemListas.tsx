@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, AlertCircle, FileText, Clock, ListOrdered, CheckCircle, Lock, Eye } from 'lucide-react';
+import { Search, Filter, AlertCircle, FileText, Clock, ListOrdered, CheckCircle, Lock, Eye, Loader2, Download } from 'lucide-react';
 import { resolucaoListaApi } from '../../../entities/resolucaoLista/api/resolucaoListaApi';
 import type { ResumoListaAluno } from '../../../entities/resolucaoLista/model/types';
 
@@ -10,6 +10,8 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
   const [estado, setEstado] = useState<'carregando' | 'sucesso' | 'erro'>('carregando');
   const [busca, setBusca] = useState('');
   const [tentativas, setTentativas] = useState(0);
+  
+  const [pdfCarregandoId, setPdfCarregandoId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -31,6 +33,26 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
       cancelado = true;
     };
   }, [busca, tentativas]);
+
+  const handleBaixarPdf = async (listaTurmaId: string, nomeLista: string) => {
+    try {
+      setPdfCarregandoId(listaTurmaId);
+      const base64Data = await resolucaoListaApi.baixarPdfAluno(listaTurmaId);
+      
+      const pdfUrl = `data:application/pdf;base64,${base64Data}`;
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `${nomeLista.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao gerar o PDF da lista. Tente novamente mais tarde.');
+    } finally {
+      setPdfCarregandoId(null);
+    }
+  };
 
   const renderInfoRodape = (lista: ResumoListaAluno) => {
     const temPrazo = !!lista.prazo;
@@ -240,10 +262,16 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
               </div>
               <div className="flex-shrink-0 w-full sm:w-auto mt-3 sm:mt-0">
                  <button 
-                  className="w-full sm:w-auto inline-flex justify-center items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/aluno/turmas/${turmaId}/listas/${lista.listaTurmaId}`)}
+                  className="w-full sm:w-auto inline-flex justify-center items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                  onClick={() => handleBaixarPdf(lista.listaTurmaId, lista.nome)}
+                  disabled={pdfCarregandoId === lista.listaTurmaId}
                 >
-                  <Eye size={16} /> Ver Detalhes
+                  {pdfCarregandoId === lista.listaTurmaId ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Download size={16} />
+                  )}
+                  {pdfCarregandoId === lista.listaTurmaId ? 'Gerando...' : 'Baixar PDF'}
                 </button>
               </div>
             </div>
