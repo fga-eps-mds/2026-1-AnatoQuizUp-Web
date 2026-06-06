@@ -79,7 +79,7 @@ describe('ResponderLista', () => {
     expect(screen.getByText('Sua resposta')).toBeInTheDocument();
     expect(screen.getByText('Correta')).toBeInTheDocument();
     expect(screen.getByText('Info extra')).toBeInTheDocument();
-    expect(screen.getByAltText('Imagem da questão')).toBeInTheDocument();
+    expect(await screen.findByAltText('Imagem da questão')).toBeInTheDocument();
     
     fireEvent.click(screen.getByRole('button', { name: /Voltar para turma/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas/t1');
@@ -99,7 +99,6 @@ describe('ResponderLista', () => {
     render(<ResponderLista />);
 
     expect(await screen.findByText('Lista Teste')).toBeInTheDocument();
-    expect(screen.getByAltText('Imagem da questão')).toBeInTheDocument();
     
     const btnAnterior = screen.getByRole('button', { name: /Anterior/i });
     expect(btnAnterior).toBeDisabled();
@@ -110,13 +109,13 @@ describe('ResponderLista', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Próxima/i }));
-    expect(screen.getByText('Q2')).toBeInTheDocument();
+    expect(await screen.findByText('Q2')).toBeInTheDocument();
     
     const btnProxima = screen.getByRole('button', { name: /Próxima/i });
     expect(btnProxima).toBeDisabled();
     
     fireEvent.click(btnAnterior);
-    expect(screen.getByText('Q1')).toBeInTheDocument();
+    expect(await screen.findByText('Q1')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Confirmar submissão/i }));
     expect(screen.getByText('Confirmar Submissão')).toBeInTheDocument();

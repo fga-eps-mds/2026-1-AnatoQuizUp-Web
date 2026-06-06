@@ -132,7 +132,9 @@ export const DetalheTurma = () => {
 
       <div className="p-6 md:p-7 overflow-y-auto flex-1">
         <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
-          <span className="cursor-pointer hover:text-teal-600 transition-colors" onClick={voltar}>Minhas Turmas</span> 
+          <button type="button" className="cursor-pointer hover:text-teal-600 transition-colors bg-transparent border-none p-0 text-inherit font-inherit" onClick={voltar}>
+            Minhas Turmas
+          </button> 
           <span>›</span> 
           <span>{turma?.nome}</span> 
           <span>›</span> 

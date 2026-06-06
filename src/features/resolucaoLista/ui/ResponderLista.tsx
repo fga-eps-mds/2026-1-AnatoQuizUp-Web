@@ -261,16 +261,17 @@ export const ResponderLista = () => {
               {q.alternativas && Object.entries(q.alternativas).map(([letra, texto]) => {
                 const isSelected = q.respostaMarcada === letra;
                 return (
-                  <div 
+                  <button 
                     key={letra} 
-                    className={`flex items-center gap-3 border-2 rounded-xl p-3 cursor-pointer transition-all ${isSelected ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200 hover:border-teal-500 hover:bg-teal-50'}`}
+                    type="button"
+                    className={`w-full text-left flex items-center gap-3 border-2 rounded-xl p-3 cursor-pointer transition-all ${isSelected ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200 hover:border-teal-500 hover:bg-teal-50'}`}
                     onClick={() => marcarAlternativa(letra)}
                   >
                     <div className={`w-8 h-8 rounded-lg flex shrink-0 items-center justify-center font-extrabold text-sm border-2 ${isSelected ? 'bg-teal-500 border-teal-500 text-white' : 'border-gray-200 text-gray-500'}`}>
                       {letra}
                     </div>
                     <div className="text-sm font-semibold text-gray-800 flex-1">{texto}</div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
