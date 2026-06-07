@@ -1,4 +1,8 @@
-import { buscarDashboardMacro, buscarDesempenhoIndividual } from './dashboardTurmaApi';
+import {
+  buscarDashboardMacro,
+  buscarDesempenhoIndividual,
+  buscarDesempenhoPorListas,
+} from './dashboardTurmaApi';
 import { httpClient } from '../../../shared/api/httpClient';
 
 jest.mock('../../../shared/api/httpClient', () => ({
@@ -53,6 +57,38 @@ describe('dashboardTurmaApi', () => {
 
       expect(httpClient.get).toHaveBeenCalledWith('/turmasDashboard/turma-456/individual');
       expect(result.alunos).toHaveLength(0);
+    });
+  });
+
+  describe('buscarDesempenhoPorListas', () => {
+    it('deve fazer GET para /turmasDashboard/:id/listas e retornar os dados', async () => {
+      const mockData = [
+        {
+          listaTurmaId: 'lista-turma-1',
+          nomeLista: 'Simulado de Anatomia',
+          totalAlunos: 18,
+          totalSubmeteram: 11,
+          totalPendentes: 7,
+          taxaMediaAcerto: 73.4,
+          prazo: '2026-06-10T23:59:00.000Z',
+        },
+      ];
+
+      (httpClient.get as jest.Mock).mockResolvedValue({ data: mockData });
+
+      const result = await buscarDesempenhoPorListas('turma-123');
+
+      expect(httpClient.get).toHaveBeenCalledWith('/turmasDashboard/turma-123/listas');
+      expect(result).toEqual(mockData);
+    });
+
+    it('deve retornar lista vazia quando nao houver desempenho por lista', async () => {
+      (httpClient.get as jest.Mock).mockResolvedValue({ data: [] });
+
+      const result = await buscarDesempenhoPorListas('turma-456');
+
+      expect(httpClient.get).toHaveBeenCalledWith('/turmasDashboard/turma-456/listas');
+      expect(result).toEqual([]);
     });
   });
 });

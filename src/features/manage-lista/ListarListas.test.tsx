@@ -1,216 +1,223 @@
-jest.mock('../../shared/config/env', () => ({
-  API_BASE_URL: 'http://localhost:4000/api/v1',
-  USE_MOCKS: false,
-}));
-
-jest.mock('./ModalLista', () => ({
-  ModalLista: ({
-    isOpen,
-    mode,
-    lista,
-    onSubmit,
-  }: {
-    isOpen: boolean;
-    mode: 'create' | 'edit';
-    lista: { nome?: string } | null;
-    onSubmit: (nome: string) => void | Promise<void>;
-  }) => (
-    isOpen ? (
-      <div data-testid="modal-lista">
-        <span>{mode}</span>
-        <span>{lista?.nome ?? 'nova'}</span>
-        <button type="button" onClick={() => void onSubmit(mode === 'create' ? 'Nova Lista Teste' : 'Lista Editada')}>
-          Salvar lista mock
-        </button>
-      </div>
-    ) : null
-  ),
-}));
-
-jest.mock('./ModalGerenciarQuestoesLista', () => ({
-  ModalGerenciarQuestoesLista: ({
-    isOpen,
-    lista,
-  }: {
-    isOpen: boolean;
-    lista: { nome?: string } | null;
-  }) => (
-    isOpen ? <div data-testid="modal-questoes-lista">{lista?.nome}</div> : null
-  ),
-}));
-
-jest.mock('./ModalGerenciarTurmasLista', () => ({
-  ModalGerenciarTurmasLista: ({
-    isOpen,
-    lista,
-  }: {
-    isOpen: boolean;
-    lista: { nome?: string } | null;
-  }) => (
-    isOpen ? <div data-testid="modal-turmas-lista">{lista?.nome}</div> : null
-  ),
-}));
-
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ListarListas } from './ListarListas';
-import {
-  atualizarLista,
-  criarLista,
-  excluirLista,
-  listarListas,
-  baixarPdfLista
-} from '../../entities/lista/api/listaApi';
+import * as listaApi from '../../entities/lista/api/listaApi';
 import type { ListaQuestao } from '../../entities/lista/model/types';
 
-jest.mock('../../entities/lista/api/listaApi');
+interface MockModalListaProps {
+  isOpen: boolean;
+  mode: 'create' | 'edit';
+  lista: { nome: string } | null;
+  onSubmit: (nome: string) => void;
+  onClose: () => void;
+}
 
-const mockedListar = listarListas as jest.MockedFunction<typeof listarListas>;
-const mockedCriar = criarLista as jest.MockedFunction<typeof criarLista>;
-const mockedAtualizar = atualizarLista as jest.MockedFunction<typeof atualizarLista>;
-const mockedExcluir = excluirLista as jest.MockedFunction<typeof excluirLista>;
+interface MockModalGerenciarProps {
+  isOpen: boolean;
+  lista: { nome: string } | null;
+  onClose: () => void;
+  onAfterChange: () => void;
+  onFeedback: (msg: string, type: string) => void;
+}
 
-const listaBase: ListaQuestao = {
-  id: '1',
-  nome: 'Lista 1',
-  quantidadeQuestoes: 5,
-  status: 'RASCUNHO',
-  turmas: [],
-  criadoEm: '22/05/2026',
-};
+interface MockModalExcluirProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (id: string) => void;
+}
+
+jest.mock('../../entities/lista/api/listaApi', () => ({
+  listarListas: jest.fn(),
+  criarLista: jest.fn(),
+  atualizarLista: jest.fn(),
+  excluirLista: jest.fn(),
+  baixarPdfLista: jest.fn()
+}));
+
+jest.mock('../../shared/config/env', () => ({ API_BASE_URL: 'http://localhost:4000/api/v1', USE_MOCKS: false }));
+
+jest.mock('./ModalLista', () => ({
+  ModalLista: ({ isOpen, mode, lista, onSubmit, onClose }: MockModalListaProps) => (isOpen ? (
+    <div data-testid="modal-lista">
+      <span>{mode}</span>
+      <span>{lista?.nome ?? 'nova'}</span>
+      <button onClick={() => { onSubmit(mode === 'create' ? 'NovaLista' : 'Editada'); }}>Submeter</button>
+      <button onClick={onClose}>Fechar</button>
+    </div>
+  ) : null)
+}));
+
+jest.mock('./ModalGerenciarQuestoesLista', () => ({
+  ModalGerenciarQuestoesLista: ({ isOpen, lista, onClose, onAfterChange, onFeedback }: MockModalGerenciarProps) => (isOpen ? (
+    <div data-testid="modal-questoes">
+      <span>{lista?.nome}</span>
+      <button onClick={onClose}>FecharQuestoes</button>
+      <button onClick={onAfterChange}>Atualizar</button>
+      <button onClick={() => { onFeedback('Toast Teste', 'success'); }}>Toast</button>
+    </div>
+  ) : null)
+}));
+
+jest.mock('./ModalExcluirLista', () => ({
+  ModalExcluirLista: ({ isOpen, onClose, onConfirm }: MockModalExcluirProps) => (isOpen ? (
+    <div data-testid="modal-excluir">
+      <button onClick={onClose}>Cancelar</button>
+      <button onClick={() => { onConfirm('1'); }}>ConfirmarExclusao</button>
+    </div>
+  ) : null)
+}));
+
+const mockedListar = jest.mocked(listaApi.listarListas);
+const mockedCriar = jest.mocked(listaApi.criarLista);
+const mockedAtualizar = jest.mocked(listaApi.atualizarLista);
+const mockedExcluir = jest.mocked(listaApi.excluirLista);
+const mockedBaixarPdf = jest.mocked(listaApi.baixarPdfLista);
 
 describe('ListarListas', () => {
+  const listaBase: ListaQuestao = {
+    id: '1', nome: 'Lista 1', quantidadeQuestoes: 5, status: 'RASCUNHO', criadoEm: '22/05/2026', questoes: [],
+    turmas: [{ id: 't1', nome: 'Turma A' }, { id: 't2', nome: 'Turma B' }, { id: 't3', nome: 'Turma C' }, { id: 't4', nome: 'Turma D' }] 
+  };
+
+  const listaSemTurma: ListaQuestao = {
+    id: '2', nome: 'Lista 2', quantidadeQuestoes: 0, status: 'PUBLICADA', turmas: [], criadoEm: '', questoes: []
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedListar.mockResolvedValue([listaBase]);
+    jest.useFakeTimers();
+    mockedListar.mockResolvedValue([listaBase, listaSemTurma]);
   });
 
-  it('deve exibir mensagem de carregamento e depois as listas da API', async () => {
-    render(<ListarListas />);
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
 
+  it('deve buscar e listar as listas, testando turmas excedentes e sem turma', async () => {
+    render(<ListarListas />);
     expect(screen.getByText('Carregando listas...')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Lista 1')).toBeInTheDocument();
-      expect(screen.getByText('5 questao(oes)')).toBeInTheDocument();
-      expect(screen.getAllByText('Rascunho')).toHaveLength(2);
+      expect(screen.getByText('Sem turma')).toBeInTheDocument();
+      expect(screen.getByText('+2')).toBeInTheDocument(); 
     });
   });
 
-  it('deve buscar listas usando filtros de busca e status', async () => {
+  it('deve exibir toast e esconde-lo apos 4 segundos', async () => {
     render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
 
-    await screen.findByText('Lista 1');
+    fireEvent.click(screen.getAllByRole('button', { name: /questões/i })[0]);
+    fireEvent.click(screen.getByText('Toast'));
 
-    fireEvent.change(screen.getByLabelText('Buscar lista'), {
-      target: { value: 'Neuro' },
-    });
-    fireEvent.change(screen.getByLabelText('Filtrar listas por status'), {
-      target: { value: 'PUBLICADA' },
-    });
+    expect(screen.getByText('Toast Teste')).toBeInTheDocument();
+
+    jest.advanceTimersByTime(4500);
 
     await waitFor(() => {
-      expect(mockedListar).toHaveBeenLastCalledWith({
-        busca: 'Neuro',
-        status: 'PUBLICADA',
-      });
+      expect(screen.queryByText('Toast Teste')).not.toBeInTheDocument();
     });
   });
 
-  it('deve criar uma lista pela modal de cadastro', async () => {
-    mockedCriar.mockResolvedValue({ ...listaBase, id: '2', nome: 'Nova Lista Teste' });
-
+  it('deve usar filtros de busca e status para recarregar as listas', async () => {
     render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
 
-    await screen.findByText('Lista 1');
+    fireEvent.change(screen.getByPlaceholderText('Buscar lista'), { target: { value: 'Neuro' } });
+    fireEvent.change(screen.getByLabelText('Filtrar listas por status'), { target: { value: 'PUBLICADA' } });
+
+    jest.advanceTimersByTime(100);
+
+    await waitFor(() => {
+      expect(mockedListar).toHaveBeenCalledWith({ busca: 'Neuro', status: 'PUBLICADA' });
+    });
+  });
+
+  it('deve criar uma nova lista com sucesso (fluxo ModalLista)', async () => {
+    render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: /Nova lista/i }));
-    expect(screen.getByTestId('modal-lista')).toHaveTextContent('create');
-
-    fireEvent.click(screen.getByText('Salvar lista mock'));
-
-    await waitFor(() => {
-      expect(mockedCriar).toHaveBeenCalledWith({ nome: 'Nova Lista Teste' });
-    });
-  });
-
-  it('deve editar uma lista pela modal de edicao', async () => {
-    mockedAtualizar.mockResolvedValue({ ...listaBase, nome: 'Lista Editada' });
-
-    render(<ListarListas />);
-
-    await screen.findByText('Lista 1');
-
-    fireEvent.click(screen.getByRole('button', { name: /Editar/i }));
-    expect(screen.getByTestId('modal-lista')).toHaveTextContent('Lista 1');
-
-    fireEvent.click(screen.getByText('Salvar lista mock'));
-
-    await waitFor(() => {
-      expect(mockedAtualizar).toHaveBeenCalledWith('1', { nome: 'Lista Editada' });
-    });
-  });
-
-  it('deve abrir a modal de vincular e desvincular questoes', async () => {
-    render(<ListarListas />);
-
-    await screen.findByText('Lista 1');
-
-    fireEvent.click(screen.getByRole('button', { name: /5 questao\(oes\)/i }));
-
-    expect(screen.getByTestId('modal-questoes-lista')).toHaveTextContent('Lista 1');
-  });
-
-  it('deve abrir a modal de vincular e desvincular turmas', async () => {
-    render(<ListarListas />);
-
-    await screen.findByText('Lista 1');
-
-    fireEvent.click(screen.getByRole('button', { name: /Turmas/i }));
-
-    expect(screen.getByTestId('modal-turmas-lista')).toHaveTextContent('Lista 1');
-  });
-
-  it('deve iniciar o download do PDF e mostrar o toast de carregamento', async () => {
-    window.URL.createObjectURL = jest.fn().mockReturnValue('blob:http://localhost/mock-url');
-    window.URL.revokeObjectURL = jest.fn();
-
-    (baixarPdfLista as jest.Mock).mockResolvedValue('base64-falsa-para-teste');
-
-    render(<ListarListas />);
     
-    await screen.findByText('Lista 1');
-
-    fireEvent.click(screen.getByRole('button', { name: /PDF/i }));
-
-    expect(screen.getByText('Gerando PDF...')).toBeInTheDocument();
+    mockedCriar.mockResolvedValueOnce({ ...listaBase, id: '3' });
+    fireEvent.click(screen.getByText('Submeter'));
 
     await waitFor(() => {
-      expect(baixarPdfLista).toHaveBeenCalledWith('1');
+      expect(mockedCriar).toHaveBeenCalledWith({ nome: 'NovaLista' });
+      expect(screen.getByText('Lista criada com sucesso.')).toBeInTheDocument();
     });
   });
 
-  it('deve abrir o modal de exclusao e excluir a lista', async () => {
-    mockedListar.mockResolvedValueOnce([listaBase]).mockResolvedValueOnce([]);
-    mockedExcluir.mockResolvedValueOnce();
-
+  it('deve editar uma lista existente com sucesso e fechar modal', async () => {
     render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
 
-    await screen.findByText('Lista 1');
+    fireEvent.click(screen.getAllByRole('button', { name: /Editar/i })[0]);
+    
+    fireEvent.click(screen.getByText('Fechar'));
+    expect(screen.queryByTestId('modal-lista')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Excluir/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Editar/i })[0]);
+    mockedAtualizar.mockResolvedValueOnce(listaBase);
+    fireEvent.click(screen.getByText('Submeter'));
 
-    expect(screen.getByText('Excluir lista?')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockedAtualizar).toHaveBeenCalledWith('1', { nome: 'Editada' });
+      expect(screen.getByText('Lista atualizada com sucesso.')).toBeInTheDocument();
+    });
+  });
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Excluir/i })[1]);
+  it('deve abrir modal de exclusao e confirmar', async () => {
+    render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
+    
+    fireEvent.click(screen.getByText('Cancelar'));
+    expect(screen.queryByTestId('modal-excluir')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Excluir/i })[0]);
+    mockedExcluir.mockResolvedValueOnce();
+    fireEvent.click(screen.getByText('ConfirmarExclusao'));
 
     await waitFor(() => {
       expect(mockedExcluir).toHaveBeenCalledWith('1');
+      expect(screen.getByText('Lista excluída com sucesso.')).toBeInTheDocument();
     });
+  });
 
+  it('deve fazer download do PDF com sucesso', async () => {
+    window.URL.createObjectURL = jest.fn().mockReturnValue('blob-url');
+    window.URL.revokeObjectURL = jest.fn();
+    mockedBaixarPdf.mockResolvedValueOnce('base64');
+
+    render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole('button', { name: /PDF/i })[0]);
+
+    expect(screen.getByText('Gerando PDF...')).toBeInTheDocument();
+    
     await waitFor(() => {
-      expect(screen.queryByText('Lista 1')).not.toBeInTheDocument();
-      expect(screen.getByText('Nenhuma lista encontrada.')).toBeInTheDocument();
+      expect(mockedBaixarPdf).toHaveBeenCalledWith('1');
+      expect(screen.getByText('PDF baixado com sucesso!')).toBeInTheDocument();
+    });
+  });
+
+  it('deve disparar onAfterChange do Modal de Questões', async () => {
+    render(<ListarListas />);
+    await waitFor(() => expect(screen.getByText('Lista 1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole('button', { name: /questões/i })[0]);
+    
+    mockedListar.mockClear();
+    fireEvent.click(screen.getByText('Atualizar'));
+
+    jest.advanceTimersByTime(100); 
+    await waitFor(() => {
+      expect(mockedListar).toHaveBeenCalled();
     });
   });
 });

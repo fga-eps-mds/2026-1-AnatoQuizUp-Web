@@ -13,7 +13,7 @@ export const ModalExcluirLista = ({ isOpen, lista, onClose, onConfirm, isLoading
   if (!isOpen || !lista) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-xl w-full max-w-md shadow-xl p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-2">
           Excluir lista?
@@ -31,14 +31,14 @@ export const ModalExcluirLista = ({ isOpen, lista, onClose, onConfirm, isLoading
           <button 
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="cursor-pointer px-4 py-2 rounded-lg border-2 border-gray-200 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>
           <button 
             onClick={() => onConfirm(lista.id)}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white flex items-center gap-2 hover:bg-red-700 transition-colors disabled:opacity-50"
+            className="cursor-pointer px-4 py-2 rounded-lg bg-red-600 text-sm font-bold text-white flex items-center gap-2 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             {isLoading ? 'Excluindo...' : 'Excluir'}

@@ -26,3 +26,13 @@ export interface DesempenhoAluno {
 export interface DashboardIndividual {
   alunos: DesempenhoAluno[];
 }
+
+export interface DesempenhoLista {
+  listaTurmaId: string;
+  nomeLista: string;
+  totalAlunos: number;
+  totalSubmeteram: number;
+  totalPendentes: number;
+  taxaMediaAcerto: number;
+  prazo: string | null;
+}

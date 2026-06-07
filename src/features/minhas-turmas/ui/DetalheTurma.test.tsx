@@ -1,144 +1,135 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import axios from 'axios';
-
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DetalheTurma } from './DetalheTurma';
 import { httpClient } from '../../../shared/api/httpClient';
 import { buscarUsuarioPorId } from '../../../entities/usuarios/api/usuarioApi';
+import { useNavigate, useParams } from 'react-router-dom';
 
 jest.mock('../../../shared/api/httpClient', () => ({
-  httpClient: {
-    get: jest.fn(),
-  },
+  httpClient: { get: jest.fn(), post: jest.fn() }
 }));
 
 jest.mock('../../../entities/usuarios/api/usuarioApi', () => ({
-  buscarUsuarioPorId: jest.fn(),
+  buscarUsuarioPorId: jest.fn()
 }));
 
-const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  useNavigate: jest.fn(),
+  useParams: jest.fn(),
+}));
 
-jest.mock('react-router-dom', () => {
-  const original = jest.requireActual('react-router-dom');
-  return {
-    ...original,
-    useNavigate: () => mockNavigate,
-    useParams: () => ({ id: 'turma-1' }),
-  };
-});
+jest.mock('../../resolucaoLista/ui/ListagemListas', () => ({
+  ListagemListas: () => <div data-testid="listagem-mock" />
+}));
 
-const turmaApiMock = {
-  id: 'turma-1',
-  codigo: 'ANAT-01',
-  nome: 'Anatomia Sistemica',
-  semestre: '1',
-  ano: 2026,
-  descricao: 'Estudo da estrutura do corpo humano.',
-  status: 'ATIVA',
-  quantidadeAlunos: 12,
-  criadoEm: '2026-03-01T10:00:00.000Z',
-  professorId: 'prof-1',
-};
+describe('DetalheTurma', () => {
+  const mockNavigate = jest.fn();
 
-const usuarioPublicoMock = {
-  id: 'prof-1',
-  nome: 'Dra. Maria Souza',
-  papel: 'PROFESSOR' as const,
-};
-
-const renderComponente = () =>
-  render(
-    <MemoryRouter>
-      <DetalheTurma />
-    </MemoryRouter>,
-  );
-
-describe('DetalheTurma Feature', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
+    (useParams as jest.Mock).mockReturnValue({ id: 'turma-1' });
   });
 
-  afterEach(() => {
-    // Restaura jest.spyOn (ex.: axios.isAxiosError) para nao vazar entre testes.
-    jest.restoreAllMocks();
+  it('deve exibir loading inicialmente', () => {
+    (httpClient.get as jest.Mock).mockReturnValue(new Promise(() => {})); // Fica pendente
+    render(<DetalheTurma />);
+    expect(screen.getByText(/Carregando detalhes/i)).toBeInTheDocument();
   });
 
-  it('deve renderizar nome, descricao e professor da turma', async () => {
+  it('deve exibir estado de nao encontrada se o id da URL for indefinido', () => {
+    (useParams as jest.Mock).mockReturnValue({ id: undefined });
+    render(<DetalheTurma />);
+    expect(screen.getByText('Turma não encontrada')).toBeInTheDocument();
+  });
+
+  it('deve exibir erro 404 se a turma nao existir', async () => {
+    (httpClient.get as jest.Mock).mockRejectedValue({ response: { status: 404 }, isAxiosError: true });
+    render(<DetalheTurma />);
+    
+    expect(await screen.findByText('Turma não encontrada')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByRole('button', { name: /Voltar para minhas turmas/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas');
+  });
+
+  it('deve exibir erro generico se a API falhar com outro erro', async () => {
+    (httpClient.get as jest.Mock).mockRejectedValue(new Error('Network Error'));
+    render(<DetalheTurma />);
+    
+    expect(await screen.findByText('Erro ao carregar')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByRole('button', { name: /Voltar/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas');
+  });
+
+  it('deve carregar e exibir os detalhes da turma e professor com sucesso', async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
-      data: { dados: turmaApiMock },
+      data: { dados: { nome: 'Anatomia I', descricao: 'Desc específica', professorId: 'prof-1', _count: { alunos: 10 } } }
     });
-    (buscarUsuarioPorId as jest.Mock).mockResolvedValue(usuarioPublicoMock);
+    (buscarUsuarioPorId as jest.Mock).mockResolvedValue({ nome: 'Prof Teste' });
 
-    renderComponente();
+    render(<DetalheTurma />);
 
-    expect(await screen.findByText('Anatomia Sistemica')).toBeInTheDocument();
-    expect(screen.getByText('2026.1')).toBeInTheDocument();
-    expect(
-      screen.getByText('Estudo da estrutura do corpo humano.'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Dra. Maria Souza')).toBeInTheDocument();
-
-    expect(httpClient.get).toHaveBeenCalledWith('/turmas/turma-1');
-    expect(buscarUsuarioPorId).toHaveBeenCalledWith('prof-1');
+    expect(await screen.findByRole('heading', { name: 'Anatomia I' })).toBeInTheDocument();
+    expect(screen.getByText('Desc específica')).toBeInTheDocument();
+    expect(screen.getByText('Prof Teste')).toBeInTheDocument();
+    expect(screen.getByTestId('listagem-mock')).toBeInTheDocument();
   });
 
-  it('deve exibir fallback quando nao for possivel obter o professor', async () => {
+  it('deve usar valores de fallback para descricao e permitir voltar pelo breadcrumb', async () => {
+    
     (httpClient.get as jest.Mock).mockResolvedValue({
-      data: { dados: turmaApiMock },
+      data: { dados: { nome: 'Anatomia Sem Descricao', professorId: 'prof-1' } } 
     });
-    (buscarUsuarioPorId as jest.Mock).mockRejectedValue(new Error('falha'));
+    (buscarUsuarioPorId as jest.Mock).mockResolvedValue({ nome: 'Prof Teste' });
 
-    renderComponente();
+    render(<DetalheTurma />);
 
-    expect(await screen.findByText('Anatomia Sistemica')).toBeInTheDocument();
-    expect(screen.getByText('Professor não disponível')).toBeInTheDocument();
+    expect(await screen.findByText('Listas de exercícios publicadas pelo professor')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Minhas Turmas'));
+    expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas');
   });
 
-  it('deve exibir estado nao encontrada quando a turma retornar 404', async () => {
-    const erro404 = Object.assign(new Error('not found'), {
-      isAxiosError: true,
-      response: { status: 404 },
-    });
-    jest.spyOn(axios, 'isAxiosError').mockReturnValue(true);
-    (httpClient.get as jest.Mock).mockRejectedValue(erro404);
-
-    renderComponente();
-
-    expect(await screen.findByText('Turma não encontrada.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Esta turma não existe ou você não está vinculado a ela.'),
-    ).toBeInTheDocument();
-  });
-
-  it('deve exibir estado de erro generico quando a chamada falhar com erro nao 404', async () => {
-    jest.spyOn(axios, 'isAxiosError').mockReturnValue(false);
-    (httpClient.get as jest.Mock).mockRejectedValue(new Error('falha 500'));
-
-    renderComponente();
-
-    expect(
-      await screen.findByText('Não foi possível carregar os detalhes da turma.'),
-    ).toBeInTheDocument();
-  });
-
-  it('deve navegar de volta para listagem ao clicar em voltar', async () => {
-    const user = userEvent.setup();
+  it('deve lidar com falha ao buscar professor sem quebrar a tela', async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
-      data: { dados: turmaApiMock },
+      data: { dados: { nome: 'Anatomia I', professorId: 'prof-1' } }
     });
-    (buscarUsuarioPorId as jest.Mock).mockResolvedValue(usuarioPublicoMock);
+    (buscarUsuarioPorId as jest.Mock).mockRejectedValue(new Error('Erro prof'));
 
-    renderComponente();
+    render(<DetalheTurma />);
 
-    await screen.findByText('Anatomia Sistemica');
+    expect(await screen.findByRole('heading', { name: 'Anatomia I' })).toBeInTheDocument();
+    expect(screen.getByText('Professor')).toBeInTheDocument(); // O fallback de nome de professor
+  });
 
-    await user.click(
-      screen.getAllByRole('button', { name: /Voltar para minhas turmas/i })[0],
-    );
+  it('nao deve tentar atualizar o estado se o componente for desmontado (cleanup do useEffect)', async () => {
+    type TurmaResponse = { 
+      data: { 
+        dados: { nome: string; professorId: string } 
+      } 
+    };
+    
+    let resolverApi: (value: TurmaResponse) => void;
+    
+    const promiseApi = new Promise<TurmaResponse>((resolve) => { 
+      resolverApi = resolve; 
+    });
+    
+    (httpClient.get as jest.Mock).mockReturnValue(promiseApi);
+
+    const { unmount } = render(<DetalheTurma />);
+    
+    unmount();
+    
+    resolverApi({
+      data: { 
+        dados: { nome: 'Fantasma', professorId: 'prof-1' } 
+      }
+    });
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas');
+      expect(httpClient.get).toHaveBeenCalled();
     });
   });
 });

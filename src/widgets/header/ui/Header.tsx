@@ -128,7 +128,7 @@ export const Header = () => {
       label: "Listas",
       icon: List,
       onSelect: () => navigate("/professor/lista"),
-      isActive: location.pathname.startsWith("/professor/listas"),
+      isActive: location.pathname.startsWith("/professor/lista"), // CORRIGIDO: removido o 's' do final para coincidir com a rota real
     };
 
     switch (role) {
@@ -221,7 +221,7 @@ export const Header = () => {
               key={item.key}
               onClick={() => handleSelect(item)}
               aria-current={item.isActive ? "page" : undefined}
-              className={`flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
+              className={`cursor-pointer flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
             >
               <Icon size={22} />
               <span>{item.label}</span>
@@ -276,7 +276,7 @@ export const Header = () => {
   return (
     <>
       <div className="md:hidden sticky top-0 z-40 bg-[#0A1128] h-16 flex items-center justify-between px-4 border-b border-[#00214d]">
-        <button onClick={() => navigate("/home")} className="flex items-center">
+        <button onClick={() => navigate("/home")} className="flex cursor-pointer items-center">
           <img src={logo} alt="AnatoQuizUp" className="h-10" />
         </button>
 
@@ -290,7 +290,7 @@ export const Header = () => {
 
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="p-2 text-[#fffffe] hover:text-[#71edc8] transition-colors"
+            className="p-2 cursor-pointer text-[#fffffe] hover:text-[#71edc8] transition-colors"
             aria-label="Abrir menu"
             aria-expanded={isDrawerOpen}
           >
@@ -311,7 +311,7 @@ export const Header = () => {
           >
             <button
               onClick={() => setIsDrawerOpen(false)}
-              className="absolute top-3 right-3 z-10 p-2 text-[#fffffe] hover:text-[#71edc8] transition-colors"
+              className="absolute cursor-pointer top-3 right-3 z-10 p-2 text-[#fffffe] hover:text-[#71edc8] transition-colors"
               aria-label="Fechar menu"
             >
               <X size={22} />

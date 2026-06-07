@@ -23,7 +23,7 @@ interface ModalGerenciarQuestoesListaProps {
 const formatarTipo = (tipo?: string) => {
   if (!tipo) return '';
   if (/verdadeiro|falso|certo_errado/i.test(tipo)) return 'Verdadeiro/Falso';
-  if (/multipla|escolha|ltipla/i.test(tipo)) return 'Multipla escolha';
+  if (/multipla|escolha|ltipla/i.test(tipo)) return 'Múltipla escolha';
   return tipo;
 };
 
@@ -62,7 +62,7 @@ export const ModalGerenciarQuestoesLista = ({
       setQuestoes(questoesBanco);
     } catch (error) {
       console.error('Erro ao carregar questoes da lista', error);
-      onFeedback('Nao foi possivel carregar as questoes da lista.', 'error');
+      onFeedback('Não foi possivel carregar as questoes da lista.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +172,7 @@ export const ModalGerenciarQuestoesLista = ({
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h3 id="modal-questoes-lista-title" className="text-lg font-bold text-gray-900">
-              Questoes da lista
+              Questões da lista
             </h3>
             <p className="text-sm text-gray-500">
               {lista.nome} - {questoesVinculadas.length} questao(oes) selecionada(s)
@@ -183,7 +183,7 @@ export const ModalGerenciarQuestoesLista = ({
             type="button"
             onClick={onClose}
             aria-label="Fechar modal de questoes"
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100"
           >
             <X size={18} />
           </button>
@@ -211,12 +211,12 @@ export const ModalGerenciarQuestoesLista = ({
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {questoesVinculadas.map((questao, index) => (
-                    <li key={questao.id} className="flex items-start justify-between gap-3 p-4">
+                    <li key={questao.id} className="flex items-start justify-between gap-3 p-4 hover:bg-gray-50 transition-colors">
                       <div className="min-w-0">
                         <p className="line-clamp-2 text-sm font-semibold text-gray-900">
                           {index + 1}. {questao.enunciado}
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 font-medium">
                           {[questao.tema, formatarTipo(questao.tipo), questao.dificuldade].filter(Boolean).join(' - ')}
                         </p>
                       </div>
@@ -227,7 +227,7 @@ export const ModalGerenciarQuestoesLista = ({
                           aria-label="Mover questao para cima"
                           onClick={() => void handleMoverQuestao(questao.id, -1)}
                           disabled={index === 0 || idEmOperacao === questao.id}
-                          className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer rounded-md border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <ArrowUp size={14} />
                         </button>
@@ -236,7 +236,7 @@ export const ModalGerenciarQuestoesLista = ({
                           aria-label="Mover questao para baixo"
                           onClick={() => void handleMoverQuestao(questao.id, 1)}
                           disabled={index === questoesVinculadas.length - 1 || idEmOperacao === questao.id}
-                          className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer rounded-md border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <ArrowDown size={14} />
                         </button>
@@ -245,7 +245,7 @@ export const ModalGerenciarQuestoesLista = ({
                           aria-label="Remover questao"
                           onClick={() => void handleDesvincularQuestao(questao.id)}
                           disabled={idEmOperacao === questao.id}
-                          className="rounded-md border border-red-200 bg-red-50 p-2 text-red-700 hover:bg-red-100 disabled:opacity-50"
+                          className="cursor-pointer rounded-md border border-red-200 bg-red-50 p-2 text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {idEmOperacao === questao.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                         </button>
@@ -259,7 +259,7 @@ export const ModalGerenciarQuestoesLista = ({
 
           <section className="min-h-0">
             <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-bold text-gray-900">Banco de questoes</h4>
+              <h4 className="text-sm font-bold text-gray-900">Banco de questões</h4>
               <span className="text-xs font-medium text-gray-500">
                 {questoesDisponiveis.length} disponivel(is)
               </span>
@@ -281,7 +281,7 @@ export const ModalGerenciarQuestoesLista = ({
                 aria-label="Filtrar questoes por tema"
                 value={temaFiltro}
                 onChange={(event) => setTemaFiltro(event.target.value)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 hover:bg-gray-50"
               >
                 <option value="">Todos os temas</option>
                 {temas.map((tema) => (
@@ -293,10 +293,10 @@ export const ModalGerenciarQuestoesLista = ({
                 aria-label="Filtrar questoes por tipo"
                 value={tipoFiltro}
                 onChange={(event) => setTipoFiltro(event.target.value)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 hover:bg-gray-50"
               >
                 <option value="">Todos os tipos</option>
-                <option value="MULTIPLA">Multipla escolha</option>
+                <option value="MULTIPLA">Múltipla escolha</option>
                 <option value="VF">Verdadeiro/Falso</option>
               </select>
             </div>
@@ -314,12 +314,12 @@ export const ModalGerenciarQuestoesLista = ({
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {questoesDisponiveis.map((questao) => (
-                    <li key={questao.id} className="flex items-start justify-between gap-3 p-4">
+                    <li key={questao.id} className="flex items-start justify-between gap-3 p-4 hover:bg-gray-50 transition-colors">
                       <div className="min-w-0">
                         <p className="line-clamp-2 text-sm font-semibold text-gray-900">
                           {questao.statement}
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 font-medium">
                           {[questao.topic, questao.type, questao.difficulty].filter(Boolean).join(' - ')}
                         </p>
                       </div>
@@ -328,7 +328,7 @@ export const ModalGerenciarQuestoesLista = ({
                         type="button"
                         onClick={() => void handleVincularQuestao(questao.id)}
                         disabled={idEmOperacao === questao.id}
-                        className="flex shrink-0 items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 disabled:opacity-50"
+                        className="cursor-pointer flex shrink-0 items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {idEmOperacao === questao.id ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                         Adicionar

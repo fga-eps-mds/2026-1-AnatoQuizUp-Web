@@ -1,0 +1,1 @@
+export {ResponderListaPage} from './ui/ResolucaoListaPage'
