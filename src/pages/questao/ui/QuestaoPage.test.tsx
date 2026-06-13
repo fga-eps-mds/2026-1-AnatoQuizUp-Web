@@ -46,7 +46,13 @@ const questions: ProfessorQuestion[] = [
     type: "Múltipla escolha",
     statement: "Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?",
     difficulty: "Médio",
-    origemQuestao: "ELABORADA_POR_PROFESSOR",
+    origemQuestao: "PROVA_ANTERIOR",
+    taxonomiaBloom: "ANALISAR",
+    regiaoAnatomica: "Tórax",
+    estruturaAlvo: "Pulmão",
+    sistemaAnatomico: "Respiratório",
+    planoAnatomico: "AP",
+    modalidade: "Radiografia",
     createdAt: "31/03/2025",
     explanation: "",
     alternatives: [
@@ -228,6 +234,96 @@ describe("QuestionsPage", () => {
     expect(await screen.findByText("Questão cadastrada com sucesso!")).toBeInTheDocument();
   });
 
+  it("envia os campos de classificacao preenchidos no Step 1 ao criar", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    expect(await screen.findByRole("dialog", { name: /Nova questão/i })).toBeInTheDocument();
+
+    await testUser.selectOptions(
+      screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }),
+      "ANALISAR",
+    );
+    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
+    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
+    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+    await testUser.type(
+      screen.getByRole("textbox", { name: /Enunciado da questão/i }),
+      "Pergunta com classificacao?",
+    );
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa A/i }), { target: { value: "A" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa B/i }), { target: { value: "B" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa C/i }), { target: { value: "C" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa D/i }), { target: { value: "D" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa E/i }), { target: { value: "E" } });
+    await testUser.click(screen.getByRole("radio", { name: /Marcar alternativa A como correta/i }));
+
+    await testUser.click(screen.getByRole("button", { name: /Salvar questão/i }));
+
+    await waitFor(() => {
+      expect(createQuestionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taxonomiaBloom: "ANALISAR",
+          regiaoAnatomica: "Tórax",
+          estruturaAlvo: "Coração",
+          sistemaAnatomico: "Cardiovascular",
+        }),
+      );
+    });
+  });
+
+  it("exibe plano anatomico e modalidade somente quando ha imagem", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage(true);
+
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    // Sem imagem: campos condicionais não existem
+    expect(screen.queryByRole("combobox", { name: /Plano anatômico/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /Modalidade de imagem/i })).not.toBeInTheDocument();
+
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+    const validFile = new File(["dummy"], "anatomia.png", { type: "image/png" });
+    await testUser.upload(fileInput, validFile);
+
+    // Com imagem: campos aparecem e são editáveis
+    const planoSelect = await screen.findByRole("combobox", { name: /Plano anatômico/i });
+    expect(planoSelect).toBeInTheDocument();
+    await testUser.selectOptions(planoSelect, "AXIAL");
+    expect(planoSelect).toHaveValue("AXIAL");
+
+    const modalidadeInput = screen.getByRole("textbox", { name: /Modalidade de imagem/i });
+    await testUser.type(modalidadeInput, "TC");
+    expect(modalidadeInput).toHaveValue("TC");
+
+    // Remover a imagem esconde os campos de novo
+    await testUser.click(screen.getByRole("button", { name: /Remover imagem/i }));
+    expect(screen.queryByRole("combobox", { name: /Plano anatômico/i })).not.toBeInTheDocument();
+  });
+
+  it("filtra questoes por nivel cognitivo (Bloom) via API", async () => {
+    const testUser = userEvent.setup();
+    renderQuestionsPage();
+
+    await screen.findByText(/atelectasia/i);
+    listProfessorQuestionsMock.mockClear();
+
+    await testUser.selectOptions(
+      screen.getByRole("combobox", { name: /Filtrar por nível cognitivo/i }),
+      "ANALISAR",
+    );
+
+    await waitFor(() => {
+      expect(listProfessorQuestionsMock).toHaveBeenCalledWith(
+        expect.objectContaining({ taxonomiaBloom: "ANALISAR" }),
+      );
+    });
+  });
+
   it("handles image upload, preview and removal correctly", async () => {
     const testUser = userEvent.setup();
     renderQuestionsPage(true);
@@ -358,9 +454,13 @@ describe("QuestionsPage", () => {
 
       expect(await screen.findByRole("dialog", { name: /Editar questão/i })).toBeInTheDocument();
 
+      // Edição carrega os campos de classificação da questão existente
+      expect(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i })).toHaveValue("ANALISAR");
+      expect(screen.getByRole("textbox", { name: /Região anatômica/i })).toHaveValue("Tórax");
+
       await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
       await screen.findByRole("textbox", { name: /Enunciado da questão/i });
-      
+
       const backButton = await screen.findByRole("button", { name: /Voltar|Anterior/i });
       await testUser.click(backButton);
       

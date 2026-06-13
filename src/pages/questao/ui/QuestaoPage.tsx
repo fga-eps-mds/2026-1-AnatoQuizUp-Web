@@ -22,11 +22,13 @@ import {
 import type {
   ApiQuestionDifficulty,
   OrigemQuestao,
+  PlanoAnatomico,
   ProfessorQuestion,
   QuestionAlternative,
   QuestionDifficulty,
   QuestionFormValues,
   QuestionType,
+  TaxonomiaBloom,
 } from '../../../features/manage-questions/model/types';
 
 const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
@@ -34,6 +36,24 @@ const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
   { valor: 'LIVRO', rotulo: 'Livro' },
   { valor: 'PROVA_ANTERIOR', rotulo: 'Prova anterior' },
   { valor: 'GERADA_POR_IA', rotulo: 'Gerada por IA' },
+];
+
+const TAXONOMIAS_BLOOM: { valor: TaxonomiaBloom; rotulo: string }[] = [
+  { valor: 'LEMBRAR', rotulo: 'Lembrar' },
+  { valor: 'COMPREENDER', rotulo: 'Compreender' },
+  { valor: 'APLICAR', rotulo: 'Aplicar' },
+  { valor: 'ANALISAR', rotulo: 'Analisar' },
+  { valor: 'AVALIAR', rotulo: 'Avaliar' },
+  { valor: 'CRIAR', rotulo: 'Criar' },
+];
+
+const PLANOS_ANATOMICOS: { valor: PlanoAnatomico; rotulo: string }[] = [
+  { valor: 'AXIAL', rotulo: 'Axial' },
+  { valor: 'CORONAL', rotulo: 'Coronal' },
+  { valor: 'SAGITAL', rotulo: 'Sagital' },
+  { valor: 'PA', rotulo: 'PA (póstero-anterior)' },
+  { valor: 'AP', rotulo: 'AP (ântero-posterior)' },
+  { valor: 'OUTRO', rotulo: 'Outro' },
 ];
 
 const TOPICS = ['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
@@ -65,6 +85,12 @@ const emptyFormValues: QuestionFormValues = {
   origemQuestao: 'ELABORADA_POR_PROFESSOR',
   statement: '',
   explanation: '',
+  taxonomiaBloom: '',
+  regiaoAnatomica: '',
+  estruturaAlvo: '',
+  sistemaAnatomico: '',
+  planoAnatomico: '',
+  modalidade: '',
   alternatives: EMPTY_ALTERNATIVES,
   image: null,
 };
@@ -97,6 +123,12 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
   origemQuestao: question.origemQuestao,
   statement: question.statement,
   explanation: question.explanation ?? '',
+  taxonomiaBloom: question.taxonomiaBloom ?? '',
+  regiaoAnatomica: question.regiaoAnatomica ?? '',
+  estruturaAlvo: question.estruturaAlvo ?? '',
+  sistemaAnatomico: question.sistemaAnatomico ?? '',
+  planoAnatomico: question.planoAnatomico ?? '',
+  modalidade: question.modalidade ?? '',
   image: question.image || null,
   alternatives: question.type === 'Verdadeiro/Falso'
     ? TRUE_FALSE_ALTERNATIVES.map((alternative) => ({
@@ -182,19 +214,23 @@ const QuestionsFilters = ({
   searchTerm,
   selectedDifficulty,
   selectedTopic,
+  selectedBloom,
   topicOptions,
   onDifficultyChange,
   onSearchTermChange,
   onTopicChange,
+  onBloomChange,
 }: {
   resultCount: number;
   searchTerm: string;
   selectedDifficulty: QuestionDifficulty | 'all';
   selectedTopic: string;
+  selectedBloom: TaxonomiaBloom | 'all';
   topicOptions: string[];
   onDifficultyChange: (value: QuestionDifficulty | 'all') => void;
   onSearchTermChange: (value: string) => void;
   onTopicChange: (value: string) => void;
+  onBloomChange: (value: TaxonomiaBloom | 'all') => void;
 }) => (
   <section className="flex w-full flex-wrap items-center gap-2" aria-label="Filtros de questões">
     <label className="relative min-w-[180px] flex-1">
@@ -226,6 +262,16 @@ const QuestionsFilters = ({
     >
       <option value="all">Dificuldade</option>
       {DIFFICULTIES.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
+    </select>
+
+    <select
+      className="rounded-lg border border-[#e0e5ef] bg-white px-4 py-2 text-xs text-[#4a5578] outline-none focus:border-[#00e5cc]"
+      aria-label="Filtrar por nível cognitivo"
+      value={selectedBloom}
+      onChange={(event) => onBloomChange(event.target.value as TaxonomiaBloom | 'all')}
+    >
+      <option value="all">Nível cognitivo</option>
+      {TAXONOMIAS_BLOOM.map((bloom) => <option key={bloom.valor} value={bloom.valor}>{bloom.rotulo}</option>)}
     </select>
 
     <span className="text-[11px] text-[#8a9ab8]">{resultCount} resultado(s)</span>
@@ -609,6 +655,50 @@ const QuestionModal = ({
                     ))}
                   </select>
                 </label>
+                <label>
+                  <FieldLabel>Nível cognitivo (Bloom)</FieldLabel>
+                  <select
+                    value={values.taxonomiaBloom ?? ''}
+                    onChange={(event) =>
+                      updateValue('taxonomiaBloom', event.target.value as TaxonomiaBloom | '')
+                    }
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
+                  >
+                    <option value="">Não classificado</option>
+                    {TAXONOMIAS_BLOOM.map((bloom) => (
+                      <option key={bloom.valor} value={bloom.valor}>
+                        {bloom.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <FieldLabel>Região anatômica</FieldLabel>
+                  <input
+                    value={values.regiaoAnatomica ?? ''}
+                    onChange={(event) => updateValue('regiaoAnatomica', event.target.value)}
+                    placeholder="ex: Tórax"
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
+                  />
+                </label>
+                <label>
+                  <FieldLabel>Estrutura-alvo</FieldLabel>
+                  <input
+                    value={values.estruturaAlvo ?? ''}
+                    onChange={(event) => updateValue('estruturaAlvo', event.target.value)}
+                    placeholder="ex: Coração"
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
+                  />
+                </label>
+                <label>
+                  <FieldLabel>Sistema anatômico</FieldLabel>
+                  <input
+                    value={values.sistemaAnatomico ?? ''}
+                    onChange={(event) => updateValue('sistemaAnatomico', event.target.value)}
+                    placeholder="ex: Cardiovascular"
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
+                  />
+                </label>
               </div>
             </>
           ) : null}
@@ -673,7 +763,7 @@ const QuestionModal = ({
                       />
                       <button
                         type="button"
-                        onClick={() => updateValue('image', null)}
+                        onClick={() => onChange({ ...values, image: null, planoAnatomico: '', modalidade: '' })}
                         className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-[#e14b4b] text-white shadow-md hover:bg-[#c03939]"
                         aria-label="Remover imagem"
                       >
@@ -683,6 +773,37 @@ const QuestionModal = ({
                   )}
                 </div>
               </div>
+
+              {values.image ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <FieldLabel>Plano anatômico / Incidência</FieldLabel>
+                    <select
+                      value={values.planoAnatomico ?? ''}
+                      onChange={(event) =>
+                        updateValue('planoAnatomico', event.target.value as PlanoAnatomico | '')
+                      }
+                      className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
+                    >
+                      <option value="">Não informado</option>
+                      {PLANOS_ANATOMICOS.map((plano) => (
+                        <option key={plano.valor} value={plano.valor}>
+                          {plano.rotulo}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <FieldLabel>Modalidade de imagem</FieldLabel>
+                    <input
+                      value={values.modalidade ?? ''}
+                      onChange={(event) => updateValue('modalidade', event.target.value)}
+                      placeholder="ex: TC, RM, Radiografia"
+                      className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
+                    />
+                  </label>
+                </div>
+              ) : null}
 
               <label className="block">
                 <FieldLabel>Explicação / justificativa (opcional)</FieldLabel>
@@ -896,6 +1017,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'all'>('all');
+  const [selectedBloom, setSelectedBloom] = useState<TaxonomiaBloom | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -930,7 +1052,10 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   useEffect(() => {
     let isMounted = true;
     const shouldUseSearchEndpoint =
-      searchTerm.trim() || selectedTopic !== 'all' || selectedDifficulty !== 'all';
+      searchTerm.trim() ||
+      selectedTopic !== 'all' ||
+      selectedDifficulty !== 'all' ||
+      selectedBloom !== 'all';
 
     const loadQuestions = async () => {
       if (isMounted) {
@@ -944,6 +1069,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
             ? {
               tema: selectedTopic !== 'all' ? selectedTopic : searchTerm.trim() || undefined,
               dificuldade: mapDifficultyToApi(selectedDifficulty),
+              taxonomiaBloom: selectedBloom !== 'all' ? selectedBloom : undefined,
             }
             : undefined,
         );
@@ -963,7 +1089,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       isMounted = false;
       globalThis.clearTimeout(timeoutId);
     };
-  }, [searchTerm, selectedDifficulty, selectedTopic]);
+  }, [searchTerm, selectedDifficulty, selectedTopic, selectedBloom]);
 
   const topicOptions = useMemo(() => {
     const questionTopics = Array.from(
@@ -1061,10 +1187,12 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
               searchTerm={searchTerm}
               selectedDifficulty={selectedDifficulty}
               selectedTopic={selectedTopic}
+              selectedBloom={selectedBloom}
               topicOptions={topicOptions}
               onDifficultyChange={setSelectedDifficulty}
               onSearchTermChange={setSearchTerm}
               onTopicChange={setSelectedTopic}
+              onBloomChange={setSelectedBloom}
             />
             {filteredQuestions.length > 0 ? (
               <QuestionsTable items={filteredQuestions} onEdit={openEditQuestion} onDelete={setQuestionToDelete} />
