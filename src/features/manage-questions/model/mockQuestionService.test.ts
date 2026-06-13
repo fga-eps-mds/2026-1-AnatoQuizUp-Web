@@ -10,7 +10,7 @@ const multipleChoiceValues: QuestionFormValues = {
   tags: 'anatomia',
   type: 'Múltipla escolha',
   difficulty: 'Difícil',
-  origin: 'Manual',
+  origemQuestao: 'ELABORADA_POR_PROFESSOR',
   statement: 'Qual estrutura protege o coracao?',
   explanation: 'A caixa toracica protege os orgaos do mediastino.',
   alternatives: [
@@ -25,7 +25,7 @@ const trueFalseValues: QuestionFormValues = {
   tags: '',
   type: 'Verdadeiro/Falso',
   difficulty: 'Fácil',
-  origin: 'Manual',
+  origemQuestao: 'ELABORADA_POR_PROFESSOR',
   statement: 'O cerebelo participa do equilibrio.',
   explanation: '',
   alternatives: [
@@ -118,7 +118,7 @@ describe('mockQuestionService', () => {
     const createdApiQuestion = await buscarQuestaoPorIdMock(created.id);
     expect(createdApiQuestion.dados).toMatchObject({
       alternativaCorreta: 'C',
-      explicacaoPedagogica: null,
+      saibaMais: null,
     });
 
     const updated = await updateQuestionMock(created.id, multipleChoiceValues);
@@ -134,7 +134,7 @@ describe('mockQuestionService', () => {
       dificuldade: 'MEDIA',
       imagem: null,
       alternativaCorreta: 'A',
-      explicacaoPedagogica: 'Explicacao revisada',
+      saibaMais: 'Explicacao revisada',
       alternativas: { A: 'Resposta revisada' },
     });
     expect(apiUpdated.dados).toMatchObject({

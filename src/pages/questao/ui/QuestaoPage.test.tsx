@@ -46,7 +46,7 @@ const questions: ProfessorQuestion[] = [
     type: "Múltipla escolha",
     statement: "Em uma radiografia de tórax, qual o sinal radiológico que diferencia atelectasia de consolidação pulmonar?",
     difficulty: "Médio",
-    origin: "Manual",
+    origemQuestao: "ELABORADA_POR_PROFESSOR",
     createdAt: "31/03/2025",
     explanation: "",
     alternatives: [
@@ -65,7 +65,7 @@ const questions: ProfessorQuestion[] = [
     type: "Múltipla escolha",
     statement: "Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?",
     difficulty: "Difícil",
-    origin: "Manual",
+    origemQuestao: "ELABORADA_POR_PROFESSOR",
     createdAt: "30/03/2025",
     explanation: "",
     alternatives: [
@@ -82,7 +82,7 @@ const questions: ProfessorQuestion[] = [
     type: "Múltipla escolha",
     statement: "Qual estrutura anatômica dá origem ao arco aórtico?",
     difficulty: "Fácil",
-    origin: "Manual",
+    origemQuestao: "ELABORADA_POR_PROFESSOR",
     createdAt: "01/04/2025",
     explanation: "",
     alternatives: [

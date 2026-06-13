@@ -108,7 +108,7 @@ const toProfessorQuestionsPayload = (
 });
 
 const mapTypeToApi = (type: QuestionFormValues['type']): ApiQuestionType => (
-  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'VERDADEIRO_FALSO'
+  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'CERTO_ERRADO'
 );
 
 const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): ApiQuestionDifficulty => {
@@ -118,7 +118,7 @@ const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): ApiQu
 };
 
 const mapTypeFromApi = (type?: string): ProfessorQuestion['type'] => (
-  /verdadeiro|falso|true_false|vf|certo_errado/i.test(type ?? '')
+  /certo_errado|verdadeiro|falso|true_false|vf/i.test(type ?? '')
     ? 'Verdadeiro/Falso'
     : 'Múltipla escolha'
 );
@@ -201,9 +201,15 @@ const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   tags: normalizeTags(question.tags),
   type: mapTypeFromApi(question.type ?? question.tipo),
   difficulty: mapDifficultyFromApi(question.difficulty ?? question.dificuldade),
-  origin: question.origin ?? question.origem ?? 'Manual',
+  origemQuestao: question.origemQuestao ?? 'ELABORADA_POR_PROFESSOR',
   statement: question.statement ?? question.enunciado ?? '',
-  explanation: question.explanation ?? question.explicacao ?? question.explicacaoPedagogica ?? '',
+  explanation: question.explanation ?? question.explicacao ?? question.saibaMais ?? '',
+  taxonomiaBloom: question.taxonomiaBloom ?? null,
+  regiaoAnatomica: question.regiaoAnatomica ?? null,
+  estruturaAlvo: question.estruturaAlvo ?? null,
+  sistemaAnatomico: question.sistemaAnatomico ?? null,
+  planoAnatomico: question.planoAnatomico ?? null,
+  modalidade: question.modalidade ?? null,
   image: question.image ?? question.imagem ?? null,
   alternatives: normalizeAlternatives(
     question.alternatives ?? question.alternativas,
@@ -227,7 +233,21 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   formData.append('enunciado', values.statement.trim());
   
   const explanation = values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION;
-  formData.append('explicacaoPedagogica', explanation);
+  formData.append('saibaMais', explanation);
+
+  if (values.origemQuestao) formData.append('origemQuestao', values.origemQuestao);
+  if (values.taxonomiaBloom) formData.append('taxonomiaBloom', values.taxonomiaBloom);
+  if (values.regiaoAnatomica?.trim()) {
+    formData.append('regiaoAnatomica', values.regiaoAnatomica.trim());
+  }
+  if (values.estruturaAlvo?.trim()) {
+    formData.append('estruturaAlvo', values.estruturaAlvo.trim());
+  }
+  if (values.sistemaAnatomico?.trim()) {
+    formData.append('sistemaAnatomico', values.sistemaAnatomico.trim());
+  }
+  if (values.planoAnatomico) formData.append('planoAnatomico', values.planoAnatomico);
+  if (values.modalidade?.trim()) formData.append('modalidade', values.modalidade.trim());
 
   const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
   if (correctAlternative) {

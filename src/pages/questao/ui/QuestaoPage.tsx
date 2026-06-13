@@ -21,12 +21,20 @@ import {
 } from '../../../features/manage-questions/model/questionService';
 import type {
   ApiQuestionDifficulty,
+  OrigemQuestao,
   ProfessorQuestion,
   QuestionAlternative,
   QuestionDifficulty,
   QuestionFormValues,
   QuestionType,
 } from '../../../features/manage-questions/model/types';
+
+const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
+  { valor: 'ELABORADA_POR_PROFESSOR', rotulo: 'Elaborada por professor' },
+  { valor: 'LIVRO', rotulo: 'Livro' },
+  { valor: 'PROVA_ANTERIOR', rotulo: 'Prova anterior' },
+  { valor: 'GERADA_POR_IA', rotulo: 'Gerada por IA' },
+];
 
 const TOPICS = ['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
 const TYPES: QuestionType[] = ['Múltipla escolha', 'Verdadeiro/Falso'];
@@ -54,7 +62,7 @@ const emptyFormValues: QuestionFormValues = {
   tags: '',
   type: 'Múltipla escolha',
   difficulty: 'Médio',
-  origin: 'Manual',
+  origemQuestao: 'ELABORADA_POR_PROFESSOR',
   statement: '',
   explanation: '',
   alternatives: EMPTY_ALTERNATIVES,
@@ -86,7 +94,7 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
   tags: question.tags.join(', '),
   type: question.type,
   difficulty: question.difficulty,
-  origin: question.origin,
+  origemQuestao: question.origemQuestao,
   statement: question.statement,
   explanation: question.explanation ?? '',
   image: question.image || null,
@@ -587,11 +595,19 @@ const QuestionModal = ({
                 </label>
                 <label>
                   <FieldLabel>Origem</FieldLabel>
-                  <input
-                    value={values.origin}
-                    onChange={(event) => updateValue('origin', event.target.value)}
+                  <select
+                    value={values.origemQuestao}
+                    onChange={(event) =>
+                      updateValue('origemQuestao', event.target.value as OrigemQuestao)
+                    }
                     className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
-                  />
+                  >
+                    {ORIGENS_QUESTAO.map((origem) => (
+                      <option key={origem.valor} value={origem.valor}>
+                        {origem.rotulo}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
             </>

@@ -35,7 +35,14 @@ let questionsMock: Question[] = [
     dificuldade: 'MEDIA',
     imagem: 'https://exemplo.com/coracao.png',
     alternativaCorreta: 'B',
-    explicacaoPedagogica: 'O ventrículo esquerdo é responsável pela circulação sistêmica.',
+    saibaMais: 'O ventrículo esquerdo é responsável pela circulação sistêmica.',
+    taxonomiaBloom: 'COMPREENDER',
+    origemQuestao: 'ELABORADA_POR_PROFESSOR',
+    regiaoAnatomica: 'Tórax',
+    estruturaAlvo: 'Coração',
+    sistemaAnatomico: 'Cardiovascular',
+    planoAnatomico: null,
+    modalidade: null,
     alternativas: {
       A: 'Átrio direito',
       B: 'Ventrículo esquerdo',
@@ -58,8 +65,15 @@ let questionsMock: Question[] = [
     dificuldade: 'DIFICIL',
     imagem: 'https://exemplo.com/radiografia-torax.png',
     alternativaCorreta: 'B',
-    explicacaoPedagogica:
+    saibaMais:
       'Atelectasia costuma causar perda de volume e deslocamento de estruturas adjacentes.',
+    taxonomiaBloom: 'ANALISAR',
+    origemQuestao: 'PROVA_ANTERIOR',
+    regiaoAnatomica: 'Tórax',
+    estruturaAlvo: 'Pulmão',
+    sistemaAnatomico: 'Respiratório',
+    planoAnatomico: 'AP',
+    modalidade: 'Radiografia',
     alternativas: {
       A: 'Broncograma aéreo',
       B: 'Perda de volume pulmonar',
@@ -143,9 +157,15 @@ const mapQuestionToProfessorQuestion = (question: Question): ProfessorQuestion =
   tags: [],
   type: mapTypeToProfessorQuestion(question.tipo),
   difficulty: mapDifficultyToProfessorQuestion(question.dificuldade),
-  origin: 'Manual',
+  origemQuestao: question.origemQuestao ?? 'ELABORADA_POR_PROFESSOR',
   statement: question.enunciado,
-  explanation: question.explicacaoPedagogica ?? '',
+  explanation: question.saibaMais ?? '',
+  taxonomiaBloom: question.taxonomiaBloom ?? null,
+  regiaoAnatomica: question.regiaoAnatomica ?? null,
+  estruturaAlvo: question.estruturaAlvo ?? null,
+  sistemaAnatomico: question.sistemaAnatomico ?? null,
+  planoAnatomico: question.planoAnatomico ?? null,
+  modalidade: question.modalidade ?? null,
   alternatives: mapApiAlternativesToFormAlternatives(question),
   createdAt: formatQuestionDate(question.criadoEm),
 });
@@ -164,7 +184,14 @@ const mapValuesToQuestion = (values: QuestionFormValues, id: string): Question =
     alternativaCorreta: correctAlternative
       ? mapAlternativeLabelToApi(correctAlternative.label)
       : 'A',
-    explicacaoPedagogica: values.explanation || null,
+    saibaMais: values.explanation || null,
+    taxonomiaBloom: values.taxonomiaBloom || null,
+    origemQuestao: values.origemQuestao || 'ELABORADA_POR_PROFESSOR',
+    regiaoAnatomica: values.regiaoAnatomica?.trim() || null,
+    estruturaAlvo: values.estruturaAlvo?.trim() || null,
+    sistemaAnatomico: values.sistemaAnatomico?.trim() || null,
+    planoAnatomico: values.planoAnatomico || null,
+    modalidade: values.modalidade?.trim() || null,
     alternativas: values.alternatives.reduce<Question['alternativas']>((acc, alternative) => {
       return {
         ...acc,
@@ -200,7 +227,7 @@ const filterQuestions = (params?: SearchQuestionsParams): Question[] => {
           question.tipo,
           question.dificuldade,
           question.alternativaCorreta,
-          question.explicacaoPedagogica ?? '',
+          question.saibaMais ?? '',
           ...Object.values(question.alternativas ?? {}),
         ]
           .join(' ')
@@ -328,8 +355,14 @@ export const atualizarQuestaoMock = async (
     dificuldade: payload.dificuldade ?? currentQuestion.dificuldade,
     imagem: payload.imagem ?? currentQuestion.imagem,
     alternativaCorreta: payload.alternativaCorreta ?? currentQuestion.alternativaCorreta,
-    explicacaoPedagogica:
-      payload.explicacaoPedagogica ?? currentQuestion.explicacaoPedagogica,
+    saibaMais: payload.saibaMais ?? currentQuestion.saibaMais,
+    taxonomiaBloom: payload.taxonomiaBloom ?? currentQuestion.taxonomiaBloom,
+    origemQuestao: payload.origemQuestao ?? currentQuestion.origemQuestao,
+    regiaoAnatomica: payload.regiaoAnatomica ?? currentQuestion.regiaoAnatomica,
+    estruturaAlvo: payload.estruturaAlvo ?? currentQuestion.estruturaAlvo,
+    sistemaAnatomico: payload.sistemaAnatomico ?? currentQuestion.sistemaAnatomico,
+    planoAnatomico: payload.planoAnatomico ?? currentQuestion.planoAnatomico,
+    modalidade: payload.modalidade ?? currentQuestion.modalidade,
     alternativas: payload.alternativas
       ? { ...payload.alternativas }
       : currentQuestion.alternativas

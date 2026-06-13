@@ -33,7 +33,7 @@ const formValues = {
   tags: 'aorta, mediastino',
   type: 'Múltipla escolha' as const,
   difficulty: 'Médio' as const,
-  origin: 'Manual',
+  origemQuestao: 'ELABORADA_POR_PROFESSOR' as const,
   statement: 'Qual estrutura forma a parede anterior do mediastino superior?',
   explanation: 'O manúbrio se relaciona com os grandes vasos.',
   image: null,
@@ -54,7 +54,10 @@ const apiQuestion = {
   imagem: 'https://exemplo.com/torax.png',
   enunciado: 'Pergunta anatômica',
   alternativaCorreta: 'A',
-  explicacaoPedagogica: 'Explicação pedagógica',
+  saibaMais: 'Explicação pedagógica',
+  taxonomiaBloom: 'ANALISAR',
+  origemQuestao: 'PROVA_ANTERIOR',
+  regiaoAnatomica: 'Tórax',
   alternativas: { A: 'Resposta', B: 'Distrator' },
   status: 'ATIVO',
   criadoPorId: 'professor-api',
@@ -175,9 +178,9 @@ describe('questionService', () => {
           dados: [
             {
               id: 'weird-1',
-              criadoEm: 'data-invalida', 
-              tags: 'tag1, tag2', 
-              tipo: 'VERDADEIRO_FALSO',
+              criadoEm: 'data-invalida',
+              tags: 'tag1, tag2',
+              tipo: 'CERTO_ERRADO',
               dificuldade: 'FÁCIL',
               alternativaCorreta: 'C',
               alternativas: { C: 'Certo', E: 'Errado' }, 
@@ -220,23 +223,59 @@ describe('questionService', () => {
         ...formValues,
         type: 'Verdadeiro/Falso' as const,
         difficulty: 'Difícil' as const,
-        explanation: '   ', 
+        explanation: '   ',
         alternatives: [
           { id: 'v', label: 'V', text: 'Opção V', isCorrect: true },
-          { id: 'f', label: 'F', text: '   ', isCorrect: false }, 
+          { id: 'f', label: 'F', text: '   ', isCorrect: false },
         ],
       };
 
       await createQuestion(formIncompleto);
 
       const formData = postMock.mock.calls[0][1] as FormData;
-      
-      expect(formData.get('tipo')).toBe('VERDADEIRO_FALSO');
+
+      expect(formData.get('tipo')).toBe('CERTO_ERRADO');
       expect(formData.get('dificuldade')).toBe('DIFICIL');
-      expect(formData.get('explicacaoPedagogica')).toBe('Explicação pedagógica não informada.');
+      expect(formData.get('saibaMais')).toBe('Explicação pedagógica não informada.');
       expect(formData.get('alternativaCorreta')).toBe('C');
       expect(formData.get('alternativas[C]')).toBe('Opção V');
       expect(formData.has('alternativas[E]')).toBe(false); // Ignorado por ser vazio
+    });
+
+    it('anexa os campos de classificacao no buildFormData quando presentes', async () => {
+      const { createQuestion } = await loadService(false);
+      postMock.mockResolvedValueOnce({ data: { dados: apiQuestion } });
+
+      await createQuestion({
+        ...formValues,
+        origemQuestao: 'LIVRO',
+        taxonomiaBloom: 'APLICAR',
+        regiaoAnatomica: '  Abdome  ',
+        estruturaAlvo: 'Fígado',
+        sistemaAnatomico: 'Digestório',
+        planoAnatomico: 'AXIAL',
+        modalidade: 'TC',
+      });
+
+      const formData = postMock.mock.calls[0][1] as FormData;
+
+      expect(formData.get('origemQuestao')).toBe('LIVRO');
+      expect(formData.get('taxonomiaBloom')).toBe('APLICAR');
+      expect(formData.get('regiaoAnatomica')).toBe('Abdome'); // trim aplicado
+      expect(formData.get('planoAnatomico')).toBe('AXIAL');
+      expect(formData.get('modalidade')).toBe('TC');
+    });
+
+    it('normaliza os campos de classificacao retornados pelo backend', async () => {
+      const { listProfessorQuestions } = await loadService(false);
+      getMock.mockResolvedValueOnce({ data: { dados: [apiQuestion] } });
+
+      const [questao] = await listProfessorQuestions();
+
+      expect(questao.origemQuestao).toBe('PROVA_ANTERIOR');
+      expect(questao.taxonomiaBloom).toBe('ANALISAR');
+      expect(questao.regiaoAnatomica).toBe('Tórax');
+      expect(questao.explanation).toBe('Explicação pedagógica'); // lido de saibaMais
     });
   });
 

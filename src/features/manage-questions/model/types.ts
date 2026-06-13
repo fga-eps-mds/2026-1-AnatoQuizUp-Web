@@ -1,6 +1,22 @@
-export type ApiQuestionType = 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO' | 'VERDADEIRO_FALSO';
+export type ApiQuestionType = 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO';
 
-export type ApiQuestionDifficulty = 'FACIL' | 'MEDIA' | 'MEDIO' | 'DIFICIL';
+export type ApiQuestionDifficulty = 'FACIL' | 'MEDIA' | 'DIFICIL';
+
+export type TaxonomiaBloom =
+  | 'LEMBRAR'
+  | 'COMPREENDER'
+  | 'APLICAR'
+  | 'ANALISAR'
+  | 'AVALIAR'
+  | 'CRIAR';
+
+export type OrigemQuestao =
+  | 'LIVRO'
+  | 'PROVA_ANTERIOR'
+  | 'GERADA_POR_IA'
+  | 'ELABORADA_POR_PROFESSOR';
+
+export type PlanoAnatomico = 'AXIAL' | 'CORONAL' | 'SAGITAL' | 'PA' | 'AP' | 'OUTRO';
 
 export type QuestionAlternativeKey = 'A' | 'B' | 'C' | 'D' | 'E';
 
@@ -24,7 +40,14 @@ export type Question = {
   dificuldade: ApiQuestionDifficulty;
   imagem: string | null;
   alternativaCorreta: QuestionAlternativeKey;
-  explicacaoPedagogica: string | null;
+  saibaMais: string | null;
+  taxonomiaBloom?: TaxonomiaBloom | null;
+  origemQuestao?: OrigemQuestao;
+  regiaoAnatomica?: string | null;
+  estruturaAlvo?: string | null;
+  sistemaAnatomico?: string | null;
+  planoAnatomico?: PlanoAnatomico | null;
+  modalidade?: string | null;
   alternativas: QuestionAlternatives | null;
   status: QuestionStatus;
   criadoPorId: string;
@@ -50,9 +73,15 @@ export type ProfessorQuestion = {
   tags: string[];
   type: QuestionType;
   difficulty: QuestionDifficulty;
-  origin: string;
+  origemQuestao: OrigemQuestao;
   statement: string;
   explanation?: string;
+  taxonomiaBloom?: TaxonomiaBloom | null;
+  regiaoAnatomica?: string | null;
+  estruturaAlvo?: string | null;
+  sistemaAnatomico?: string | null;
+  planoAnatomico?: PlanoAnatomico | null;
+  modalidade?: string | null;
   alternatives: QuestionAlternative[];
   createdAt: string;
   image?: string | null;
@@ -63,9 +92,15 @@ export type QuestionFormValues = {
   tags: string;
   type: QuestionType;
   difficulty: QuestionDifficulty;
-  origin: string;
+  origemQuestao: OrigemQuestao;
   statement: string;
   explanation: string;
+  taxonomiaBloom?: TaxonomiaBloom | '';
+  regiaoAnatomica?: string;
+  estruturaAlvo?: string;
+  sistemaAnatomico?: string;
+  planoAnatomico?: PlanoAnatomico | '';
+  modalidade?: string;
   alternatives: QuestionAlternative[];
   image: File | string | null;
 };
@@ -77,7 +112,14 @@ export type UpdateQuestionPayload = Partial<{
   dificuldade: ApiQuestionDifficulty;
   imagem: string | null;
   alternativaCorreta: QuestionAlternativeKey;
-  explicacaoPedagogica: string | null;
+  saibaMais: string | null;
+  taxonomiaBloom: TaxonomiaBloom | null;
+  origemQuestao: OrigemQuestao;
+  regiaoAnatomica: string | null;
+  estruturaAlvo: string | null;
+  sistemaAnatomico: string | null;
+  planoAnatomico: PlanoAnatomico | null;
+  modalidade: string | null;
   alternativas: QuestionAlternatives | null;
 }>;
 
@@ -87,6 +129,7 @@ export type QuestionListParams = {
   tema?: string;
   tipo?: ApiQuestionType;
   dificuldade?: ApiQuestionDifficulty;
+  taxonomiaBloom?: TaxonomiaBloom;
   status?: QuestionStatus;
 };
 
