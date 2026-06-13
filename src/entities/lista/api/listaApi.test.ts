@@ -91,7 +91,7 @@ describe('listaApi', () => {
                 questao: {
                   id: 'q2',
                   enunciado: 'Segunda questao',
-                  tipoQuestao: 'VERDADEIRO_FALSO',
+                  tipoQuestao: 'CERTO_ERRADO',
                   dificuldade: 'FACIL',
                   tema: { id: 'tema1', nome: 'Torax' },
                 },
@@ -136,7 +136,7 @@ describe('listaApi', () => {
           id: 'q2',
           enunciado: 'Segunda questao',
           tema: 'Torax',
-          tipo: 'VERDADEIRO_FALSO',
+          tipo: 'CERTO_ERRADO',
           dificuldade: 'FACIL',
           ordem: 2,
         },

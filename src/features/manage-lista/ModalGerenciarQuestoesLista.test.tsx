@@ -35,7 +35,7 @@ describe('ModalGerenciarQuestoesLista', () => {
     id: 'lista-1', nome: 'Lista Base', quantidadeQuestoes: 2, status: 'RASCUNHO', turmas: [], criadoEm: '',
     questoes: [
       { id: 'q1', enunciado: 'Q1', tema: 'Ossos', tipo: 'MULTIPLA_ESCOLHA', dificuldade: 'FACIL', ordem: 1 },
-      { id: 'q2', enunciado: 'Q2', tema: 'Músculos', tipo: 'VERDADEIRO_FALSO', dificuldade: 'MEDIO', ordem: 2 }
+      { id: 'q2', enunciado: 'Q2', tema: 'Músculos', tipo: 'CERTO_ERRADO', dificuldade: 'MEDIA', ordem: 2 }
     ]
   };
 
@@ -74,6 +74,19 @@ describe('ModalGerenciarQuestoesLista', () => {
     fireEvent.click(screen.getAllByLabelText('Remover questao')[0]);
     await waitFor(() => expect(mockedDesvincular).toHaveBeenCalledWith('lista-1', 'q1'));
     expect(mockOnFeedback).toHaveBeenCalledWith('Questao removida da lista.', 'success');
+  });
+
+  it('filtro "Verdadeiro/Falso" reconhece questoes CERTO_ERRADO do banco', async () => {
+    renderComponent();
+    await waitFor(() => expect(screen.getByText('Q3 Inédita')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Filtrar questoes por tipo'), {
+      target: { value: 'VF' },
+    });
+
+    // q3 (CERTO_ERRADO) deve continuar visível; q4 (Múltipla escolha) some
+    expect(screen.getByText('Q3 Inédita')).toBeInTheDocument();
+    expect(screen.queryByText('Q4 Inédita')).not.toBeInTheDocument();
   });
 
   it('deve reordenar questoes respeitando limites', async () => {
