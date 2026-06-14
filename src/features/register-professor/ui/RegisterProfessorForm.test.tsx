@@ -91,6 +91,33 @@ describe('RegisterProfessorForm', () => {
     expect(submitButton()).toBeDisabled();
   });
 
+  it('rejeita caracteres especiais e numeros no nome completo', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const fullNameInput = screen.getByLabelText(/Nome completo/i);
+    await user.type(fullNameInput, 'Hilmer@ Neri123');
+    await user.tab();
+
+    expect(
+      screen.getByText(/Nome completo deve conter apenas letras e espaços/i),
+    ).toBeInTheDocument();
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it('aceita letras acentuadas no nome completo', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const fullNameInput = screen.getByLabelText(/Nome completo/i);
+    await user.type(fullNameInput, 'Hílmer José');
+    await user.tab();
+
+    expect(
+      screen.queryByText(/Nome completo deve conter apenas letras e espaços/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('aceita email com subdominio UnB', async () => {
     const user = userEvent.setup();
     renderForm();
