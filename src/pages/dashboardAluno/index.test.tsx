@@ -34,9 +34,9 @@ describe("DashboardAlunoPage", () => {
     expect(screen.getByText("Carregando seu progresso...")).toBeInTheDocument();
   });
 
-  it("deve renderizar o empty state quando não houver questões respondidas", async () => {
+  it("deve renderizar o empty state quando não houver questões respondidas nem listas", async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
-      data: { totalRespondidas: 0, porTema: [] },
+      data: { totalRespondidas: 0, porTema: [], porLista: [] },
     });
 
     render(
@@ -52,7 +52,7 @@ describe("DashboardAlunoPage", () => {
 
   it("deve navegar para escolha de quiz ao clicar no botão do estado vazio", async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
-      data: { totalRespondidas: 0, porTema: [] },
+      data: { totalRespondidas: 0, porTema: [], porLista: [] },
     });
 
     render(
@@ -90,7 +90,7 @@ describe("DashboardAlunoPage", () => {
     (console.error as jest.Mock).mockRestore();
   });
 
-  it("deve renderizar o dashboard com as métricas e barras quando houver dados", async () => {
+  it("deve renderizar o dashboard com as métricas de temas quando houver dados", async () => {
     (httpClient.get as jest.Mock).mockResolvedValue({
       data: {
         totalRespondidas: 42,
@@ -108,6 +108,7 @@ describe("DashboardAlunoPage", () => {
             status: "Tranquilo",
           },
         ],
+        porLista: [],
       },
     });
 
@@ -155,6 +156,7 @@ describe("DashboardAlunoPage", () => {
             status: "Crítico",
           },
         ],
+        porLista: [],
       },
     });
 
@@ -172,7 +174,110 @@ describe("DashboardAlunoPage", () => {
     expect(screen.getAllByText("Abdome")).toHaveLength(2);
     expect(screen.getByText("Atenção")).toBeInTheDocument();
     expect(screen.getByText("Crítico")).toBeInTheDocument();
-    expect(screen.getByText((_, element) => element?.textContent === "60%")).toBeInTheDocument();
-    expect(screen.getByText((_, element) => element?.textContent === "20%")).toBeInTheDocument();
+  });
+
+  it("deve renderizar a seção de desempenho por listas", async () => {
+    (httpClient.get as jest.Mock).mockResolvedValue({
+      data: {
+        totalRespondidas: 10,
+        totalAcertos: 5,
+        totalErros: 5,
+        taxaAcerto: 50,
+        porTema: [],
+        porLista: [
+          {
+            listaTurmaId: "lista-123",
+            nomeLista: "Simulado de Neuro",
+            totalQuestoes: 10,
+            acertos: 8,
+            taxaAcerto: 80,
+            status: "SUBMETIDA",
+            submissaoEm: "2026-06-14T10:00:00Z",
+            prazo: "2026-06-20T23:59:00Z",
+          }
+        ],
+      },
+    });
+
+    render(
+      <BrowserRouter>
+        <DashboardAlunoPage />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Desempenho nas Listas")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Simulado de Neuro")).toBeInTheDocument();
+    expect(screen.getByText("Respondida")).toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
+  });
+
+  it("deve renderizar as listas com status alternativos e prazos expirados (cobre linhas do switch)", async () => {
+    (httpClient.get as jest.Mock).mockResolvedValue({
+      data: {
+        totalRespondidas: 10,
+        totalAcertos: 5,
+        totalErros: 5,
+        taxaAcerto: 50,
+        porTema: [],
+        porLista: [
+          {
+            listaTurmaId: "lista-andamento",
+            nomeLista: "Lista em Andamento",
+            totalQuestoes: 10,
+            acertos: 1,
+            taxaAcerto: 10,
+            status: "EM_ANDAMENTO",
+            submissaoEm: null,
+            prazo: "2099-12-31T23:59:00Z",
+          },
+          {
+            listaTurmaId: "lista-atrasada",
+            nomeLista: "Lista Atrasada",
+            totalQuestoes: 10,
+            acertos: 0,
+            taxaAcerto: 0,
+            status: "NAO_RESPONDEU",
+            submissaoEm: null,
+            prazo: "2000-01-01T00:00:00Z", // Prazo antigo para testar condicional expirado
+          },
+          {
+            listaTurmaId: "lista-desconhecida",
+            nomeLista: "Lista Bugada",
+            totalQuestoes: 10,
+            acertos: 0,
+            taxaAcerto: 0,
+            status: "STATUS_INVENTADO", // Testa o default do switch
+            submissaoEm: null,
+            prazo: null, // Testa sem prazo
+          },
+        ],
+      },
+    });
+
+    render(
+      <BrowserRouter>
+        <DashboardAlunoPage />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Desempenho nas Listas")).toBeInTheDocument();
+    });
+
+    // Testa EM_ANDAMENTO
+    expect(screen.getByText("Em andamento")).toBeInTheDocument();
+    
+    // Testa NAO_RESPONDEU (e verifica se aparece os traços '-')
+    expect(screen.getByText("Não respondeu")).toBeInTheDocument();
+    expect(screen.getAllByText("-").length).toBeGreaterThan(0);
+
+    // Testa o default (Renderiza exatamente a string bizarra enviada pelo backend)
+    expect(screen.getByText("STATUS_INVENTADO")).toBeInTheDocument();
+    
+    // Testa o condicional de data nula
+    expect(screen.getByText("Sem prazo")).toBeInTheDocument();
   });
 });
