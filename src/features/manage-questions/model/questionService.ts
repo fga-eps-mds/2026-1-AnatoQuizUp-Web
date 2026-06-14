@@ -234,20 +234,14 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   
   const explanation = values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION;
   formData.append('saibaMais', explanation);
-
-  if (values.origemQuestao) formData.append('origemQuestao', values.origemQuestao);
-  if (values.taxonomiaBloom) formData.append('taxonomiaBloom', values.taxonomiaBloom);
-  if (values.regiaoAnatomica?.trim()) {
-    formData.append('regiaoAnatomica', values.regiaoAnatomica.trim());
-  }
-  if (values.estruturaAlvo?.trim()) {
-    formData.append('estruturaAlvo', values.estruturaAlvo.trim());
-  }
-  if (values.sistemaAnatomico?.trim()) {
-    formData.append('sistemaAnatomico', values.sistemaAnatomico.trim());
-  }
+  formData.append('origemQuestao', values.origemQuestao || '');
+  formData.append('taxonomiaBloom', values.taxonomiaBloom || '');
+  formData.append('regiaoAnatomica', (values.regiaoAnatomica || '').trim());
+  formData.append('estruturaAlvo', (values.estruturaAlvo || '').trim());
+  formData.append('sistemaAnatomico', (values.sistemaAnatomico || '').trim());
+  
   if (values.planoAnatomico) formData.append('planoAnatomico', values.planoAnatomico);
-  if (values.modalidade?.trim()) formData.append('modalidade', values.modalidade.trim());
+  if (values.modalidade) formData.append('modalidade', values.modalidade.trim());
 
   const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
   if (correctAlternative) {

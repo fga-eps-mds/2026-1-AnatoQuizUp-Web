@@ -54,7 +54,7 @@ const questions: ProfessorQuestion[] = [
     planoAnatomico: "AP",
     modalidade: "Radiografia",
     createdAt: "31/03/2025",
-    explanation: "",
+    explanation: "Explicação padrão",
     alternatives: [
       { id: "a", label: "A", text: "Broncograma aéreo", isCorrect: false },
       { id: "b", label: "B", text: "Perda de volume pulmonar", isCorrect: true },
@@ -72,8 +72,12 @@ const questions: ProfessorQuestion[] = [
     statement: "Na ecocardiografia, qual janela acústica permite melhor visualização do septo interventricular em seu terço médio?",
     difficulty: "Difícil",
     origemQuestao: "ELABORADA_POR_PROFESSOR",
+    taxonomiaBloom: "LEMBRAR",
+    regiaoAnatomica: "Tórax",
+    estruturaAlvo: "Coração",
+    sistemaAnatomico: "Cardiovascular",
     createdAt: "30/03/2025",
-    explanation: "",
+    explanation: "Explicação padrão",
     alternatives: [
       { id: "a", label: "A", text: "Paraesternal eixo curto", isCorrect: true },
       { id: "b", label: "B", text: "Subcostal", isCorrect: false },
@@ -89,8 +93,12 @@ const questions: ProfessorQuestion[] = [
     statement: "Qual estrutura anatômica dá origem ao arco aórtico?",
     difficulty: "Fácil",
     origemQuestao: "ELABORADA_POR_PROFESSOR",
+    taxonomiaBloom: "LEMBRAR",
+    regiaoAnatomica: "Tórax",
+    estruturaAlvo: "Coração",
+    sistemaAnatomico: "Cardiovascular",
     createdAt: "01/04/2025",
-    explanation: "",
+    explanation: "Explicação padrão",
     alternatives: [
       { id: "a", label: "A", text: "Ventrículo esquerdo", isCorrect: true },
       { id: "b", label: "B", text: "Átrio direito", isCorrect: false },
@@ -192,12 +200,20 @@ describe("QuestionsPage", () => {
     renderQuestionsPage(true);
 
     expect(await screen.findByRole("dialog", { name: /Nova questão/i })).toBeInTheDocument();
+    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
+    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
+    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
+    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
 
     const statement = screen.getByRole("textbox", { name: /Enunciado da questão/i });
     expect(screen.getByRole("button", { name: /Próximo/i })).toBeDisabled();
 
     await testUser.type(statement, "Pergunta obrigatória?");
+    
+    await testUser.type(screen.getByPlaceholderText(/Explique a resposta correta/i), "Explicação teste");
+    
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
 
     const saveButton = screen.getByRole("button", { name: /Salvar questão/i });
@@ -239,7 +255,8 @@ describe("QuestionsPage", () => {
     renderQuestionsPage(true);
 
     expect(await screen.findByRole("dialog", { name: /Nova questão/i })).toBeInTheDocument();
-
+    
+    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
     await testUser.selectOptions(
       screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }),
       "ANALISAR",
@@ -247,12 +264,15 @@ describe("QuestionsPage", () => {
     await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
     await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
     await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
-
+    
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+    
     await testUser.type(
       screen.getByRole("textbox", { name: /Enunciado da questão/i }),
       "Pergunta com classificacao?",
     );
+    await testUser.type(screen.getByPlaceholderText(/Explique a resposta correta/i), "Explicação teste");
+    
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
 
     fireEvent.change(screen.getByRole("textbox", { name: /Texto da alternativa A/i }), { target: { value: "A" } });
@@ -279,7 +299,11 @@ describe("QuestionsPage", () => {
   it("exibe plano anatomico e modalidade somente quando ha imagem", async () => {
     const testUser = userEvent.setup();
     renderQuestionsPage(true);
-
+    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
+    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
+    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
+    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
 
     // Sem imagem: campos condicionais não existem
@@ -328,8 +352,14 @@ describe("QuestionsPage", () => {
     const testUser = userEvent.setup();
     renderQuestionsPage(true);
 
-    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
+    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
+    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
+    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
 
+    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+    await screen.findByRole("textbox", { name: /Enunciado da questão/i });
     const fileInput = document.getElementById("image-upload") as HTMLInputElement;
     expect(fileInput).not.toBeNull();
 
@@ -354,7 +384,14 @@ describe("QuestionsPage", () => {
 
     const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
 
+    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
+    await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
+    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
+    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
+    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
+
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
+    await screen.findByRole("textbox", { name: /Enunciado da questão/i });
 
     const fileInput = document.getElementById("image-upload") as HTMLInputElement;
 

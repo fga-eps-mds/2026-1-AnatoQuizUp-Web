@@ -140,11 +140,27 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
 
 const isStepValid = (values: QuestionFormValues, step: number) => {
   if (step === 1) {
-    return Boolean(values.topic && values.type && values.difficulty);
+    return Boolean(
+      values.topic && 
+      values.type && 
+      values.difficulty && 
+      values.tags.trim() && 
+      values.origemQuestao && 
+      values.taxonomiaBloom && 
+      values.regiaoAnatomica.trim() && 
+      values.estruturaAlvo.trim() && 
+      values.sistemaAnatomico.trim()
+    );
   }
 
   if (step === 2) {
-    return values.statement.trim().length > 0;
+    const isTextValid = values.statement.trim().length > 0 && values.explanation.trim().length > 0;
+    
+    if (values.image) {
+      return isTextValid && Boolean(values.planoAnatomico && values.modalidade.trim());
+    }
+    
+    return isTextValid;
   }
 
   const filledAlternatives = values.alternatives.filter((alternative) => alternative.text.trim());
@@ -598,7 +614,7 @@ const QuestionModal = ({
                   {showTopicError ? <RequiredError /> : null}
                 </label>
                 <label>
-                  <FieldLabel>Tags / palavras-chave</FieldLabel>
+                  <FieldLabel required>Tags / palavras-chave</FieldLabel>
                   <input
                     value={values.tags}
                     onChange={(event) => updateValue('tags', event.target.value)}
@@ -640,7 +656,7 @@ const QuestionModal = ({
                   {showDifficultyError ? <RequiredError /> : null}
                 </label>
                 <label>
-                  <FieldLabel>Origem</FieldLabel>
+                  <FieldLabel required>Origem</FieldLabel>
                   <select
                     value={values.origemQuestao}
                     onChange={(event) =>
@@ -656,7 +672,7 @@ const QuestionModal = ({
                   </select>
                 </label>
                 <label>
-                  <FieldLabel>Nível cognitivo (Bloom)</FieldLabel>
+                  <FieldLabel required>Nível cognitivo (Bloom)</FieldLabel>
                   <select
                     value={values.taxonomiaBloom ?? ''}
                     onChange={(event) =>
@@ -673,7 +689,7 @@ const QuestionModal = ({
                   </select>
                 </label>
                 <label>
-                  <FieldLabel>Região anatômica</FieldLabel>
+                  <FieldLabel required>Região anatômica</FieldLabel>
                   <input
                     value={values.regiaoAnatomica ?? ''}
                     onChange={(event) => updateValue('regiaoAnatomica', event.target.value)}
@@ -682,7 +698,7 @@ const QuestionModal = ({
                   />
                 </label>
                 <label>
-                  <FieldLabel>Estrutura-alvo</FieldLabel>
+                  <FieldLabel required>Estrutura-alvo</FieldLabel>
                   <input
                     value={values.estruturaAlvo ?? ''}
                     onChange={(event) => updateValue('estruturaAlvo', event.target.value)}
@@ -691,7 +707,7 @@ const QuestionModal = ({
                   />
                 </label>
                 <label>
-                  <FieldLabel>Sistema anatômico</FieldLabel>
+                  <FieldLabel required>Sistema anatômico</FieldLabel>
                   <input
                     value={values.sistemaAnatomico ?? ''}
                     onChange={(event) => updateValue('sistemaAnatomico', event.target.value)}
@@ -806,7 +822,7 @@ const QuestionModal = ({
               ) : null}
 
               <label className="block">
-                <FieldLabel>Explicação / justificativa (opcional)</FieldLabel>
+                <FieldLabel required>Explicação / justificativa</FieldLabel>
                 <textarea
                   value={values.explanation}
                   onChange={(event) => updateValue('explanation', event.target.value)}

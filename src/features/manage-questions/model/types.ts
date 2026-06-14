@@ -95,12 +95,12 @@ export type QuestionFormValues = {
   origemQuestao: OrigemQuestao;
   statement: string;
   explanation: string;
-  taxonomiaBloom?: TaxonomiaBloom | '';
-  regiaoAnatomica?: string;
-  estruturaAlvo?: string;
-  sistemaAnatomico?: string;
-  planoAnatomico?: PlanoAnatomico | '';
-  modalidade?: string;
+  taxonomiaBloom: TaxonomiaBloom | '';
+  regiaoAnatomica: string;
+  estruturaAlvo: string;
+  sistemaAnatomico: string;
+  planoAnatomico: PlanoAnatomico | '';
+  modalidade: string;
   alternatives: QuestionAlternative[];
   image: File | string | null;
 };

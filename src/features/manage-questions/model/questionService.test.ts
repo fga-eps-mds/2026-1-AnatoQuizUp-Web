@@ -37,6 +37,12 @@ const formValues = {
   statement: 'Qual estrutura forma a parede anterior do mediastino superior?',
   explanation: 'O manúbrio se relaciona com os grandes vasos.',
   image: null,
+  taxonomiaBloom: 'LEMBRAR' as const,
+  regiaoAnatomica: 'Tórax',
+  estruturaAlvo: 'Coração',
+  sistemaAnatomico: 'Cardiovascular',
+  planoAnatomico: '' as const,
+  modalidade: '',
   alternatives: [
     { id: 'a', label: 'A', text: 'Esterno', isCorrect: false },
     { id: 'b', label: 'B', text: 'Manúbrio do esterno', isCorrect: true },
