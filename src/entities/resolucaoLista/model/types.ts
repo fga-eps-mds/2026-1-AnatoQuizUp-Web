@@ -26,6 +26,7 @@ export interface QuestaoAluno {
   respostaMarcada: string | null;
   respostaCorreta?: string;
   saibaMais?: string | null;
+  tipo: 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO';
 }
 
 export interface DetalhesListaAluno {

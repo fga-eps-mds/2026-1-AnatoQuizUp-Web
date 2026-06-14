@@ -148,4 +148,45 @@ describe('ResponderLista', () => {
       expect(screen.queryByText('Confirmar Submissão')).not.toBeInTheDocument(); // O modal tem que fechar
     });
   });
+
+  it('deve cobrir a renderizacao de questao Verdadeiro/Falso e acerto do aluno no gabarito liberado', async () => {
+    (resolucaoListaApi.buscarDetalhes as jest.Mock).mockResolvedValue({ 
+      id: 'l_vf', nome: 'Lista VF', prazo: null, status: 'SUBMETIDA', gabaritoLiberado: true,
+      questoes: [{ 
+        id: 'q1', enunciado: 'O corpo humano tem 206 ossos.', tema: 'Esqueleto', 
+        tipo: 'CERTO_ERRADO',
+        alternativas: { C: 'Certo', E: 'Errado', X: '   ' },
+        respostaMarcada: 'C', 
+        respostaCorreta: 'C', 
+        saibaMais: null,
+        urlImagem: null
+      }] 
+    });
+    render(<ResponderLista />);
+    
+    expect(await screen.findByText('Gabarito · Lista VF')).toBeInTheDocument();
+    expect(screen.getByText('V')).toBeInTheDocument();
+    expect(screen.getByText('F')).toBeInTheDocument();
+    
+    expect(screen.getByText(/Correta · sua resposta/i)).toBeInTheDocument();
+  });
+
+  it('deve renderizar questao Verdadeiro/Falso na visao de resposta do aluno', async () => {
+    (resolucaoListaApi.buscarDetalhes as jest.Mock).mockResolvedValue({ 
+      id: 'l_vf2', nome: 'Lista VF Answering', prazo: null, status: 'PENDENTE', gabaritoLiberado: false,
+      questoes: [{ 
+        id: 'q1', enunciado: 'O fêmur é o maior osso.', tema: 'Esqueleto', 
+        tipo: 'CERTO_ERRADO',
+        alternativas: { C: 'Certo', E: 'Errado', Z: '' }, // A vazia garante o filtro na tela do aluno
+        respostaMarcada: null, 
+        respostaCorreta: 'C',
+      }] 
+    });
+    render(<ResponderLista />);
+    
+    expect(await screen.findByText('Lista VF Answering')).toBeInTheDocument();
+    
+    expect(screen.getByText('V')).toBeInTheDocument();
+    expect(screen.getByText('F')).toBeInTheDocument();
+  });
 });
