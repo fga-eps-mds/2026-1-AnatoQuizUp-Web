@@ -7,9 +7,16 @@ import {
   Loader2,
   RefreshCcw,
   Users,
+  Eye,
+  X,
+  FileText
 } from 'lucide-react';
-import { buscarDesempenhoPorListas } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
-import type { DesempenhoLista } from '../../../entities/dashboardTurma/model/types';
+import { 
+  buscarDesempenhoPorListas, 
+  buscarDesempenhoListaIndividual,
+} from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
+import { buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi';
+import type { DesempenhoLista, DesempenhoListaIndividual } from '../../../entities/dashboardTurma/model/types';
 
 interface CardDesempenhoListasProps {
   turmaId: string;
@@ -52,10 +59,120 @@ const prazoExpirado = (prazo: string | null) => {
   return data.getTime() < Date.now();
 };
 
+const ModalAlunos = ({ turmaId, listaId, onClose }: { turmaId: string, listaId: string, onClose: () => void }) => {
+  const [detalhes, setDetalhes] = useState<DesempenhoListaIndividual | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const [nomesAlunos, setNomesAlunos] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const carregarTudo = async () => {
+      setLoading(true);
+      try {
+        const dadosDesempenho = await buscarDesempenhoListaIndividual(turmaId, listaId);
+        setDetalhes(dadosDesempenho);
+
+        const idsAlunos = dadosDesempenho.desempenhoAlunos.map((a) => a.alunoId);
+
+        if (idsAlunos.length > 0) {
+          const usuarios = await buscarUsuariosPorIds(idsAlunos);
+          
+          const mapaNomes: Record<string, string> = {};
+          usuarios.forEach((u) => {
+            mapaNomes[u.id] = u.nome;
+          });
+          
+          setNomesAlunos(mapaNomes);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do modal:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void carregarTudo();
+  }, [turmaId, listaId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col max-h-[85vh]">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-gray-50/50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 text-teal-600">
+              <FileText size={16} />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900">
+              {detalhes ? detalhes.nomeLista : 'Carregando...'}
+            </h3>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex h-40 items-center justify-center gap-2 text-sm text-gray-500">
+              <Loader2 size={18} className="animate-spin text-teal-500" />
+              Buscando desempenho dos alunos...
+            </div>
+          ) : !detalhes ? (
+            <div className="flex h-40 items-center justify-center text-sm text-red-500 font-medium">
+              Erro ao carregar os dados desta lista.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {detalhes.desempenhoAlunos.map((aluno) => {
+                const submeteu = aluno.status === 'SUBMETIDA';
+                const naoRespondeu = aluno.status === 'NAO_RESPONDEU';
+                
+                return (
+                  <div key={aluno.alunoId} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border p-4 transition-colors ${submeteu ? 'border-gray-200 bg-white' : 'border-red-100 bg-red-50/30'}`}>
+                    <div>
+                      <p className="text-[13px] font-bold text-gray-900 font-sans">
+                        {nomesAlunos[aluno.alunoId] ?? 'Aluno desconhecido'}
+                      </p>
+                      
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        {submeteu && aluno.submissaoEm ? `Entregue em ${new Date(aluno.submissaoEm).toLocaleString('pt-BR')}` : 'Sem registro de entrega'}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        {submeteu ? (
+                          <p className="text-[13px] font-bold text-gray-900">
+                            {aluno.totalAcertos} <span className="text-[11px] font-medium text-gray-500">/ {detalhes.totalQuestoes} acertos</span>
+                          </p>
+                        ) : (
+                          <p className="text-[13px] font-bold text-gray-400">-</p>
+                        )}
+                      </div>
+                      <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${
+                        submeteu ? 'bg-green-100 text-green-700' :
+                        naoRespondeu ? 'bg-red-100 text-red-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {aluno.mensagem}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => {
   const [listas, setListas] = useState<DesempenhoLista[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [listaSelecionadaId, setListaSelecionadaId] = useState<string | null>(null);
 
   const carregarDesempenho = useCallback(async () => {
     setIsLoading(true);
@@ -187,10 +304,28 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
                   <p className="text-[11px] font-medium text-gray-500">acerto medio</p>
                 </div>
               </div>
+              
+              <button 
+                onClick={() => setListaSelecionadaId(lista.listaTurmaId)}
+                className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 py-2 text-[12px] font-bold text-teal-600 hover:bg-teal-50 hover:border-teal-200 transition-colors"
+              >
+                <Eye size={14} />
+                Ver desempenho dos alunos
+              </button>
+
             </li>
           );
         })}
       </ul>
+
+      {listaSelecionadaId && (
+        <ModalAlunos 
+          turmaId={turmaId} 
+          listaId={listaSelecionadaId} 
+          onClose={() => setListaSelecionadaId(null)} 
+        />
+      )}
+
     </div>
   );
 };

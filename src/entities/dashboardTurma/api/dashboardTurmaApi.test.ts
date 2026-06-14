@@ -2,6 +2,7 @@ import {
   buscarDashboardMacro,
   buscarDesempenhoIndividual,
   buscarDesempenhoPorListas,
+  buscarDesempenhoListaIndividual,
 } from './dashboardTurmaApi';
 import { httpClient } from '../../../shared/api/httpClient';
 
@@ -90,5 +91,33 @@ describe('dashboardTurmaApi', () => {
       expect(httpClient.get).toHaveBeenCalledWith('/turmasDashboard/turma-456/listas');
       expect(result).toEqual([]);
     });
+  });
+
+  it('deve buscar o desempenho individual de uma lista específica', async () => {
+    const mockDesempenhoLista = {
+      listaTurmaId: 'lista-456',
+      nomeLista: 'Simulado de Neuroanatomia',
+      totalQuestoes: 10,
+      desempenhoAlunos: [
+        {
+          alunoId: 'aluno-123',
+          status: 'SUBMETIDA',
+          totalAcertos: 8,
+          taxaAcerto: 80,
+          submissaoEm: '2026-06-14T10:00:00.000Z',
+          mensagem: 'Respondida',
+        },
+      ],
+    };
+
+    (httpClient.get as jest.Mock).mockResolvedValue({
+      data: mockDesempenhoLista,
+    });
+
+    const resultado = await buscarDesempenhoListaIndividual('turma-123', 'lista-456');
+
+    expect(httpClient.get).toHaveBeenCalledWith('/turmasDashboard/turma-123/listas/lista-456');
+    
+    expect(resultado).toEqual(mockDesempenhoLista);
   });
 });

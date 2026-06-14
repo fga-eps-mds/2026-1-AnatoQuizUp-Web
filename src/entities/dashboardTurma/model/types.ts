@@ -36,3 +36,19 @@ export interface DesempenhoLista {
   taxaMediaAcerto: number;
   prazo: string | null;
 }
+
+export type AlunoDesempenhoLista = {
+  alunoId: string;
+  status: 'SUBMETIDA' | 'NAO_RESPONDEU' | 'EM_ANDAMENTO';
+  totalAcertos: number;
+  taxaAcerto: number;
+  submissaoEm: string | null;
+  mensagem: string;
+};
+
+export type DesempenhoListaIndividual = {
+  listaTurmaId: string;
+  nomeLista: string;
+  totalQuestoes: number;
+  desempenhoAlunos: AlunoDesempenhoLista[];
+};

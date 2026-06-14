@@ -1,4 +1,4 @@
-import type { DashboardIndividual, DashboardMacro, DesempenhoLista } from '../model/types';
+import type { DesempenhoListaIndividual, DashboardIndividual, DashboardMacro, DesempenhoLista } from '../model/types';
 import { httpClient } from '../../../shared/api/httpClient';
 
 export const buscarDashboardMacro = async (turmaId: string): Promise<DashboardMacro> => {
@@ -15,3 +15,12 @@ export const buscarDesempenhoPorListas = async (turmaId: string): Promise<Desemp
   const { data } = await httpClient.get(`/turmasDashboard/${turmaId}/listas`);
   return data;
 };
+
+export const buscarDesempenhoListaIndividual = async (
+  turmaId: string, 
+  listaId: string
+): Promise<DesempenhoListaIndividual> => {
+  const { data } = await httpClient.get(`/turmasDashboard/${turmaId}/listas/${listaId}`);
+  return data;
+};
+

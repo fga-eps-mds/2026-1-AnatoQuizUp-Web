@@ -1,13 +1,22 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { buscarDesempenhoPorListas } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
+import { buscarDesempenhoPorListas, buscarDesempenhoListaIndividual } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
+import { buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi';
 import { CardDesempenhoListas } from './CardDesempenhoListas';
+import type { UsuarioResumo } from '../../../entities/usuarios/model/types';
 
 jest.mock('../../../entities/dashboardTurma/api/dashboardTurmaApi', () => ({
   buscarDesempenhoPorListas: jest.fn(),
+  buscarDesempenhoListaIndividual: jest.fn(),
+}));
+
+jest.mock('../../../entities/usuarios/api/usuarioApi', () => ({
+  buscarUsuariosPorIds: jest.fn(),
 }));
 
 const mockedBuscarDesempenhoPorListas = jest.mocked(buscarDesempenhoPorListas);
+const mockedBuscarDesempenhoListaIndividual = jest.mocked(buscarDesempenhoListaIndividual);
+const mockedBuscarUsuariosPorIds = jest.mocked(buscarUsuariosPorIds);
 
 describe('CardDesempenhoListas', () => {
   beforeEach(() => {
@@ -136,5 +145,53 @@ describe('CardDesempenhoListas', () => {
     expect(mockedBuscarDesempenhoPorListas).toHaveBeenCalledTimes(2);
 
     consoleSpy.mockRestore();
+  });
+
+  it('deve abrir o modal de desempenho individual ao clicar no botão', async () => {
+    mockedBuscarDesempenhoPorListas.mockResolvedValue([
+      {
+        listaTurmaId: 'lista-turma-1',
+        nomeLista: 'Simulado de Anatomia',
+        totalAlunos: 1,
+        totalSubmeteram: 1,
+        totalPendentes: 0,
+        taxaMediaAcerto: 100,
+        prazo: null,
+      },
+    ]);
+
+    mockedBuscarDesempenhoListaIndividual.mockResolvedValue({
+      listaTurmaId: 'lista-turma-1',
+      nomeLista: 'Simulado de Anatomia',
+      totalQuestoes: 10,
+      desempenhoAlunos: [
+        { 
+          alunoId: 'aluno-1', 
+          status: 'SUBMETIDA', 
+          totalAcertos: 10, 
+          taxaAcerto: 100, 
+          submissaoEm: '2026-06-14T10:00:00.000Z', 
+          mensagem: 'Respondida' 
+        }
+      ]
+    });
+
+    mockedBuscarUsuariosPorIds.mockResolvedValue([
+      { 
+        id: 'aluno-1', 
+        nome: 'Pedro Cabeceira',
+        email: 'pedro@teste.com' 
+      } as UsuarioResumo
+    ]);
+
+    render(<CardDesempenhoListas turmaId="turma-123" />);
+
+    const btnModal = await screen.findByRole('button', { name: /Ver desempenho dos alunos/i });
+    fireEvent.click(btnModal);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pedro Cabeceira')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
+    });
   });
 });
