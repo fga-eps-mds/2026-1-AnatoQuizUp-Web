@@ -2,7 +2,7 @@
 const config = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  testMatch: ['<rootDir>/src/**/*.test.ts?(x)'],
+  testMatch: ['<rootDir>/src/**/*.test.ts?(x)','<rootDir>/test/unit/**/*.test.ts?(x)'],
   transform: {
     '^.+\\.(t|j)sx?$': [
       '@swc/jest',
