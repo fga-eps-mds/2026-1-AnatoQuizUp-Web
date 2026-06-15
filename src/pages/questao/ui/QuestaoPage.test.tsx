@@ -49,10 +49,6 @@ const questions: ProfessorQuestion[] = [
     origemQuestao: "PROVA_ANTERIOR",
     taxonomiaBloom: "ANALISAR",
     regiaoAnatomica: "Tórax",
-    estruturaAlvo: "Pulmão",
-    sistemaAnatomico: "Respiratório",
-    planoAnatomico: "AP",
-    modalidade: "Radiografia",
     createdAt: "31/03/2025",
     explanation: "Explicação padrão",
     alternatives: [
@@ -74,8 +70,6 @@ const questions: ProfessorQuestion[] = [
     origemQuestao: "ELABORADA_POR_PROFESSOR",
     taxonomiaBloom: "LEMBRAR",
     regiaoAnatomica: "Tórax",
-    estruturaAlvo: "Coração",
-    sistemaAnatomico: "Cardiovascular",
     createdAt: "30/03/2025",
     explanation: "Explicação padrão",
     alternatives: [
@@ -95,8 +89,6 @@ const questions: ProfessorQuestion[] = [
     origemQuestao: "ELABORADA_POR_PROFESSOR",
     taxonomiaBloom: "LEMBRAR",
     regiaoAnatomica: "Tórax",
-    estruturaAlvo: "Coração",
-    sistemaAnatomico: "Cardiovascular",
     createdAt: "01/04/2025",
     explanation: "Explicação padrão",
     alternatives: [
@@ -203,8 +195,6 @@ describe("QuestionsPage", () => {
     await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
     await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
     await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
-    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
-    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
 
     const statement = screen.getByRole("textbox", { name: /Enunciado da questão/i });
@@ -262,8 +252,6 @@ describe("QuestionsPage", () => {
       "ANALISAR",
     );
     await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
-    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
-    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
     
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
     
@@ -289,44 +277,9 @@ describe("QuestionsPage", () => {
         expect.objectContaining({
           taxonomiaBloom: "ANALISAR",
           regiaoAnatomica: "Tórax",
-          estruturaAlvo: "Coração",
-          sistemaAnatomico: "Cardiovascular",
         }),
       );
     });
-  });
-
-  it("exibe plano anatomico e modalidade somente quando ha imagem", async () => {
-    const testUser = userEvent.setup();
-    renderQuestionsPage(true);
-    await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
-    await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
-    await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
-    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
-    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
-    await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
-
-    // Sem imagem: campos condicionais não existem
-    expect(screen.queryByRole("combobox", { name: /Plano anatômico/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /Modalidade de imagem/i })).not.toBeInTheDocument();
-
-    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
-    const validFile = new File(["dummy"], "anatomia.png", { type: "image/png" });
-    await testUser.upload(fileInput, validFile);
-
-    // Com imagem: campos aparecem e são editáveis
-    const planoSelect = await screen.findByRole("combobox", { name: /Plano anatômico/i });
-    expect(planoSelect).toBeInTheDocument();
-    await testUser.selectOptions(planoSelect, "AXIAL");
-    expect(planoSelect).toHaveValue("AXIAL");
-
-    const modalidadeInput = screen.getByRole("textbox", { name: /Modalidade de imagem/i });
-    await testUser.type(modalidadeInput, "TC");
-    expect(modalidadeInput).toHaveValue("TC");
-
-    // Remover a imagem esconde os campos de novo
-    await testUser.click(screen.getByRole("button", { name: /Remover imagem/i }));
-    expect(screen.queryByRole("combobox", { name: /Plano anatômico/i })).not.toBeInTheDocument();
   });
 
   it("filtra questoes por nivel cognitivo (Bloom) via API", async () => {
@@ -355,8 +308,6 @@ describe("QuestionsPage", () => {
     await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
     await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
     await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
-    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
-    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
 
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
     await screen.findByRole("textbox", { name: /Enunciado da questão/i });
@@ -387,8 +338,6 @@ describe("QuestionsPage", () => {
     await testUser.type(screen.getByRole("textbox", { name: /Tags/i }), "teste");
     await testUser.selectOptions(screen.getByRole("combobox", { name: /Nível cognitivo \(Bloom\)/i }), "LEMBRAR");
     await testUser.type(screen.getByRole("textbox", { name: /Região anatômica/i }), "Tórax");
-    await testUser.type(screen.getByRole("textbox", { name: /Estrutura-alvo/i }), "Coração");
-    await testUser.type(screen.getByRole("textbox", { name: /Sistema anatômico/i }), "Cardiovascular");
 
     await testUser.click(screen.getByRole("button", { name: /Próximo/i }));
     await screen.findByRole("textbox", { name: /Enunciado da questão/i });

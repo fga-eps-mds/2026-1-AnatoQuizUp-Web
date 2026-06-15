@@ -22,7 +22,6 @@ import {
 import type {
   ApiQuestionDifficulty,
   OrigemQuestao,
-  PlanoAnatomico,
   ProfessorQuestion,
   QuestionAlternative,
   QuestionDifficulty,
@@ -47,16 +46,7 @@ const TAXONOMIAS_BLOOM: { valor: TaxonomiaBloom; rotulo: string }[] = [
   { valor: 'CRIAR', rotulo: 'Criar' },
 ];
 
-const PLANOS_ANATOMICOS: { valor: PlanoAnatomico; rotulo: string }[] = [
-  { valor: 'AXIAL', rotulo: 'Axial' },
-  { valor: 'CORONAL', rotulo: 'Coronal' },
-  { valor: 'SAGITAL', rotulo: 'Sagital' },
-  { valor: 'PA', rotulo: 'PA (póstero-anterior)' },
-  { valor: 'AP', rotulo: 'AP (ântero-posterior)' },
-  { valor: 'OUTRO', rotulo: 'Outro' },
-];
-
-const TOPICS = ['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
+const TOPICS =['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
 const TYPES: QuestionType[] = ['Múltipla escolha', 'Verdadeiro/Falso'];
 const DIFFICULTIES: QuestionDifficulty[] = ['Fácil', 'Médio', 'Difícil'];
 const EMPTY_ALTERNATIVES: QuestionAlternative[] = ['A', 'B', 'C', 'D', 'E'].map((label) => ({
@@ -87,10 +77,6 @@ const emptyFormValues: QuestionFormValues = {
   explanation: '',
   taxonomiaBloom: '',
   regiaoAnatomica: '',
-  estruturaAlvo: '',
-  sistemaAnatomico: '',
-  planoAnatomico: '',
-  modalidade: '',
   alternatives: EMPTY_ALTERNATIVES,
   image: null,
 };
@@ -125,10 +111,6 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
   explanation: question.explanation ?? '',
   taxonomiaBloom: question.taxonomiaBloom ?? '',
   regiaoAnatomica: question.regiaoAnatomica ?? '',
-  estruturaAlvo: question.estruturaAlvo ?? '',
-  sistemaAnatomico: question.sistemaAnatomico ?? '',
-  planoAnatomico: question.planoAnatomico ?? '',
-  modalidade: question.modalidade ?? '',
   image: question.image || null,
   alternatives: question.type === 'Verdadeiro/Falso'
     ? TRUE_FALSE_ALTERNATIVES.map((alternative) => ({
@@ -141,26 +123,18 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
 const isStepValid = (values: QuestionFormValues, step: number) => {
   if (step === 1) {
     return Boolean(
-      values.topic && 
-      values.type && 
-      values.difficulty && 
-      values.tags.trim() && 
-      values.origemQuestao && 
-      values.taxonomiaBloom && 
-      values.regiaoAnatomica.trim() && 
-      values.estruturaAlvo.trim() && 
-      values.sistemaAnatomico.trim()
+      values.topic &&
+      values.type &&
+      values.difficulty &&
+      values.tags.trim() &&
+      values.origemQuestao &&
+      values.taxonomiaBloom &&
+      values.regiaoAnatomica.trim()
     );
   }
 
   if (step === 2) {
-    const isTextValid = values.statement.trim().length > 0 && values.explanation.trim().length > 0;
-    
-    if (values.image) {
-      return isTextValid && Boolean(values.planoAnatomico && values.modalidade.trim());
-    }
-    
-    return isTextValid;
+    return values.statement.trim().length > 0 && values.explanation.trim().length > 0;
   }
 
   const filledAlternatives = values.alternatives.filter((alternative) => alternative.text.trim());
@@ -697,24 +671,6 @@ const QuestionModal = ({
                     className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
                   />
                 </label>
-                <label>
-                  <FieldLabel required>Estrutura-alvo</FieldLabel>
-                  <input
-                    value={values.estruturaAlvo ?? ''}
-                    onChange={(event) => updateValue('estruturaAlvo', event.target.value)}
-                    placeholder="ex: Coração"
-                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
-                  />
-                </label>
-                <label>
-                  <FieldLabel required>Sistema anatômico</FieldLabel>
-                  <input
-                    value={values.sistemaAnatomico ?? ''}
-                    onChange={(event) => updateValue('sistemaAnatomico', event.target.value)}
-                    placeholder="ex: Cardiovascular"
-                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
-                  />
-                </label>
               </div>
             </>
           ) : null}
@@ -779,7 +735,7 @@ const QuestionModal = ({
                       />
                       <button
                         type="button"
-                        onClick={() => onChange({ ...values, image: null, planoAnatomico: '', modalidade: '' })}
+                        onClick={() => onChange({ ...values, image: null })}
                         className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-[#e14b4b] text-white shadow-md hover:bg-[#c03939]"
                         aria-label="Remover imagem"
                       >
@@ -789,37 +745,6 @@ const QuestionModal = ({
                   )}
                 </div>
               </div>
-
-              {values.image ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <FieldLabel>Plano anatômico / Incidência</FieldLabel>
-                    <select
-                      value={values.planoAnatomico ?? ''}
-                      onChange={(event) =>
-                        updateValue('planoAnatomico', event.target.value as PlanoAnatomico | '')
-                      }
-                      className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
-                    >
-                      <option value="">Não informado</option>
-                      {PLANOS_ANATOMICOS.map((plano) => (
-                        <option key={plano.valor} value={plano.valor}>
-                          {plano.rotulo}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <FieldLabel>Modalidade de imagem</FieldLabel>
-                    <input
-                      value={values.modalidade ?? ''}
-                      onChange={(event) => updateValue('modalidade', event.target.value)}
-                      placeholder="ex: TC, RM, Radiografia"
-                      className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
-                    />
-                  </label>
-                </div>
-              ) : null}
 
               <label className="block">
                 <FieldLabel required>Explicação / justificativa</FieldLabel>

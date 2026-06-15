@@ -39,10 +39,6 @@ const formValues = {
   image: null,
   taxonomiaBloom: 'LEMBRAR' as const,
   regiaoAnatomica: 'Tórax',
-  estruturaAlvo: 'Coração',
-  sistemaAnatomico: 'Cardiovascular',
-  planoAnatomico: '' as const,
-  modalidade: '',
   alternatives: [
     { id: 'a', label: 'A', text: 'Esterno', isCorrect: false },
     { id: 'b', label: 'B', text: 'Manúbrio do esterno', isCorrect: true },
@@ -257,10 +253,6 @@ describe('questionService', () => {
         origemQuestao: 'LIVRO',
         taxonomiaBloom: 'APLICAR',
         regiaoAnatomica: '  Abdome  ',
-        estruturaAlvo: 'Fígado',
-        sistemaAnatomico: 'Digestório',
-        planoAnatomico: 'AXIAL',
-        modalidade: 'TC',
       });
 
       const formData = postMock.mock.calls[0][1] as FormData;
@@ -268,8 +260,6 @@ describe('questionService', () => {
       expect(formData.get('origemQuestao')).toBe('LIVRO');
       expect(formData.get('taxonomiaBloom')).toBe('APLICAR');
       expect(formData.get('regiaoAnatomica')).toBe('Abdome'); // trim aplicado
-      expect(formData.get('planoAnatomico')).toBe('AXIAL');
-      expect(formData.get('modalidade')).toBe('TC');
     });
 
     it('normaliza os campos de classificacao retornados pelo backend', async () => {

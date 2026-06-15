@@ -39,10 +39,6 @@ let questionsMock: Question[] = [
     taxonomiaBloom: 'COMPREENDER',
     origemQuestao: 'ELABORADA_POR_PROFESSOR',
     regiaoAnatomica: 'Tórax',
-    estruturaAlvo: 'Coração',
-    sistemaAnatomico: 'Cardiovascular',
-    planoAnatomico: null,
-    modalidade: null,
     alternativas: {
       A: 'Átrio direito',
       B: 'Ventrículo esquerdo',
@@ -70,10 +66,6 @@ let questionsMock: Question[] = [
     taxonomiaBloom: 'ANALISAR',
     origemQuestao: 'PROVA_ANTERIOR',
     regiaoAnatomica: 'Tórax',
-    estruturaAlvo: 'Pulmão',
-    sistemaAnatomico: 'Respiratório',
-    planoAnatomico: 'AP',
-    modalidade: 'Radiografia',
     alternativas: {
       A: 'Broncograma aéreo',
       B: 'Perda de volume pulmonar',
@@ -162,10 +154,6 @@ const mapQuestionToProfessorQuestion = (question: Question): ProfessorQuestion =
   explanation: question.saibaMais ?? '',
   taxonomiaBloom: question.taxonomiaBloom ?? null,
   regiaoAnatomica: question.regiaoAnatomica ?? null,
-  estruturaAlvo: question.estruturaAlvo ?? null,
-  sistemaAnatomico: question.sistemaAnatomico ?? null,
-  planoAnatomico: question.planoAnatomico ?? null,
-  modalidade: question.modalidade ?? null,
   alternatives: mapApiAlternativesToFormAlternatives(question),
   createdAt: formatQuestionDate(question.criadoEm),
 });
@@ -188,10 +176,6 @@ const mapValuesToQuestion = (values: QuestionFormValues, id: string): Question =
     taxonomiaBloom: values.taxonomiaBloom || null,
     origemQuestao: values.origemQuestao || 'ELABORADA_POR_PROFESSOR',
     regiaoAnatomica: values.regiaoAnatomica?.trim() || null,
-    estruturaAlvo: values.estruturaAlvo?.trim() || null,
-    sistemaAnatomico: values.sistemaAnatomico?.trim() || null,
-    planoAnatomico: values.planoAnatomico || null,
-    modalidade: values.modalidade?.trim() || null,
     alternativas: values.alternatives.reduce<Question['alternativas']>((acc, alternative) => {
       return {
         ...acc,
@@ -359,10 +343,6 @@ export const atualizarQuestaoMock = async (
     taxonomiaBloom: payload.taxonomiaBloom ?? currentQuestion.taxonomiaBloom,
     origemQuestao: payload.origemQuestao ?? currentQuestion.origemQuestao,
     regiaoAnatomica: payload.regiaoAnatomica ?? currentQuestion.regiaoAnatomica,
-    estruturaAlvo: payload.estruturaAlvo ?? currentQuestion.estruturaAlvo,
-    sistemaAnatomico: payload.sistemaAnatomico ?? currentQuestion.sistemaAnatomico,
-    planoAnatomico: payload.planoAnatomico ?? currentQuestion.planoAnatomico,
-    modalidade: payload.modalidade ?? currentQuestion.modalidade,
     alternativas: payload.alternativas
       ? { ...payload.alternativas }
       : currentQuestion.alternativas

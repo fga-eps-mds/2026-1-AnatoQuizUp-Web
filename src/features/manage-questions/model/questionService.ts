@@ -206,10 +206,6 @@ const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   explanation: question.explanation ?? question.explicacao ?? question.saibaMais ?? '',
   taxonomiaBloom: question.taxonomiaBloom ?? null,
   regiaoAnatomica: question.regiaoAnatomica ?? null,
-  estruturaAlvo: question.estruturaAlvo ?? null,
-  sistemaAnatomico: question.sistemaAnatomico ?? null,
-  planoAnatomico: question.planoAnatomico ?? null,
-  modalidade: question.modalidade ?? null,
   image: question.image ?? question.imagem ?? null,
   alternatives: normalizeAlternatives(
     question.alternatives ?? question.alternativas,
@@ -237,11 +233,6 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   formData.append('origemQuestao', values.origemQuestao || '');
   formData.append('taxonomiaBloom', values.taxonomiaBloom || '');
   formData.append('regiaoAnatomica', (values.regiaoAnatomica || '').trim());
-  formData.append('estruturaAlvo', (values.estruturaAlvo || '').trim());
-  formData.append('sistemaAnatomico', (values.sistemaAnatomico || '').trim());
-  
-  if (values.planoAnatomico) formData.append('planoAnatomico', values.planoAnatomico);
-  if (values.modalidade) formData.append('modalidade', values.modalidade.trim());
 
   const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
   if (correctAlternative) {

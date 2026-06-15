@@ -16,8 +16,6 @@ export type OrigemQuestao =
   | 'GERADA_POR_IA'
   | 'ELABORADA_POR_PROFESSOR';
 
-export type PlanoAnatomico = 'AXIAL' | 'CORONAL' | 'SAGITAL' | 'PA' | 'AP' | 'OUTRO';
-
 export type QuestionAlternativeKey = 'A' | 'B' | 'C' | 'D' | 'E';
 
 export type QuestionStatus = 'ATIVO' | 'INATIVO';
@@ -44,10 +42,6 @@ export type Question = {
   taxonomiaBloom?: TaxonomiaBloom | null;
   origemQuestao?: OrigemQuestao;
   regiaoAnatomica?: string | null;
-  estruturaAlvo?: string | null;
-  sistemaAnatomico?: string | null;
-  planoAnatomico?: PlanoAnatomico | null;
-  modalidade?: string | null;
   alternativas: QuestionAlternatives | null;
   status: QuestionStatus;
   criadoPorId: string;
@@ -78,10 +72,6 @@ export type ProfessorQuestion = {
   explanation?: string;
   taxonomiaBloom?: TaxonomiaBloom | null;
   regiaoAnatomica?: string | null;
-  estruturaAlvo?: string | null;
-  sistemaAnatomico?: string | null;
-  planoAnatomico?: PlanoAnatomico | null;
-  modalidade?: string | null;
   alternatives: QuestionAlternative[];
   createdAt: string;
   image?: string | null;
@@ -97,10 +87,6 @@ export type QuestionFormValues = {
   explanation: string;
   taxonomiaBloom: TaxonomiaBloom | '';
   regiaoAnatomica: string;
-  estruturaAlvo: string;
-  sistemaAnatomico: string;
-  planoAnatomico: PlanoAnatomico | '';
-  modalidade: string;
   alternatives: QuestionAlternative[];
   image: File | string | null;
 };
@@ -116,10 +102,6 @@ export type UpdateQuestionPayload = Partial<{
   taxonomiaBloom: TaxonomiaBloom | null;
   origemQuestao: OrigemQuestao;
   regiaoAnatomica: string | null;
-  estruturaAlvo: string | null;
-  sistemaAnatomico: string | null;
-  planoAnatomico: PlanoAnatomico | null;
-  modalidade: string | null;
   alternativas: QuestionAlternatives | null;
 }>;
 
