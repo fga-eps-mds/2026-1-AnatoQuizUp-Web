@@ -19,10 +19,10 @@ describe('resolucaoListaApi', () => {
     const mockDados = [{ id: '1', nome: 'Lista 1' }];
     (httpClient.get as jest.Mock).mockResolvedValue({ data: { dados: mockDados } });
 
-    const resultado = await resolucaoListaApi.listar('PENDENTE', 'Anatomia');
+    const resultado = await resolucaoListaApi.listar('turma-123', 'PENDENTE', 'Anatomia');
 
     expect(httpClient.get).toHaveBeenCalledWith('/listasAluno', {
-      params: { status: 'PENDENTE', busca: 'Anatomia' },
+      params: { turmaId: 'turma-123', status: 'PENDENTE', busca: 'Anatomia' },
     });
     expect(resultado).toEqual(mockDados);
   });

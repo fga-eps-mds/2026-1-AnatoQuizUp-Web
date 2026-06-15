@@ -16,7 +16,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
   useEffect(() => {
     let cancelado = false;
 
-    resolucaoListaApi.listar(undefined, busca)
+    resolucaoListaApi.listar(turmaId, undefined, busca)
       .then(dados => {
         if (!cancelado) {
           setListas(dados);

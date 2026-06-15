@@ -52,7 +52,7 @@ describe('ListagemListas', () => {
     fireEvent.change(input, { target: { value: 'Neuro' } });
 
     await waitFor(() => {
-      expect(resolucaoListaApi.listar).toHaveBeenCalledWith(undefined, 'Neuro');
+      expect(resolucaoListaApi.listar).toHaveBeenCalledWith('t1', undefined, 'Neuro');
     });
   });
 

@@ -7,9 +7,10 @@ interface RespostaApi<T> {
 }
 
 export const resolucaoListaApi = {
-  listar: async (status?: string, busca?: string) => {
+ 
+  listar: async (turmaId: string, status?: string, busca?: string) => {
     const res = await httpClient.get<RespostaApi<ResumoListaAluno[]>>('/listasAluno', {
-      params: { status, busca }
+      params: { turmaId, status, busca } 
     });
     return res.data.dados;
   },
