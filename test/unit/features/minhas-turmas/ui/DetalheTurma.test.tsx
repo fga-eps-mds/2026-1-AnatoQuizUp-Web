@@ -122,7 +122,7 @@ describe('DetalheTurma', () => {
     
     unmount();
     
-    resolverApi({
+    resolverApi!({
       data: { 
         dados: { nome: 'Fantasma', professorId: 'prof-1' } 
       }

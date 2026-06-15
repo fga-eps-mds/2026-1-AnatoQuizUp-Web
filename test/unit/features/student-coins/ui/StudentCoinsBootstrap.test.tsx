@@ -27,7 +27,7 @@ describe('StudentCoinsBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    (useStudentCoinsStore as jest.Mock).mockImplementation((selector) =>
+    (useStudentCoinsStore as unknown as jest.Mock).mockImplementation((selector) =>
       selector({
         saldoMoedas: 0,
         isLoading: false,

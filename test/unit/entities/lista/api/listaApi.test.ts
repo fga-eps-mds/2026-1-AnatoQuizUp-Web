@@ -386,7 +386,7 @@ describe('listaApi', () => {
     expect(resultado.criadoEm).toBe('data-invalida'); 
     expect(resultado.atualizadoEm).toBe(''); 
     expect(resultado.turmas[0].nome).toBe('Turma sem nome');
-    expect(resultado.questoes[0].enunciado).toBe('Questao sem enunciado');
+    expect(resultado.questoes![0].enunciado).toBe('Questao sem enunciado');
   });
 
   it('deve testar fallback para RASCUNHO quando nao ha turmas', async () => {

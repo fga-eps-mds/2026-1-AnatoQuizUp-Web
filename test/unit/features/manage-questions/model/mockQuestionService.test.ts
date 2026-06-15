@@ -5,7 +5,7 @@ const loadMockService = async () => {
   return import('../../../../../src/features/manage-questions/model/mockQuestionService');
 };
 
-const multipleChoiceValues: QuestionFormValues = {
+const multipleChoiceValues = {
   topic: 'Torax',
   tags: 'anatomia',
   type: 'Múltipla escolha',
@@ -18,9 +18,9 @@ const multipleChoiceValues: QuestionFormValues = {
     { id: 'b', label: 'B', text: 'Esterno', isCorrect: true },
     { id: 'c', label: 'C', text: 'Escapula', isCorrect: false },
   ],
-};
+} as QuestionFormValues;
 
-const trueFalseValues: QuestionFormValues = {
+const trueFalseValues = {
   topic: 'Neuroanatomia',
   tags: '',
   type: 'Verdadeiro/Falso',
@@ -32,7 +32,7 @@ const trueFalseValues: QuestionFormValues = {
     { id: 'v', label: 'V', text: 'Verdadeiro', isCorrect: true },
     { id: 'f', label: 'F', text: 'Falso', isCorrect: false },
   ],
-};
+} as QuestionFormValues;
 
 describe('mockQuestionService', () => {
   it('lista questoes ativas com paginacao e filtros', async () => {
