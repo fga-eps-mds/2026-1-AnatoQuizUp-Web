@@ -131,7 +131,12 @@ export const ResponderLista = () => {
                   )}
 
                   <div className="flex flex-col gap-2.5 mt-4">
-                    {q.alternativas && Object.entries(q.alternativas).map(([letra, texto]) => {
+                    {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
+                      
+                      const labelVisual = q.tipo === 'CERTO_ERRADO' 
+                        ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra) 
+                        : letra;
+
                       const isCorreta = letra === q.respostaCorreta;
                       const isMarcada = letra === q.respostaMarcada;
                       
@@ -154,7 +159,7 @@ export const ResponderLista = () => {
 
                       return (
                         <div key={letra} className={containerClass}>
-                          <div className={letterClass}>{letra}</div>
+                          <div className={letterClass}>{labelVisual}</div>
                           <div className="text-[13.5px] font-semibold text-gray-800 flex-1">{texto}</div>
                           {tagContent}
                         </div>
@@ -258,8 +263,13 @@ export const ResponderLista = () => {
             )}
 
             <div className="px-6 pt-2 pb-6 flex flex-col gap-3">
-              {q.alternativas && Object.entries(q.alternativas).map(([letra, texto]) => {
+              {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
                 const isSelected = q.respostaMarcada === letra;
+                
+                const labelVisual = q.tipo === 'CERTO_ERRADO' 
+                  ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra) 
+                  : letra;
+
                 return (
                   <button 
                     key={letra} 
@@ -268,7 +278,7 @@ export const ResponderLista = () => {
                     onClick={() => marcarAlternativa(letra)}
                   >
                     <div className={`w-8 h-8 rounded-lg flex shrink-0 items-center justify-center font-extrabold text-sm border-2 ${isSelected ? 'bg-teal-500 border-teal-500 text-white' : 'border-gray-200 text-gray-500'}`}>
-                      {letra}
+                      {labelVisual}
                     </div>
                     <div className="text-sm font-semibold text-gray-800 flex-1">{texto}</div>
                   </button>

@@ -1,0 +1,93 @@
+jest.mock('../../../../../src/app/providers/AuthProvider', () => ({
+  useAuth: jest.fn(),
+}));
+
+jest.mock('../../../../../src/features/auth-by-credencials/model/authService', () => ({
+  loginWithCredencials: jest.fn(),
+}));
+
+jest.mock('../../../../../src/shared/config/env', () => ({
+  API_BASE_URL: 'https://api.test',
+}));
+
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../../../src/app/providers/AuthProvider';
+import { loginWithCredencials } from '../../../../../src/features/auth-by-credencials/model/authService';
+import { LoginForm } from '../../../../../src/features/auth-by-credencials/ui/LoginForm';
+
+const useAuthMock = useAuth as jest.Mock;
+const loginWithCredencialsMock = loginWithCredencials as jest.Mock;
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <span data-testid="location">{location.pathname}</span>;
+};
+
+const renderLoginForm = () => {
+  const login = jest.fn().mockResolvedValue(undefined);
+  useAuthMock.mockReturnValue({ login });
+
+  const view = render(
+    <MemoryRouter initialEntries={['/login']}>
+      <LoginForm />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+
+  const passwordInput = view.container.querySelector('input[type="password"]') as HTMLInputElement;
+
+  return { ...view, login, passwordInput };
+};
+
+describe('LoginForm', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows a validation error when required fields are empty', async () => {
+    const testUser = userEvent.setup();
+
+    renderLoginForm();
+
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
+
+    expect(screen.getByText(/Campos obrigatórios/i)).toBeInTheDocument();
+    expect(loginWithCredencialsMock).not.toHaveBeenCalled();
+  });
+
+  it('authenticates with credentials and redirects to home', async () => {
+    const testUser = userEvent.setup();
+    loginWithCredencialsMock.mockResolvedValueOnce({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    });
+
+    const { login, passwordInput } = renderLoginForm();
+
+    await testUser.type(screen.getByPlaceholderText('Email'), 'ana@unb.br');
+    await testUser.type(passwordInput, 'secret');
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
+
+    expect(loginWithCredencialsMock).toHaveBeenCalledWith('ana@unb.br', 'secret');
+    expect(login).toHaveBeenCalledWith('access-token', 'refresh-token');
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/home');
+    });
+  });
+
+  it('shows the service error when authentication fails', async () => {
+    const testUser = userEvent.setup();
+    loginWithCredencialsMock.mockRejectedValueOnce(new Error('Email ou senha inválidos'));
+
+    const { passwordInput } = renderLoginForm();
+
+    await testUser.type(screen.getByPlaceholderText('Email'), 'ana@unb.br');
+    await testUser.type(passwordInput, 'wrong');
+    await testUser.click(screen.getByRole('button', { name: /Continuar/i }));
+
+    expect(await screen.findByText('Email ou senha inválidos')).toBeInTheDocument();
+  });
+
+});

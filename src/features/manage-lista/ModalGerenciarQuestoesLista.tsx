@@ -30,7 +30,7 @@ const formatarTipo = (tipo?: string) => {
 const correspondeAoTipo = (tipoQuestao: string, filtro: string) => {
   if (!filtro) return true;
   if (filtro === 'MULTIPLA') return /multipla|escolha|ltipla/i.test(tipoQuestao);
-  return /verdadeiro|falso/i.test(tipoQuestao);
+  return /verdadeiro|falso|certo_errado/i.test(tipoQuestao);
 };
 
 export const ModalGerenciarQuestoesLista = ({
