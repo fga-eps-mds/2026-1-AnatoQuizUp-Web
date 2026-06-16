@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   Trash2,
-  Users,
 } from 'lucide-react';
 import type { ListaQuestao, StatusLista } from '../../entities/lista/model/types';
 import {
@@ -21,7 +20,6 @@ import {
 } from '../../entities/lista/api/listaApi';
 import { ModalExcluirLista } from './ModalExcluirLista';
 import { ModalGerenciarQuestoesLista } from './ModalGerenciarQuestoesLista';
-import { ModalGerenciarTurmasLista } from './ModalGerenciarTurmasLista';
 import { ModalLista } from './ModalLista';
 
 type TipoToast = 'success' | 'error';
@@ -49,7 +47,6 @@ export const ListarListas = () => {
   const [modoModalLista, setModoModalLista] = useState<'create' | 'edit'>('create');
   const [listaSelecionada, setListaSelecionada] = useState<ListaQuestao | null>(null);
   const [listaParaQuestoes, setListaParaQuestoes] = useState<ListaQuestao | null>(null);
-  const [listaParaTurmas, setListaParaTurmas] = useState<ListaQuestao | null>(null);
   const [listaParaExcluir, setListaParaExcluir] = useState<ListaQuestao | null>(null);
   const [isSavingLista, setIsSavingLista] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -77,7 +74,7 @@ export const ListarListas = () => {
       setListas(dados);
     } catch (error) {
       console.error('Erro ao buscar listas', error);
-      mostrarToast('Nao foi possivel carregar as listas.', 'error');
+      mostrarToast('Não foi possível carregar as listas.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -125,7 +122,7 @@ export const ListarListas = () => {
       solicitarAtualizacao();
     } catch (error) {
       console.error('Erro ao salvar lista', error);
-      mostrarToast('Nao foi possivel salvar a lista.', 'error');
+      mostrarToast('Não foi possível salvar a lista.', 'error');
     } finally {
       setIsSavingLista(false);
     }
@@ -136,11 +133,11 @@ export const ListarListas = () => {
     try {
       await excluirLista(id);
       setListaParaExcluir(null);
-      mostrarToast('Lista excluida com sucesso.');
+      mostrarToast('Lista excluída com sucesso.');
       solicitarAtualizacao();
     } catch (error) {
       console.error('Erro ao excluir lista', error);
-      mostrarToast('Nao foi possivel excluir a lista.', 'error');
+      mostrarToast('Não foi possível excluir a lista.', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -175,7 +172,7 @@ export const ListarListas = () => {
       {toast && (
         <div
           role="status"
-          className={`mb-4 flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold ${
+          className={`mb-4 flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold rounded-lg shadow-sm ${
             toast.type === 'success'
               ? 'border-teal-400 bg-teal-50 text-teal-800'
               : 'border-red-300 bg-red-50 text-red-700'
@@ -186,162 +183,162 @@ export const ListarListas = () => {
         </div>
       )}
 
-      <div className="mb-6 flex flex-col items-start justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">Suas listas</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {totalListas} lista(s) encontrada(s)
-          </p>
+      <div className="bg-white border border-gray-200 rounded-xl mb-5 shadow-sm">
+        <div className="px-5 py-[18px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="text-[16px] font-extrabold text-gray-900">Suas listas</div>
+            <div className="text-[13px] text-gray-500 mt-[2px]">
+              {totalListas} lista(s) encontrada(s)
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAbrirCriacao}
+            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-4 py-2 text-[13px] font-extrabold text-white transition-colors hover:bg-teal-600 shadow-sm"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Nova lista
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={handleAbrirCriacao}
-          className="mt-4 flex items-center gap-2 rounded-lg bg-teal-400 px-4 py-2 text-sm font-bold text-teal-950 transition-colors hover:bg-teal-500 sm:mt-0"
-        >
-          <Plus className="h-4 w-4" />
-          Nova lista
-        </button>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <label className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <div className="flex flex-col sm:flex-row gap-3 items-center mb-6">
+        <label className="flex-1 w-full relative flex items-center gap-2 border border-gray-200 bg-white rounded-xl px-4 py-2.5">
+          <Search size={17} className="text-gray-400" />
           <span className="sr-only">Buscar lista</span>
           <input
             type="text"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
             placeholder="Buscar lista"
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none transition-all focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-gray-900 placeholder-gray-400"
           />
         </label>
 
         <select
           value={statusFiltro}
           onChange={(event) => setStatusFiltro(event.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition-all focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[13px] font-bold text-gray-600 outline-none transition-all focus:border-teal-500 hover:bg-gray-50"
           aria-label="Filtrar listas por status"
         >
           <option value="">Todos os status</option>
           <option value="RASCUNHO">Rascunho</option>
           <option value="PUBLICADA">Publicada</option>
         </select>
-
-        <span className="text-sm text-gray-500">{totalListas} resultado(s)</span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Lista</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Questoes</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Turmas</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Criada em</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acoes</th>
+          <table className="w-full border-collapse whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="px-5 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Lista</th>
+                <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Questões</th>
+                <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Temas / Turmas</th>
+                <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Status</th>
+                <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Criada em</th>
+                <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="bg-white">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-500">
                     Carregando listas...
                   </td>
                 </tr>
               ) : listas.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-500">
                     Nenhuma lista encontrada.
                   </td>
                 </tr>
               ) : (
-                listas.map((lista) => (
-                  <tr key={lista.id} className="transition-colors hover:bg-gray-50">
-                    <td className="px-4 py-4 text-sm">
-                      <div className="flex items-center gap-2 font-semibold text-gray-900">
-                        <ClipboardList className="h-4 w-4 text-teal-600" />
-                        {lista.nome}
+                listas.map((lista, idx) => (
+                  <tr key={lista.id} className={`hover:bg-gray-50 transition-colors ${idx !== listas.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    
+                    <td className="px-5 py-[13px]">
+                      <div className="flex items-center gap-[8px] font-extrabold text-[13.5px] text-gray-900">
+                        <ClipboardList size={16} strokeWidth={2.5} className="text-teal-600 shrink-0" />
+                        <span className="truncate max-w-[200px]" title={lista.nome}>{lista.nome}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
+
+                    <td className="px-3 py-[13px]">
                       <button
                         type="button"
                         onClick={() => setListaParaQuestoes(lista)}
-                        className="flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-[5px] bg-teal-50 px-[9px] py-[3px] text-[10.5px] font-bold text-teal-700 transition-colors hover:bg-teal-100"
                       >
-                        <HelpCircle className="h-3.5 w-3.5" />
-                        {lista.quantidadeQuestoes} questao(oes)
+                        <HelpCircle size={13} />
+                        {lista.quantidadeQuestoes} questões
                       </button>
                     </td>
-                    <td className="px-4 py-4 text-sm">
+
+                    <td className="px-3 py-[13px]">
                       {lista.turmas.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {lista.turmas.slice(0, 3).map((turma) => (
+                        <div className="flex flex-wrap gap-1.5">
+                          {lista.turmas.slice(0, 2).map((turma) => (
                             <span
                               key={turma.id}
-                              className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700"
+                              className="inline-block rounded-[5px] bg-blue-50 px-[9px] py-[3px] text-[10.5px] font-bold text-blue-700"
                             >
                               {turma.nome}
                             </span>
                           ))}
-                          {lista.turmas.length > 3 && (
-                            <span className="text-xs font-medium text-gray-500">
-                              +{lista.turmas.length - 3}
+                          {lista.turmas.length > 2 && (
+                            <span className="inline-block rounded-[5px] bg-gray-100 px-[9px] py-[3px] text-[10.5px] font-bold text-gray-600">
+                              +{lista.turmas.length - 2}
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm italic text-gray-400">Nenhuma turma</span>
+                        <span className="inline-block rounded-[5px] bg-gray-100 px-[9px] py-[3px] text-[10.5px] font-bold text-gray-500">Sem turma</span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-sm">
+
+                    <td className="px-3 py-[13px]">
                       <span
-                        className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${
+                        className={`inline-flex items-center gap-1.5 rounded-[5px] px-[9px] py-[3px] text-[10.5px] font-bold ${
                           lista.status === 'PUBLICADA'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        <span className="mr-1 h-1.5 w-1.5 rounded-full bg-current" />
+                        <span className="h-[6px] w-[6px] rounded-full bg-current" />
                         {statusLabel[lista.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-500">{lista.criadoEm}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setListaParaTurmas(lista)}
-                          className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
-                        >
-                          <Users className="h-3.5 w-3.5" />
-                          Turmas
-                        </button>
+
+                    <td className="px-3 py-[13px] text-[11.5px] text-gray-400 font-medium">
+                      {lista.criadoEm}
+                    </td>
+
+                    <td className="px-3 py-[13px]">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleBaixarPdf(lista.id, lista.nome)}
-                          title="Geracao de PDF pendente no servico"
-                          className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                          title="Baixar PDF da Lista"
+                          className="cursor-pointer flex items-center gap-1.5 rounded-lg border-[1.5px] border-blue-200 bg-blue-50 px-3 py-[7px] text-[12px] font-extrabold text-blue-700 transition-colors hover:bg-blue-100"
                         >
-                          <FileText className="h-3.5 w-3.5" />
+                          <FileText size={14} strokeWidth={2.5} />
                           PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAbrirEdicao(lista)}
-                          className="flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+                          className="cursor-pointer flex items-center gap-1.5 rounded-lg border-[1.5px] border-indigo-200 bg-indigo-50 px-3 py-[7px] text-[12px] font-extrabold text-indigo-700 transition-colors hover:bg-indigo-100"
                         >
-                          <Edit className="h-3.5 w-3.5" />
+                          <Edit size={14} strokeWidth={2.5} />
                           Editar
                         </button>
                         <button
                           type="button"
                           onClick={() => setListaParaExcluir(lista)}
-                          className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                          className="cursor-pointer flex items-center gap-1.5 rounded-lg border-[1.5px] border-red-200 bg-red-50 px-3 py-[7px] text-[12px] font-extrabold text-red-700 transition-colors hover:bg-red-100"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 size={14} strokeWidth={2.5} />
                           Excluir
                         </button>
                       </div>
@@ -354,6 +351,7 @@ export const ListarListas = () => {
         </div>
       </div>
 
+      {/* Modais */}
       <ModalLista
         key={`${modoModalLista}-${listaSelecionada?.id ?? 'nova'}-${isModalListaOpen ? 'open' : 'closed'}`}
         isOpen={isModalListaOpen}
@@ -368,14 +366,6 @@ export const ListarListas = () => {
         isOpen={!!listaParaQuestoes}
         lista={listaParaQuestoes}
         onClose={() => setListaParaQuestoes(null)}
-        onAfterChange={solicitarAtualizacao}
-        onFeedback={mostrarToast}
-      />
-
-      <ModalGerenciarTurmasLista
-        isOpen={!!listaParaTurmas}
-        lista={listaParaTurmas}
-        onClose={() => setListaParaTurmas(null)}
         onAfterChange={solicitarAtualizacao}
         onFeedback={mostrarToast}
       />

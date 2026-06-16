@@ -2,15 +2,19 @@ import { ListarListas } from '../../../features/manage-lista/ListarListas';
 
 export const ListaPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="mx-auto max-w-7xl p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Listas de Questões</h1>
-          <p className="text-sm text-gray-500">Monte e publique listas para suas turmas</p>
+    <main className="flex-1 flex flex-col overflow-hidden bg-[#dde2ea]">
+      <div className="p-6 md:p-8 overflow-y-auto flex-1">
+        <header className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-gray-900 leading-tight">Listas de Questões</h1>
+            <p className="text-[13px] text-gray-500 mt-1">
+              Monte listas e organize as questões. A publicação para alunos acontece em Turmas.
+            </p>
+          </div>
         </header>
 
         <ListarListas />
-      </main>
-    </div>
+      </div>
+    </main>
   );
 };

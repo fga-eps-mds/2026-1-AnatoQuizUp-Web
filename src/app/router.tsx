@@ -15,6 +15,7 @@ import { TurmasPage } from "../pages/turma/ui/TurmaPage";
 import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 import { TurmaDetalhesPage } from "../pages/TurmaDetalhes";
+import { ResponderListaPage } from "../pages/resolucaoLista/ui/ResolucaoListaPage";
 
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
@@ -80,6 +81,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <TurmaDetalheAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/turmas/:turmaId/listas/:listaId"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ResponderListaPage />
             </ProtectedRoute>
           }
         />

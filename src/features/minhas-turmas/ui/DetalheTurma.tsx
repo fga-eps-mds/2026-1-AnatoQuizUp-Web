@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, GraduationCap, UserCircle2 } from 'lucide-react';
 
 import { httpClient } from '../../../shared/api/httpClient';
 import type { Turma } from '../../../entities/turmas/model/types';
 import { buscarUsuarioPorId } from '../../../entities/usuarios/api/usuarioApi';
 import type { UsuarioPublico } from '../../../entities/usuarios/model/types';
+
+import { ListagemListas } from '../../resolucaoLista/ui/ListagemListas'; 
 
 type EstadoDetalhe = 'carregando' | 'sucesso' | 'erro' | 'nao-encontrada';
 
@@ -23,7 +24,6 @@ interface RespostaApi<T> {
 
 const normalizarTurma = (turma: TurmaApi): Turma & { professorId: string } => {
   const { _count, quantidadeAlunos, ...resto } = turma;
-
   return {
     ...resto,
     quantidadeAlunos: quantidadeAlunos ?? _count?.alunos ?? 0,
@@ -40,65 +40,57 @@ const ehErroNaoEncontrado = (erro: unknown) => {
 };
 
 const EstadoCarregando = () => (
-  <div
-    role="status"
-    aria-live="polite"
-    className="flex min-h-[200px] items-center justify-center"
-  >
-    <span className="animate-pulse text-sm text-gray-500">Carregando detalhes...</span>
+  <div className="flex flex-1 items-center justify-center min-h-[400px]">
+    <span className="animate-pulse text-sm text-gray-500 font-bold">Carregando detalhes da turma...</span>
   </div>
 );
 
-interface EstadoNaoEncontradaProps {
-  onVoltar: () => void;
-}
-
-const EstadoNaoEncontrada = ({ onVoltar }: EstadoNaoEncontradaProps) => (
-  <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
-    <h2 className="text-lg font-bold text-[#0A1128]">Turma não encontrada.</h2>
-    <p className="max-w-md text-sm text-gray-500">
-      Esta turma não existe ou você não está vinculado a ela.
-    </p>
-    <button
-      type="button"
-      onClick={onVoltar}
-      className="mt-2 inline-flex items-center gap-2 rounded-lg bg-teal-400 px-4 py-2 text-sm font-bold text-teal-950 transition-colors hover:bg-teal-500"
-    >
-      <ArrowLeft size={16} />
-      Voltar para minhas turmas
-    </button>
+const EstadoNaoEncontrada = ({ onVoltar }: { onVoltar: () => void }) => (
+  <div className="flex-1 flex flex-col items-center justify-center p-6">
+    <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl flex flex-col items-center">
+      <div className="font-bold text-lg mb-2 text-red-600">Turma não encontrada</div>
+      <div className="text-sm text-gray-500 max-w-md mb-6">Esta turma não existe ou você não está vinculado a ela.</div>
+      <button 
+        onClick={onVoltar} 
+        className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
+      >
+        Voltar para minhas turmas
+      </button>
+    </div>
   </div>
 );
 
-const EstadoErro = () => (
-  <div
-    role="alert"
-    className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 p-6 text-center"
-  >
-    <p className="text-base font-semibold text-red-800">
-      Não foi possível carregar os detalhes da turma.
-    </p>
-    <p className="text-sm text-red-700">Tente novamente em alguns instantes.</p>
+const EstadoErro = ({ onVoltar }: { onVoltar: () => void }) => (
+  <div className="flex-1 flex flex-col items-center justify-center p-6">
+    <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl flex flex-col items-center">
+      <div className="font-bold text-lg mb-2 text-red-600">Erro ao carregar</div>
+      <div className="text-sm text-gray-500 max-w-md mb-6">Tente novamente em alguns instantes.</div>
+      <button 
+        onClick={onVoltar} 
+        className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
+      >
+        Voltar
+      </button>
+    </div>
   </div>
 );
 
 export const DetalheTurma = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  
   const [turma, setTurma] = useState<(Turma & { professorId: string }) | null>(null);
   const [professor, setProfessor] = useState<UsuarioPublico | null>(null);
   const [estado, setEstado] = useState<EstadoDetalhe>(id ? 'carregando' : 'nao-encontrada');
 
   useEffect(() => {
     if (!id) return undefined;
-
     let cancelado = false;
 
     const carregar = async () => {
       try {
         const turmaCarregada = await buscarTurma(id);
         if (cancelado) return;
-
         setTurma(turmaCarregada);
 
         try {
@@ -116,62 +108,41 @@ export const DetalheTurma = () => {
     };
 
     void carregar();
-
-    return () => {
-      cancelado = true;
-    };
+    return () => { cancelado = true; };
   }, [id]);
 
   const voltar = () => navigate('/aluno/turmas');
 
+  if (estado === 'carregando') return <EstadoCarregando />;
+  if (estado === 'erro') return <EstadoErro onVoltar={voltar} />;
+  if (estado === 'nao-encontrada') return <EstadoNaoEncontrada onVoltar={voltar} />;
+
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
-      <button
-        type="button"
-        onClick={voltar}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-teal-700 transition-colors hover:text-teal-900"
-      >
-        <ArrowLeft size={16} />
-        Voltar para minhas turmas
-      </button>
+    <main className="flex-1 flex flex-col overflow-hidden bg-[#dde2ea]">
+      <div className="bg-white border-b border-gray-200 py-4 px-7 flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="font-bold text-lg text-gray-900">{turma?.nome}</h1>
+          <p className="text-xs text-gray-500 mt-1">{turma?.descricao || 'Listas de exercícios publicadas pelo professor'}</p>
+        </div>
+        <div className="flex items-center gap-2 border border-gray-200 rounded-full py-1.5 px-3 text-sm font-bold text-gray-500 bg-white">
+          <div className="w-6 h-6 rounded-md bg-teal-500 flex items-center justify-center font-extrabold text-[10px] text-white">PF</div> 
+          {professor?.nome || 'Professor'}
+        </div>
+      </div>
 
-      {estado === 'carregando' && <EstadoCarregando />}
-      {estado === 'erro' && <EstadoErro />}
-      {estado === 'nao-encontrada' && <EstadoNaoEncontrada onVoltar={voltar} />}
+      <div className="p-6 md:p-7 overflow-y-auto flex-1">
+        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+          <button type="button" className="cursor-pointer hover:text-teal-600 transition-colors bg-transparent border-none p-0 text-inherit font-inherit" onClick={voltar}>
+            Minhas Turmas
+          </button> 
+          <span>›</span> 
+          <span>{turma?.nome}</span> 
+          <span>›</span> 
+          <span className="text-gray-500 font-bold">Listas</span>
+        </div>
 
-      {estado === 'sucesso' && turma && (
-        <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-          <header className="mb-6 flex items-start gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
-              <BookOpen size={26} />
-            </span>
-            <div>
-              <h1 className="text-2xl font-black text-[#0A1128] md:text-3xl">{turma.nome}</h1>
-              <p className="mt-1 text-sm text-gray-500 md:text-base">
-                {turma.ano}.{turma.semestre}
-              </p>
-            </div>
-          </header>
-
-          <section className="mb-6">
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-500">
-              <GraduationCap size={16} />
-              Descrição da matéria
-            </h2>
-            <p className="text-base text-[#0A1128]">{turma.descricao}</p>
-          </section>
-
-          <section>
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-500">
-              <UserCircle2 size={16} />
-              Professor responsável
-            </h2>
-            <p className="text-base text-[#0A1128]">
-              {professor?.nome ?? 'Professor não disponível'}
-            </p>
-          </section>
-        </article>
-      )}
-    </section>
+        <ListagemListas turmaId={id!} />
+      </div>
+    </main>
   );
 };

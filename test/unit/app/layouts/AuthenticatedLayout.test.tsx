@@ -1,0 +1,28 @@
+jest.mock('../../../../src/widgets/header', () => ({
+  Header: () => <header>App header</header>,
+}));
+
+jest.mock('../../../../src/features/student-coins', () => ({
+  StudentCoinsBootstrap: () => null,
+}));
+
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { AuthenticatedLayout } from '../../../../src/app/layouts/AuthenticatedLayout';
+
+describe('AuthenticatedLayout', () => {
+  it('renders the header and nested route content', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AuthenticatedLayout />}>
+            <Route path="/" element={<section>Protected content</section>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('App header')).toBeInTheDocument();
+    expect(screen.getByText('Protected content')).toBeInTheDocument();
+  });
+});

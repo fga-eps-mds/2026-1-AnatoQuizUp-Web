@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, Edit, Plus, Search, Trash2, Users } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Edit,
+  ExternalLink,
+  Link2,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react';
 import type { SalvarTurmaPayload, StatusTurma, Turma } from '../../../entities/turmas/model/types';
-import { Link} from 'react-router-dom'; 
+import { Link } from 'react-router-dom';
 import {
   atualizarTurma,
   criarTurma,
@@ -11,6 +21,7 @@ import {
 import { ModalExcluirTurma } from './ModalExcluirTurma';
 import { ModalGerenciarAlunos } from './ModalGerenciarAlunos';
 import { ModalTurma } from './ModalTurma';
+import { ModalVincularLista } from './ModalVincularLista';
 
 type ToastType = 'success' | 'error';
 
@@ -39,6 +50,7 @@ export const ListaTurmas = () => {
   const [modoModalTurma, setModoModalTurma] = useState<'create' | 'edit'>('create');
   const [turmaSelecionada, setTurmaSelecionada] = useState<Turma | null>(null);
   const [turmaAlunos, setTurmaAlunos] = useState<Turma | null>(null);
+  const [turmaParaVincularLista, setTurmaParaVincularLista] = useState<Turma | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSavingTurma, setIsSavingTurma] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -102,6 +114,14 @@ export const ListaTurmas = () => {
   const handleAbrirModalAlunos = (turma: Turma) => {
     setTurmaAlunos(turma);
     setIsModalAlunosOpen(true);
+  };
+
+  const handleAbrirModalVincularLista = (turma: Turma) => {
+    setTurmaParaVincularLista(turma);
+  };
+
+  const handleFecharModalVincularLista = () => {
+    setTurmaParaVincularLista(null);
   };
 
   const handleFecharModalTurma = () => {
@@ -233,25 +253,29 @@ export const ListaTurmas = () => {
         <span className="text-sm text-gray-500">{turmas.length} resultado(s)</span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm text-gray-600">
+      <div className="w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="w-full min-w-[800px] text-left text-sm text-gray-600">
           <thead className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
             <tr>
               <th className="px-6 py-4">Turma</th>
               <th className="px-6 py-4">Semestre</th>
-              <th className="px-6 py-4">Descricao</th>
+              <th className="px-6 py-4">Descrição</th>
               <th className="px-6 py-4">Alunos</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Criada em</th>
-              <th className="px-6 py-4">Acoes</th>
+              <th className="px-6 py-4">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {turmas.map((turma) => (
               <tr key={turma.id} className="hover:bg-gray-50/50">
                 <td className="px-6 py-4 font-bold text-gray-900">
-                  <Link to={`/turmas/${turma.id}`} className="hover:text-teal-600 hover:underline">
+                  <Link
+                    to={`/turmas/${turma.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 hover:text-teal-700"
+                  >
                     {turma.nome}
+                    <ExternalLink size={13} />
                   </Link>
                 </td>
                 <td className="px-6 py-4">{turma.ano}.{turma.semestre}</td>
@@ -277,6 +301,15 @@ export const ListaTurmas = () => {
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button
+                      type="button"
+                      onClick={() => handleAbrirModalVincularLista(turma)}
+                      className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                    >
+                      <Link2 size={14} />
+                      Vincular lista
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleAbrirModalAlunos(turma)}
                       className="flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
                     >
@@ -284,6 +317,7 @@ export const ListaTurmas = () => {
                       Alunos
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleAbrirModalEditar(turma)}
                       className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                     >
@@ -291,6 +325,7 @@ export const ListaTurmas = () => {
                       Editar
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleAbrirModalExcluir(turma)}
                       className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                     >
@@ -328,6 +363,14 @@ export const ListaTurmas = () => {
         isOpen={isModalAlunosOpen}
         turma={turmaAlunos}
         onClose={() => setIsModalAlunosOpen(false)}
+        onAfterChange={atualizarTurmas}
+        onFeedback={mostrarToast}
+      />
+
+      <ModalVincularLista
+        isOpen={!!turmaParaVincularLista}
+        turma={turmaParaVincularLista}
+        onClose={handleFecharModalVincularLista}
         onAfterChange={atualizarTurmas}
         onFeedback={mostrarToast}
       />

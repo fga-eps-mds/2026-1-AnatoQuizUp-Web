@@ -108,7 +108,7 @@ const toProfessorQuestionsPayload = (
 });
 
 const mapTypeToApi = (type: QuestionFormValues['type']): ApiQuestionType => (
-  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'VERDADEIRO_FALSO'
+  type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'CERTO_ERRADO'
 );
 
 const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): ApiQuestionDifficulty => {
@@ -118,7 +118,7 @@ const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): ApiQu
 };
 
 const mapTypeFromApi = (type?: string): ProfessorQuestion['type'] => (
-  /verdadeiro|falso|true_false|vf|certo_errado/i.test(type ?? '')
+  /certo_errado|verdadeiro|falso|true_false|vf/i.test(type ?? '')
     ? 'Verdadeiro/Falso'
     : 'Múltipla escolha'
 );
@@ -201,9 +201,11 @@ const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   tags: normalizeTags(question.tags),
   type: mapTypeFromApi(question.type ?? question.tipo),
   difficulty: mapDifficultyFromApi(question.difficulty ?? question.dificuldade),
-  origin: question.origin ?? question.origem ?? 'Manual',
+  origemQuestao: question.origemQuestao ?? 'ELABORADA_POR_PROFESSOR',
   statement: question.statement ?? question.enunciado ?? '',
-  explanation: question.explanation ?? question.explicacao ?? question.explicacaoPedagogica ?? '',
+  explanation: question.explanation ?? question.explicacao ?? question.saibaMais ?? '',
+  taxonomiaBloom: question.taxonomiaBloom ?? null,
+  regiaoAnatomica: question.regiaoAnatomica ?? null,
   image: question.image ?? question.imagem ?? null,
   alternatives: normalizeAlternatives(
     question.alternatives ?? question.alternativas,
@@ -227,7 +229,10 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   formData.append('enunciado', values.statement.trim());
   
   const explanation = values.explanation.trim() || DEFAULT_PEDAGOGICAL_EXPLANATION;
-  formData.append('explicacaoPedagogica', explanation);
+  formData.append('saibaMais', explanation);
+  formData.append('origemQuestao', values.origemQuestao || '');
+  formData.append('taxonomiaBloom', values.taxonomiaBloom || '');
+  formData.append('regiaoAnatomica', (values.regiaoAnatomica || '').trim());
 
   const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
   if (correctAlternative) {

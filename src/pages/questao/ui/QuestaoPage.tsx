@@ -21,14 +21,32 @@ import {
 } from '../../../features/manage-questions/model/questionService';
 import type {
   ApiQuestionDifficulty,
+  OrigemQuestao,
   ProfessorQuestion,
   QuestionAlternative,
   QuestionDifficulty,
   QuestionFormValues,
   QuestionType,
+  TaxonomiaBloom,
 } from '../../../features/manage-questions/model/types';
 
-const TOPICS = ['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
+const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
+  { valor: 'ELABORADA_POR_PROFESSOR', rotulo: 'Elaborada por professor' },
+  { valor: 'LIVRO', rotulo: 'Livro' },
+  { valor: 'PROVA_ANTERIOR', rotulo: 'Prova anterior' },
+  { valor: 'GERADA_POR_IA', rotulo: 'Gerada por IA' },
+];
+
+const TAXONOMIAS_BLOOM: { valor: TaxonomiaBloom; rotulo: string }[] = [
+  { valor: 'LEMBRAR', rotulo: 'Lembrar' },
+  { valor: 'COMPREENDER', rotulo: 'Compreender' },
+  { valor: 'APLICAR', rotulo: 'Aplicar' },
+  { valor: 'ANALISAR', rotulo: 'Analisar' },
+  { valor: 'AVALIAR', rotulo: 'Avaliar' },
+  { valor: 'CRIAR', rotulo: 'Criar' },
+];
+
+const TOPICS =['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
 const TYPES: QuestionType[] = ['Múltipla escolha', 'Verdadeiro/Falso'];
 const DIFFICULTIES: QuestionDifficulty[] = ['Fácil', 'Médio', 'Difícil'];
 const EMPTY_ALTERNATIVES: QuestionAlternative[] = ['A', 'B', 'C', 'D', 'E'].map((label) => ({
@@ -54,9 +72,11 @@ const emptyFormValues: QuestionFormValues = {
   tags: '',
   type: 'Múltipla escolha',
   difficulty: 'Médio',
-  origin: 'Manual',
+  origemQuestao: 'ELABORADA_POR_PROFESSOR',
   statement: '',
   explanation: '',
+  taxonomiaBloom: '',
+  regiaoAnatomica: '',
   alternatives: EMPTY_ALTERNATIVES,
   image: null,
 };
@@ -86,9 +106,11 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
   tags: question.tags.join(', '),
   type: question.type,
   difficulty: question.difficulty,
-  origin: question.origin,
+  origemQuestao: question.origemQuestao,
   statement: question.statement,
   explanation: question.explanation ?? '',
+  taxonomiaBloom: question.taxonomiaBloom ?? '',
+  regiaoAnatomica: question.regiaoAnatomica ?? '',
   image: question.image || null,
   alternatives: question.type === 'Verdadeiro/Falso'
     ? TRUE_FALSE_ALTERNATIVES.map((alternative) => ({
@@ -100,11 +122,19 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
 
 const isStepValid = (values: QuestionFormValues, step: number) => {
   if (step === 1) {
-    return Boolean(values.topic && values.type && values.difficulty);
+    return Boolean(
+      values.topic &&
+      values.type &&
+      values.difficulty &&
+      values.tags.trim() &&
+      values.origemQuestao &&
+      values.taxonomiaBloom &&
+      values.regiaoAnatomica.trim()
+    );
   }
 
   if (step === 2) {
-    return values.statement.trim().length > 0;
+    return values.statement.trim().length > 0 && values.explanation.trim().length > 0;
   }
 
   const filledAlternatives = values.alternatives.filter((alternative) => alternative.text.trim());
@@ -174,19 +204,23 @@ const QuestionsFilters = ({
   searchTerm,
   selectedDifficulty,
   selectedTopic,
+  selectedBloom,
   topicOptions,
   onDifficultyChange,
   onSearchTermChange,
   onTopicChange,
+  onBloomChange,
 }: {
   resultCount: number;
   searchTerm: string;
   selectedDifficulty: QuestionDifficulty | 'all';
   selectedTopic: string;
+  selectedBloom: TaxonomiaBloom | 'all';
   topicOptions: string[];
   onDifficultyChange: (value: QuestionDifficulty | 'all') => void;
   onSearchTermChange: (value: string) => void;
   onTopicChange: (value: string) => void;
+  onBloomChange: (value: TaxonomiaBloom | 'all') => void;
 }) => (
   <section className="flex w-full flex-wrap items-center gap-2" aria-label="Filtros de questões">
     <label className="relative min-w-[180px] flex-1">
@@ -218,6 +252,16 @@ const QuestionsFilters = ({
     >
       <option value="all">Dificuldade</option>
       {DIFFICULTIES.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
+    </select>
+
+    <select
+      className="rounded-lg border border-[#e0e5ef] bg-white px-4 py-2 text-xs text-[#4a5578] outline-none focus:border-[#00e5cc]"
+      aria-label="Filtrar por nível cognitivo"
+      value={selectedBloom}
+      onChange={(event) => onBloomChange(event.target.value as TaxonomiaBloom | 'all')}
+    >
+      <option value="all">Nível cognitivo</option>
+      {TAXONOMIAS_BLOOM.map((bloom) => <option key={bloom.valor} value={bloom.valor}>{bloom.rotulo}</option>)}
     </select>
 
     <span className="text-[11px] text-[#8a9ab8]">{resultCount} resultado(s)</span>
@@ -544,7 +588,7 @@ const QuestionModal = ({
                   {showTopicError ? <RequiredError /> : null}
                 </label>
                 <label>
-                  <FieldLabel>Tags / palavras-chave</FieldLabel>
+                  <FieldLabel required>Tags / palavras-chave</FieldLabel>
                   <input
                     value={values.tags}
                     onChange={(event) => updateValue('tags', event.target.value)}
@@ -586,11 +630,45 @@ const QuestionModal = ({
                   {showDifficultyError ? <RequiredError /> : null}
                 </label>
                 <label>
-                  <FieldLabel>Origem</FieldLabel>
-                  <input
-                    value={values.origin}
-                    onChange={(event) => updateValue('origin', event.target.value)}
+                  <FieldLabel required>Origem</FieldLabel>
+                  <select
+                    value={values.origemQuestao}
+                    onChange={(event) =>
+                      updateValue('origemQuestao', event.target.value as OrigemQuestao)
+                    }
                     className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
+                  >
+                    {ORIGENS_QUESTAO.map((origem) => (
+                      <option key={origem.valor} value={origem.valor}>
+                        {origem.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <FieldLabel required>Nível cognitivo (Bloom)</FieldLabel>
+                  <select
+                    value={values.taxonomiaBloom ?? ''}
+                    onChange={(event) =>
+                      updateValue('taxonomiaBloom', event.target.value as TaxonomiaBloom | '')
+                    }
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none focus:border-[#00e5cc]"
+                  >
+                    <option value="">Não classificado</option>
+                    {TAXONOMIAS_BLOOM.map((bloom) => (
+                      <option key={bloom.valor} value={bloom.valor}>
+                        {bloom.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <FieldLabel required>Região anatômica</FieldLabel>
+                  <input
+                    value={values.regiaoAnatomica ?? ''}
+                    onChange={(event) => updateValue('regiaoAnatomica', event.target.value)}
+                    placeholder="ex: Tórax"
+                    className="h-8 w-full rounded-md border border-[#d8dee9] px-3 text-xs outline-none placeholder:text-[#94a3b8] focus:border-[#00e5cc]"
                   />
                 </label>
               </div>
@@ -657,7 +735,7 @@ const QuestionModal = ({
                       />
                       <button
                         type="button"
-                        onClick={() => updateValue('image', null)}
+                        onClick={() => onChange({ ...values, image: null })}
                         className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-[#e14b4b] text-white shadow-md hover:bg-[#c03939]"
                         aria-label="Remover imagem"
                       >
@@ -669,7 +747,7 @@ const QuestionModal = ({
               </div>
 
               <label className="block">
-                <FieldLabel>Explicação / justificativa (opcional)</FieldLabel>
+                <FieldLabel required>Explicação / justificativa</FieldLabel>
                 <textarea
                   value={values.explanation}
                   onChange={(event) => updateValue('explanation', event.target.value)}
@@ -880,6 +958,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'all'>('all');
+  const [selectedBloom, setSelectedBloom] = useState<TaxonomiaBloom | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -914,7 +993,10 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   useEffect(() => {
     let isMounted = true;
     const shouldUseSearchEndpoint =
-      searchTerm.trim() || selectedTopic !== 'all' || selectedDifficulty !== 'all';
+      searchTerm.trim() ||
+      selectedTopic !== 'all' ||
+      selectedDifficulty !== 'all' ||
+      selectedBloom !== 'all';
 
     const loadQuestions = async () => {
       if (isMounted) {
@@ -928,6 +1010,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
             ? {
               tema: selectedTopic !== 'all' ? selectedTopic : searchTerm.trim() || undefined,
               dificuldade: mapDifficultyToApi(selectedDifficulty),
+              taxonomiaBloom: selectedBloom !== 'all' ? selectedBloom : undefined,
             }
             : undefined,
         );
@@ -947,7 +1030,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       isMounted = false;
       globalThis.clearTimeout(timeoutId);
     };
-  }, [searchTerm, selectedDifficulty, selectedTopic]);
+  }, [searchTerm, selectedDifficulty, selectedTopic, selectedBloom]);
 
   const topicOptions = useMemo(() => {
     const questionTopics = Array.from(
@@ -1045,10 +1128,12 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
               searchTerm={searchTerm}
               selectedDifficulty={selectedDifficulty}
               selectedTopic={selectedTopic}
+              selectedBloom={selectedBloom}
               topicOptions={topicOptions}
               onDifficultyChange={setSelectedDifficulty}
               onSearchTermChange={setSearchTerm}
               onTopicChange={setSelectedTopic}
+              onBloomChange={setSelectedBloom}
             />
             {filteredQuestions.length > 0 ? (
               <QuestionsTable items={filteredQuestions} onEdit={openEditQuestion} onDelete={setQuestionToDelete} />
