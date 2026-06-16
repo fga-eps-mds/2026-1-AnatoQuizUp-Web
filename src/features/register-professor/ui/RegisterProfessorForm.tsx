@@ -33,13 +33,20 @@ const SUBMIT_LABEL = 'Completar cadastro';
 const GENERIC_REGISTER_ERROR = 'Não foi possível concluir o cadastro. Tente novamente.';
 const EMAIL_UNB_REGEX = /^[^\s@]+@(?:[a-z0-9-]+\.)*unb\.br$/i;
 const SIAPE_REGEX = /^\d{7}$/;
+const FULL_NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
 
 type FieldValidator = (values: RegisterProfessorFormValues) => string | undefined;
 
 const requiredText = (value: string, message: string) => (value.trim() ? undefined : message);
 
 const FIELD_VALIDATORS: Record<RegisterProfessorField, FieldValidator> = {
-  fullName: (values) => requiredText(values.fullName, 'Nome completo é obrigatório.'),
+  fullName: (values) => {
+    const fullName = values.fullName.trim();
+    if (!fullName) return 'Nome completo é obrigatório.';
+    return FULL_NAME_REGEX.test(fullName)
+      ? undefined
+      : 'Nome completo deve conter apenas letras e espaços.';
+  },
   email: (values) => {
     const email = values.email.trim();
     if (!email) return 'Email institucional é obrigatório.';

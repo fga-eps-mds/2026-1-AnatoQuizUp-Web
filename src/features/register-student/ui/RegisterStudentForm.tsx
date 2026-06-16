@@ -122,6 +122,8 @@ const isFutureDate = (value: string): boolean => {
   return selected.getTime() > today.getTime();
 };
 
+const FULL_NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
+
 const validateField = (
   values: RegisterStudentFormValues,
   field: RegisterStudentField,
@@ -136,6 +138,9 @@ const validateField = (
       if (!trimmedValue) return 'Nome completo é obrigatório.';
       if (trimmedValue.length < 3 || trimmedValue.length > 120) {
         return 'Nome completo deve ter entre 3 e 120 caracteres.';
+      }
+      if (!FULL_NAME_REGEX.test(trimmedValue)) {
+        return 'Nome completo deve conter apenas letras e espaços.';
       }
       return undefined;
     case 'nickname':

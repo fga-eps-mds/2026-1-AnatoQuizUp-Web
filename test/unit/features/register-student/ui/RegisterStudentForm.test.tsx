@@ -199,6 +199,33 @@ describe('RegisterStudentForm', () => {
     expect(screen.getByText(/Nome completo é obrigatório/i)).toBeInTheDocument();
   });
 
+  it('rejeita caracteres especiais e numeros no nome completo', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const fullNameInput = screen.getByLabelText(/Nome completo/i);
+    await user.type(fullNameInput, 'Jose@ Silva123');
+    await user.tab();
+
+    expect(
+      screen.getByText(/Nome completo deve conter apenas letras e espaços/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Completar cadastro/i })).toBeDisabled();
+  });
+
+  it('aceita letras acentuadas no nome completo', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const fullNameInput = screen.getByLabelText(/Nome completo/i);
+    await user.type(fullNameInput, 'João Álvares');
+    await user.tab();
+
+    expect(
+      screen.queryByText(/Nome completo deve conter apenas letras e espaços/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('habilita o botao somente quando os campos do passo atual estao validos', async () => {
     const user = userEvent.setup();
     renderForm();
