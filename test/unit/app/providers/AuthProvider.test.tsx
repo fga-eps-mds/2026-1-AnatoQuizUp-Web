@@ -44,6 +44,12 @@ const AuthConsumer = () => {
       <button type="button" onClick={() => void auth.logout()}>
         logout
       </button>
+      <button
+        type="button"
+        onClick={() => void auth.recarregarUsuario().catch(() => undefined)}
+      >
+        recarregar
+      </button>
     </div>
   );
 };
@@ -127,6 +133,31 @@ describe('AuthProvider', () => {
     expect(logoutSessionMock).toHaveBeenCalledWith('refresh-token');
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
+  it('recarrega o usuario autenticado sob demanda', async () => {
+    const testUser = userEvent.setup();
+    getAuthenticatedUserMock
+      .mockResolvedValueOnce(user)
+      .mockResolvedValueOnce({
+        ...user,
+        name: 'Ana Atualizada',
+        nickname: 'ana_atualizada',
+      });
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await testUser.click(screen.getByRole('button', { name: 'login' }));
+    expect(await screen.findByText('Ana Estudante')).toBeInTheDocument();
+
+    await testUser.click(screen.getByRole('button', { name: 'recarregar' }));
+
+    expect(await screen.findByText('Ana Atualizada')).toBeInTheDocument();
+    expect(getAuthenticatedUserMock).toHaveBeenCalledTimes(2);
   });
 
   it('clears local session even when backend logout fails', async () => {

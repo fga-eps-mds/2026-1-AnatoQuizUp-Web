@@ -28,6 +28,7 @@ import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 import { DashboardAlunoPage } from "../pages/dashboardAluno";
 import { AmigosPage } from "../pages/amigosAluno";
 import { PerfilAlunoPage } from "../pages/aluno/perfil";
+import { EditarPerfilPage } from "../pages/aluno/perfil/editar";
 
 export const AppRouter = () => {
   return (
@@ -73,6 +74,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <PerfilAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/perfil/editar"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EditarPerfilPage />
             </ProtectedRoute>
           }
         />

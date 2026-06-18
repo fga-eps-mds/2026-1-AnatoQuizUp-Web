@@ -43,6 +43,15 @@ const PROFESSOR_TOKENS: LoginResponse = {
 
 let authenticatedMockUser: User = STUDENT_USER;
 
+export const atualizarUsuarioAutenticadoMock = (
+  dados: Partial<Pick<User, 'name' | 'nickname'>>,
+) => {
+  authenticatedMockUser = {
+    ...authenticatedMockUser,
+    ...dados,
+  };
+};
+
 const getStoredAccessToken = (): string | null => {
   try {
     return globalThis.localStorage?.getItem('access_token') ?? null;
@@ -80,11 +89,11 @@ export const getAuthenticatedUserMock = async (): Promise<User> => {
   const storedAccessToken = getStoredAccessToken();
 
   if (storedAccessToken === PROFESSOR_TOKENS.accessToken) {
-    return PROFESSOR_USER;
+    return authenticatedMockUser.role === 'PROFESSOR' ? authenticatedMockUser : PROFESSOR_USER;
   }
 
   if (storedAccessToken === STUDENT_TOKENS.accessToken) {
-    return STUDENT_USER;
+    return authenticatedMockUser.role === 'STUDENT' ? authenticatedMockUser : STUDENT_USER;
   }
 
   return authenticatedMockUser;
