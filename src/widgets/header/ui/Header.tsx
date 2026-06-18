@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -123,6 +123,14 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/aluno/amigos"),
     };
 
+    const studentLojaItem: NavItem = {
+      key: "aluno-loja",
+      label: "Loja",
+      icon: ShoppingBag,
+      onSelect: () => navigate("/aluno/loja"),
+      isActive: location.pathname.startsWith("/aluno/loja"),
+    };
+
     const listasItem: NavItem = {
       key: "listas",
       label: "Listas",
@@ -189,6 +197,7 @@ export const Header = () => {
           studentQuestaoItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
+          studentLojaItem,
           studentHistoricoItem,
         ];
     }
@@ -211,11 +220,11 @@ export const Header = () => {
 
   const sidebarContent = (
     <>
-      <div className="flex items-center justify-center px-4 py-6 border-b border-[#00214d]">
-        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[200px]" />
+      <div className="flex items-center justify-center px-4 py-4 border-b border-[#00214d]">
+        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[170px]" />
       </div>
 
-      <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
+      <nav className="flex-1 py-3 flex flex-col gap-0.5 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const estiloItem = item.isActive
@@ -227,18 +236,18 @@ export const Header = () => {
               key={item.key}
               onClick={() => handleSelect(item)}
               aria-current={item.isActive ? "page" : undefined}
-              className={`cursor-pointer flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
+              className={`cursor-pointer flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
             >
-              <Icon size={22} />
+              <Icon size={20} />
               <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="border-t border-[#00214d] p-4 flex flex-col gap-3">
+      <div className="border-t border-[#00214d] p-3 flex flex-col gap-2.5">
         {shouldShowCoins && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-[#fffffe]">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2.5 text-[#fffffe]">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-[#0A1128] flex items-center justify-center shrink-0">
                 <Coins size={18} />

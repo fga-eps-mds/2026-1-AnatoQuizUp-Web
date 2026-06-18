@@ -29,6 +29,7 @@ import { DashboardAlunoPage } from "../pages/dashboardAluno";
 import { AmigosPage } from "../pages/amigosAluno";
 import { PerfilAlunoPage } from "../pages/aluno/perfil";
 import { EditarPerfilPage } from "../pages/aluno/perfil/editar";
+import { LojaPage } from "../pages/aluno/loja";
 
 export const AppRouter = () => {
   return (
@@ -119,6 +120,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <AmigosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/loja"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <LojaPage />
             </ProtectedRoute>
           }
         />
