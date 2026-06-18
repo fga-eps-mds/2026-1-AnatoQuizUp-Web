@@ -216,6 +216,32 @@ describe('Header', () => {
     );
   });
 
+  it('navigates students to profile page from the user card', async () => {
+    const testUser = userEvent.setup();
+
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/aluno/home');
+
+    await testUser.click(screen.getByRole('button', { name: /Meu Perfil/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/perfil');
+  });
+
+  it('marks the student profile card as active on profile routes', () => {
+    renderHeader({ user: makeUser('STUDENT'), isAuthenticated: true }, '/aluno/perfil');
+
+    expect(screen.getByRole('button', { name: /Meu Perfil/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('keeps professor user card static', () => {
+    renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
+
+    expect(screen.queryByRole('button', { name: /Meu Perfil/i })).not.toBeInTheDocument();
+    expect(screen.getByText('PROFESSOR')).toBeInTheDocument();
+  });
+
   it('closes the mobile drawer when clicking the close button (X)', async () => {
     const testUser = userEvent.setup();
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -197,9 +197,15 @@ export const Header = () => {
   const navItems = buildNavItems(user.role);
   const initial = user.name?.charAt(0).toUpperCase() || "U";
   const shouldShowCoins = user.role === "STUDENT";
+  const isPerfilAlunoActive = location.pathname.startsWith("/aluno/perfil");
 
   const handleSelect = (item: NavItem) => {
     item.onSelect();
+    setIsDrawerOpen(false);
+  };
+
+  const handlePerfilAluno = () => {
+    navigate("/aluno/perfil");
     setIsDrawerOpen(false);
   };
 
@@ -247,19 +253,43 @@ export const Header = () => {
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
-            {initial}
+        {shouldShowCoins ? (
+          <button
+            type="button"
+            onClick={handlePerfilAluno}
+            aria-current={isPerfilAlunoActive ? "page" : undefined}
+            className={`flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors ${
+              isPerfilAlunoActive ? "bg-[#71edc8]/10" : "hover:bg-[#00214d]"
+            }`}
+          >
+            <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
+              {initial}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-bold text-[#fffffe]">
+                {user.name}
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
+                Meu Perfil
+              </span>
+            </div>
+            <ChevronRight size={16} className="shrink-0 text-[#fffffe]/40" />
+          </button>
+        ) : (
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
+              {initial}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-[#fffffe] truncate">
+                {user.name}
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
+                {user.role}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-[#fffffe] truncate">
-              {user.name}
-            </span>
-            <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
-              {user.role}
-            </span>
-          </div>
-        </div>
+        )}
 
         <button
           onClick={() => void handleLogout()}
