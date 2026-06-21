@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import {
   aceitarConvite,
@@ -15,7 +16,9 @@ import {
   recusarConvite,
 } from '../../../features/friendship';
 import type { ResumoAmigo, ResumoAmizade } from '../../../features/friendship';
-import { montarIniciais } from '../../../shared/utils/iniciais';
+import { buscarEquipadosDe } from '../../../features/profile-cosmetics';
+import type { EquipadosPorUsuario } from '../../../features/profile-cosmetics';
+import { ProfileIdentityCard } from '../../../shared/ui/profile-identity-card';
 
 type AbaAmigos = 'buscar' | 'convites' | 'amigos';
 
@@ -57,6 +60,7 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
 );
 
 export const AmigosPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>('buscar');
   const [termoBusca, setTermoBusca] = useState('');
@@ -77,6 +81,8 @@ export const AmigosPage = () => {
   const [perfilVisivel, setPerfilVisivel] = useState(user?.visivel ?? true);
   const [alterandoPrivacidade, setAlterandoPrivacidade] = useState(false);
   const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
+  const [cosmeticosPorUsuario, setCosmeticosPorUsuario] =
+    useState<EquipadosPorUsuario>({});
 
   useEffect(() => {
     let ativo = true;
@@ -96,6 +102,19 @@ export const AmigosPage = () => {
           setIdsSolicitados(
             new Set(convitesEnviadosResposta.dados.map((convite) => convite.amigo.id)),
           );
+
+          try {
+            const idsConvites = convitesRecebidosResposta.dados.map(
+              (convite) => convite.amigo.id,
+            );
+            const slots = await buscarEquipadosDe(idsConvites);
+
+            if (ativo) {
+              setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
+            }
+          } catch {
+            // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
+          }
         }
       } catch (error) {
         if (ativo) {
@@ -119,6 +138,17 @@ export const AmigosPage = () => {
 
         if (ativo) {
           setAmigos(resposta.dados);
+
+          try {
+            const idsAmigos = resposta.dados.map((amizade) => amizade.amigo.id);
+            const slots = await buscarEquipadosDe(idsAmigos);
+
+            if (ativo) {
+              setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
+            }
+          } catch {
+            // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
+          }
         }
       } catch (error) {
         if (ativo) {
@@ -157,6 +187,14 @@ export const AmigosPage = () => {
       const resposta = await buscarColegas(params);
 
       setResultadosBusca(resposta.dados);
+
+      try {
+        const idsBusca = resposta.dados.map((colega) => colega.id);
+        const slots = await buscarEquipadosDe(idsBusca);
+        setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
+      } catch {
+        // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
+      }
     } catch (error) {
       setResultadosBusca([]);
       setErroBusca(error instanceof Error ? error.message : 'Erro ao buscar colegas.');
@@ -397,12 +435,18 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={colega.id}
-                          className="flex flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                          onClick={() => navigate(`/aluno/amigos/${colega.id}`)}
+                          className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(colega.nome)}
-                            </span>
+                            <ProfileIdentityCard
+                              identidade={{
+                                nome: colega.nome,
+                                nickname: colega.nickname ?? null,
+                              }}
+                              cosmeticos={cosmeticosPorUsuario[colega.id] ?? {}}
+                              tamanho="sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="truncate text-base font-black text-[#0A1128]">
                                 {colega.nome}
@@ -420,7 +464,10 @@ export const AmigosPage = () => {
 
                           <button
                             type="button"
-                            onClick={() => void handleEnviarSolicitacao(colega.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleEnviarSolicitacao(colega.id);
+                            }}
                             disabled={jaSolicitado || enviando}
                             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00A88F]/40 px-4 text-sm font-black text-[#008f7a] transition hover:bg-[#71edc8]/15 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#71edc8]/20 disabled:text-[#008f7a]/70"
                           >
@@ -492,12 +539,18 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={convite.id}
-                          className="flex flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                          onClick={() => navigate(`/aluno/amigos/${convite.amigo.id}`)}
+                          className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(convite.amigo.nome)}
-                            </span>
+                            <ProfileIdentityCard
+                              identidade={{
+                                nome: convite.amigo.nome,
+                                nickname: convite.amigo.nickname ?? null,
+                              }}
+                              cosmeticos={cosmeticosPorUsuario[convite.amigo.id] ?? {}}
+                              tamanho="sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="truncate text-base font-black text-[#0A1128]">
                                 {convite.amigo.nome}
@@ -522,7 +575,10 @@ export const AmigosPage = () => {
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <button
                               type="button"
-                              onClick={() => void handleAceitarConvite(convite)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleAceitarConvite(convite);
+                              }}
                               disabled={processando}
                               className="min-h-11 rounded-xl bg-[#00A88F] px-5 text-sm font-black text-white transition hover:bg-[#008f7a] disabled:cursor-not-allowed disabled:bg-[#0A1128]/20"
                             >
@@ -530,7 +586,10 @@ export const AmigosPage = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => void handleRecusarConvite(convite.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleRecusarConvite(convite.id);
+                              }}
                               disabled={processando}
                               className="min-h-11 rounded-xl border border-rose-200 px-5 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
                             >
@@ -591,12 +650,18 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={amizade.id}
-                          className="flex min-h-[168px] flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm"
+                          onClick={() => navigate(`/aluno/amigos/${amizade.amigo.id}`)}
+                          className="flex min-h-[168px] cursor-pointer flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC]"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(amizade.amigo.nome)}
-                            </span>
+                            <ProfileIdentityCard
+                              identidade={{
+                                nome: amizade.amigo.nome,
+                                nickname: amizade.amigo.nickname ?? null,
+                              }}
+                              cosmeticos={cosmeticosPorUsuario[amizade.amigo.id] ?? {}}
+                              tamanho="sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="truncate text-base font-black text-[#0A1128]">
                                 {amizade.amigo.nome}
@@ -620,7 +685,10 @@ export const AmigosPage = () => {
 
                           <button
                             type="button"
-                            onClick={() => void handleDesfazerAmizade(amizade.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleDesfazerAmizade(amizade.id);
+                            }}
                             disabled={processando}
                             className="mt-5 min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
                           >

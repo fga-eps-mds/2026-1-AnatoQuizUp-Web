@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 
 jest.mock('../../../../../src/app/providers/AuthProvider', () => ({
   useAuth: () => ({
@@ -13,6 +14,10 @@ jest.mock('../../../../../src/app/providers/AuthProvider', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+jest.mock('../../../../../src/features/profile-cosmetics', () => ({
+  buscarEquipadosDe: jest.fn(),
+}));
+
 import {
   aceitarConvite,
   alterarVisibilidade,
@@ -24,6 +29,11 @@ import {
   listarConvitesRecebidos,
   recusarConvite,
 } from '../../../../../src/features/friendship';
+import type {
+  ItemInventario,
+  TipoItemLoja,
+} from '../../../../../src/features/loja';
+import { buscarEquipadosDe } from '../../../../../src/features/profile-cosmetics';
 import { AmigosPage } from '../../../../../src/pages/amigosAluno/ui/AmigosPage';
 
 jest.mock('../../../../../src/features/friendship', () => ({
@@ -47,6 +57,7 @@ const listarAmigosMock = listarAmigos as jest.Mock;
 const listarConvitesEnviadosMock = listarConvitesEnviados as jest.Mock;
 const listarConvitesRecebidosMock = listarConvitesRecebidos as jest.Mock;
 const recusarConviteMock = recusarConvite as jest.Mock;
+const buscarEquipadosDeMock = buscarEquipadosDe as jest.Mock;
 
 const conviteRecebido = {
   id: 'amizade-1',
@@ -78,9 +89,49 @@ const amizadeAtiva = {
   },
 };
 
+const criarCosmetico = (
+  tipo: TipoItemLoja,
+  dados: Partial<ItemInventario> = {},
+): ItemInventario => ({
+  id: `item-${tipo.toLowerCase()}`,
+  codigo: `codigo-${tipo.toLowerCase()}`,
+  nome: `Item ${tipo}`,
+  descricao: null,
+  tipo,
+  precoMoedas: 100,
+  valor: null,
+  imagemUrl: null,
+  previewImagemUrl: null,
+  ativo: true,
+  ...dados,
+});
+
+function criarDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolver) => {
+    resolve = resolver;
+  });
+
+  return { promise, resolve };
+}
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <span data-testid="location">{location.pathname}</span>;
+};
+
+const renderAmigos = () =>
+  render(
+    <MemoryRouter initialEntries={['/aluno/amigos']}>
+      <AmigosPage />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+
 describe('AmigosPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    buscarEquipadosDeMock.mockResolvedValue({});
     buscarColegasMock.mockResolvedValue({
       dados: [],
       metadados: {
@@ -134,8 +185,8 @@ describe('AmigosPage', () => {
     });
   });
 
-  it('renderiza a pagina de rede do aluno', () => {
-    render(<AmigosPage />);
+  it('renderiza a pagina de rede do aluno', async () => {
+    renderAmigos();
 
     expect(screen.getByRole('heading', { name: /Minha Rede/i })).toBeInTheDocument();
     expect(screen.getByText(/Busque colegas, gerencie convites/i)).toBeInTheDocument();
@@ -152,12 +203,15 @@ describe('AmigosPage', () => {
     );
     expect(screen.getByRole('heading', { name: /Buscar colegas/i })).toBeInTheDocument();
     expect(listarAmigos).toHaveBeenCalledWith({ limit: 100 });
+    await waitFor(() => {
+      expect(buscarEquipadosDeMock).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('alterna entre as abas da tela', async () => {
     const user = userEvent.setup();
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
 
@@ -196,7 +250,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -210,7 +264,7 @@ describe('AmigosPage', () => {
   it('busca colegas por nickname quando termo começa com arroba', async () => {
     const user = userEvent.setup();
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), '@maria');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -238,7 +292,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -246,6 +300,7 @@ describe('AmigosPage', () => {
 
     expect(enviarSolicitacao).toHaveBeenCalledWith('aluno-1');
     expect(await screen.findByRole('button', { name: /Solicitacao pendente/i })).toBeDisabled();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/aluno\/amigos$/);
   });
 
   it('mostra solicitacao pendente quando colega buscado ja tem convite enviado', async () => {
@@ -291,7 +346,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await waitFor(() => {
       expect(listarConvitesEnviados).toHaveBeenCalledWith({ limit: 100 });
@@ -307,7 +362,7 @@ describe('AmigosPage', () => {
   it('mostra estado vazio quando nao encontrar colegas', async () => {
     const user = userEvent.setup();
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Inexistente');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -327,7 +382,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
 
@@ -351,7 +406,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Isabela Costa');
@@ -362,6 +417,7 @@ describe('AmigosPage', () => {
       expect(screen.queryByText('Isabela Costa')).not.toBeInTheDocument();
     });
     expect(screen.getByText(/Nenhum convite pendente/i)).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/aluno\/amigos$/);
   });
 
   it('adiciona convite aceito na lista de amigos localmente', async () => {
@@ -376,7 +432,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Isabela Costa');
@@ -399,7 +455,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Isabela Costa');
@@ -410,6 +466,7 @@ describe('AmigosPage', () => {
       expect(screen.queryByText('Isabela Costa')).not.toBeInTheDocument();
     });
     expect(screen.getByText(/Nenhum convite pendente/i)).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/aluno\/amigos$/);
   });
 
   it('lista amigos na aba meus amigos', async () => {
@@ -424,7 +481,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
 
@@ -447,7 +504,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
     await screen.findByText('Rafael Oliveira');
@@ -458,12 +515,13 @@ describe('AmigosPage', () => {
       expect(screen.queryByText('Rafael Oliveira')).not.toBeInTheDocument();
     });
     expect(screen.getByText(/Nenhum amigo adicionado/i)).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/aluno\/amigos$/);
   });
 
   it('altera privacidade para perfil privado', async () => {
     const user = userEvent.setup();
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('switch', { name: /Alternar privacidade da rede/i }));
 
@@ -480,7 +538,7 @@ describe('AmigosPage', () => {
     const user = userEvent.setup();
     alterarVisibilidadeMock.mockRejectedValue(new Error('Falha ao salvar privacidade'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('switch', { name: /Alternar privacidade da rede/i }));
 
@@ -514,7 +572,7 @@ describe('AmigosPage', () => {
       },
     });
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Rafael Oliveira');
@@ -538,7 +596,7 @@ describe('AmigosPage', () => {
     });
     aceitarConviteMock.mockRejectedValue(new Error('Erro ao aceitar convite'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Isabela Costa');
@@ -561,7 +619,7 @@ describe('AmigosPage', () => {
     });
     recusarConviteMock.mockRejectedValue(new Error('Erro ao recusar convite'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Convites/i }));
     await screen.findByText('Isabela Costa');
@@ -584,7 +642,7 @@ describe('AmigosPage', () => {
     });
     desfazerAmizadeMock.mockRejectedValue(new Error('Erro ao desfazer amizade'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
     await screen.findByText('Rafael Oliveira');
@@ -598,7 +656,7 @@ describe('AmigosPage', () => {
     const user = userEvent.setup();
     buscarColegasMock.mockRejectedValue(new Error('Erro na busca'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -627,7 +685,7 @@ describe('AmigosPage', () => {
     });
     enviarSolicitacaoMock.mockRejectedValue(new Error('Erro ao enviar solicitacao'));
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.type(screen.getByLabelText(/Buscar por nome ou nickname/i), 'Lucas');
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
@@ -639,10 +697,339 @@ describe('AmigosPage', () => {
   it('nao realiza busca quando termo esta vazio', async () => {
     const user = userEvent.setup();
 
-    render(<AmigosPage />);
+    renderAmigos();
 
     await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
 
     expect(buscarColegas).not.toHaveBeenCalled();
+  });
+
+  describe('cosmeticos nos cards de amigos', () => {
+    it('busca cosmeticos dos amigos em uma unica chamada em lote', async () => {
+      const outraAmizade = {
+        ...amizadeAtiva,
+        id: 'amizade-ativa-2',
+        amigo: {
+          ...amizadeAtiva.amigo,
+          id: 'aluno-3',
+          nome: 'Carlos Lima',
+          nickname: 'carlos',
+        },
+      };
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva, outraAmizade],
+        metadados: { page: 1, limit: 100, total: 2, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await waitFor(() => {
+        expect(buscarEquipadosDeMock).toHaveBeenCalledWith([
+          'aluno-2',
+          'aluno-3',
+        ]);
+      });
+
+      const chamadasDoLote = buscarEquipadosDeMock.mock.calls.filter(
+        ([ids]) => Array.isArray(ids) && ids.includes('aluno-2'),
+      );
+      expect(chamadasDoLote).toHaveLength(1);
+    });
+
+    it('busca cosmeticos dos remetentes de convites em lote', async () => {
+      listarConvitesRecebidosMock.mockResolvedValue({
+        dados: [conviteRecebido],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await waitFor(() => {
+        expect(buscarEquipadosDeMock).toHaveBeenCalledWith(['aluno-1']);
+      });
+    });
+
+    it('busca cosmeticos dos resultados da pesquisa em lote', async () => {
+      const user = userEvent.setup();
+      buscarColegasMock.mockResolvedValue({
+        dados: [
+          {
+            id: 'aluno-3',
+            nome: 'Carlos Lima',
+            nickname: 'carlos',
+            curso: 'Medicina',
+            semestre: '2',
+          },
+        ],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await user.type(
+        screen.getByLabelText(/Buscar por nome ou nickname/i),
+        'Carlos',
+      );
+      await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+
+      await waitFor(() => {
+        expect(buscarEquipadosDeMock).toHaveBeenCalledWith(['aluno-3']);
+      });
+    });
+
+    it('mantem a pagina funcional quando a busca de cosmeticos falha', async () => {
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+      buscarEquipadosDeMock.mockRejectedValue(new Error('Sem conexão'));
+      const user = userEvent.setup();
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+      expect(await screen.findByText('Rafael Oliveira')).toBeInTheDocument();
+      expect(screen.queryByText('Sem conexão')).not.toBeInTheDocument();
+    });
+
+    it('renderiza avatar, moldura e titulo equipados no card', async () => {
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+      buscarEquipadosDeMock.mockResolvedValue({
+        'aluno-2': {
+          AVATAR: criarCosmetico('AVATAR', {
+            nome: 'Avatar do Rafael',
+            imagemUrl: '/avatar-rafael.png',
+          }),
+          MOLDURA: criarCosmetico('MOLDURA', {
+            nome: 'Moldura Dourada',
+            valor: '#f59e0b',
+          }),
+          TITULO: criarCosmetico('TITULO', {
+            nome: 'Veterano dos Ossos',
+          }),
+        },
+      });
+      const user = userEvent.setup();
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+
+      expect(
+        await screen.findByRole('img', { name: 'Avatar do Rafael' }),
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Moldura Moldura Dourada')).toBeInTheDocument();
+      expect(screen.getByText('Veterano dos Ossos')).toBeInTheDocument();
+    });
+
+    it('usa iniciais como fallback quando o amigo nao tem cosmeticos', async () => {
+      const amizadeSemNickname = {
+        ...amizadeAtiva,
+        amigo: {
+          ...amizadeAtiva.amigo,
+          nickname: null,
+        },
+      };
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeSemNickname],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+      const user = userEvent.setup();
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+
+      expect(await screen.findByText('RO')).toBeInTheDocument();
+    });
+
+    it('renderiza cosmeticos nos cards de convite e resultado da busca', async () => {
+      const user = userEvent.setup();
+      listarConvitesRecebidosMock.mockResolvedValue({
+        dados: [conviteRecebido],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+      buscarColegasMock.mockResolvedValue({
+        dados: [
+          {
+            id: 'aluno-3',
+            nome: 'Carlos Lima',
+            nickname: null,
+            curso: 'Medicina',
+            semestre: '2',
+          },
+        ],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+      buscarEquipadosDeMock.mockImplementation(async (ids: string[]) => {
+        if (ids.includes('aluno-1')) {
+          return {
+            'aluno-1': {
+              ICONE_PERFIL: criarCosmetico('ICONE_PERFIL', {
+                nome: 'Icone da Isabela',
+                imagemUrl: '/icone-isabela.png',
+              }),
+            },
+          };
+        }
+
+        if (ids.includes('aluno-3')) {
+          return {
+            'aluno-3': {
+              TITULO: criarCosmetico('TITULO', {
+                nome: 'Explorador Anatomico',
+              }),
+            },
+          };
+        }
+
+        return {};
+      });
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Convites/i }));
+      expect(
+        await screen.findByRole('img', { name: 'Icone da Isabela' }),
+      ).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /Buscar colegas/i }));
+      await user.type(
+        screen.getByLabelText(/Buscar por nome ou nickname/i),
+        'Carlos',
+      );
+      await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+
+      expect(await screen.findByText('Explorador Anatomico')).toBeInTheDocument();
+    });
+
+    it('mantem resultados quando a busca de cosmeticos dos colegas falha', async () => {
+      const user = userEvent.setup();
+      buscarColegasMock.mockResolvedValue({
+        dados: [
+          {
+            id: 'aluno-3',
+            nome: 'Carlos Lima',
+            nickname: 'carlos',
+            curso: 'Medicina',
+            semestre: '2',
+          },
+        ],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+      buscarEquipadosDeMock.mockImplementation(async (ids: string[]) => {
+        if (ids.includes('aluno-3')) {
+          throw new Error('Falha visual');
+        }
+
+        return {};
+      });
+
+      renderAmigos();
+
+      await user.type(
+        screen.getByLabelText(/Buscar por nome ou nickname/i),
+        'Carlos',
+      );
+      await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+
+      expect(await screen.findByText('Carlos Lima')).toBeInTheDocument();
+      expect(screen.queryByText('Falha visual')).not.toBeInTheDocument();
+    });
+
+    it('ignora resposta de cosmeticos depois de desmontar a pagina', async () => {
+      const respostaCosmeticos = criarDeferred<Record<string, never>>();
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+      listarConvitesRecebidosMock.mockResolvedValue({
+        dados: [conviteRecebido],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+      buscarEquipadosDeMock.mockReturnValue(respostaCosmeticos.promise);
+
+      const { unmount } = renderAmigos();
+
+      await waitFor(() => {
+        expect(buscarEquipadosDeMock).toHaveBeenCalledWith(['aluno-1']);
+        expect(buscarEquipadosDeMock).toHaveBeenCalledWith(['aluno-2']);
+      });
+      unmount();
+
+      respostaCosmeticos.resolve({});
+      await respostaCosmeticos.promise;
+      await Promise.resolve();
+
+      expect(buscarEquipadosDeMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('navegacao pelos cards de amigos', () => {
+    it('navega pelo card de um resultado da busca', async () => {
+      const user = userEvent.setup();
+      buscarColegasMock.mockResolvedValue({
+        dados: [
+          {
+            id: 'aluno-3',
+            nome: 'Carlos Lima',
+            nickname: 'carlos',
+            curso: 'Medicina',
+            semestre: '2',
+          },
+        ],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await user.type(
+        screen.getByLabelText(/Buscar por nome ou nickname/i),
+        'Carlos',
+      );
+      await user.click(screen.getByRole('button', { name: /^Buscar$/i }));
+      await user.click(await screen.findByText('Carlos Lima'));
+
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/aluno/amigos/aluno-3',
+      );
+    });
+
+    it('navega pelo card de um convite recebido', async () => {
+      const user = userEvent.setup();
+      listarConvitesRecebidosMock.mockResolvedValue({
+        dados: [conviteRecebido],
+        metadados: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Convites/i }));
+      await user.click(await screen.findByText('Isabela Costa'));
+
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/aluno/amigos/aluno-1',
+      );
+    });
+
+    it('navega pelo card de uma amizade ativa', async () => {
+      const user = userEvent.setup();
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+
+      renderAmigos();
+
+      await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+      await user.click(await screen.findByText('Rafael Oliveira'));
+
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/aluno/amigos/aluno-2',
+      );
+    });
   });
 });
