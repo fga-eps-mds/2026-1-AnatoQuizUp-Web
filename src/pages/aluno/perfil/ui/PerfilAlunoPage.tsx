@@ -30,6 +30,7 @@ type CardStatProps = {
   rotulo: string;
   carregando: boolean;
   tone: 'teal' | 'green' | 'blue';
+  onClick?: () => void;
 };
 
 const statToneClass = {
@@ -42,25 +43,59 @@ const formatarValor = (valor: number | string) => (
   typeof valor === 'number' ? valor.toLocaleString('pt-BR') : valor
 );
 
-const CardStat = ({ icon, valor, rotulo, carregando, tone }: CardStatProps) => (
-  <div className="flex min-h-28 items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${statToneClass[tone]}`}>
-      {icon}
-    </div>
-    <div className="min-w-0">
-      {carregando ? (
-        <div
-          role="status"
-          aria-label={`Carregando ${rotulo}`}
-          className="h-8 w-20 animate-pulse rounded-md bg-gray-200"
-        />
-      ) : (
-        <p className="text-3xl font-black tabular-nums text-[#00214d]">{formatarValor(valor)}</p>
-      )}
-      <p className="mt-1 text-sm font-bold text-gray-500">{rotulo}</p>
-    </div>
-  </div>
-);
+const CARD_STAT_BASE_CLASS =
+  'flex min-h-28 items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm';
+
+const CARD_STAT_INTERATIVO_CLASS =
+  'w-full cursor-pointer text-left transition-colors hover:bg-gray-50 ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#71edc8] focus-visible:ring-offset-2';
+
+export const CardStat = ({
+  icon,
+  valor,
+  rotulo,
+  carregando,
+  tone,
+  onClick,
+}: CardStatProps) => {
+  const conteudo = (
+    <>
+      <div
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${statToneClass[tone]}`}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        {carregando ? (
+          <div
+            role="status"
+            aria-label={`Carregando ${rotulo}`}
+            className="h-8 w-20 animate-pulse rounded-md bg-gray-200"
+          />
+        ) : (
+          <p className="text-3xl font-black tabular-nums text-[#00214d]">
+            {formatarValor(valor)}
+          </p>
+        )}
+        <p className="mt-1 text-sm font-bold text-gray-500">{rotulo}</p>
+      </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${CARD_STAT_BASE_CLASS} ${CARD_STAT_INTERATIVO_CLASS}`}
+      >
+        {conteudo}
+      </button>
+    );
+  }
+
+  return <div className={CARD_STAT_BASE_CLASS}>{conteudo}</div>;
+};
 
 export const PerfilAlunoPage = () => {
   const navigate = useNavigate();
@@ -175,6 +210,7 @@ export const PerfilAlunoPage = () => {
             rotulo="Questões respondidas"
             carregando={carregandoStats}
             tone="teal"
+            onClick={() => navigate('/aluno/dashboard')}
           />
           <CardStat
             icon={<Target size={20} />}
@@ -182,6 +218,7 @@ export const PerfilAlunoPage = () => {
             rotulo="Taxa de acerto"
             carregando={carregandoStats}
             tone="green"
+            onClick={() => navigate('/aluno/dashboard')}
           />
           <CardStat
             icon={<Users size={20} />}
@@ -189,6 +226,7 @@ export const PerfilAlunoPage = () => {
             rotulo="Amigos"
             carregando={carregandoStats}
             tone="blue"
+            onClick={() => navigate('/aluno/amigos')}
           />
         </section>
 

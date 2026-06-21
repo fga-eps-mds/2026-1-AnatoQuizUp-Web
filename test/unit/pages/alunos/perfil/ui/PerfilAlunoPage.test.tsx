@@ -33,6 +33,7 @@ import type {
 import { useEquippedCosmeticsStore } from '../../../../../../src/features/profile-cosmetics';
 import { useStudentCoinsStore } from '../../../../../../src/features/student-coins/model/useStudentCoinsStore';
 import { PerfilAlunoPage } from '../../../../../../src/pages/aluno/perfil';
+import { CardStat } from '../../../../../../src/pages/aluno/perfil/ui/PerfilAlunoPage';
 import { httpClient } from '../../../../../../src/shared/api/httpClient';
 
 const useAuthMock = useAuth as jest.Mock;
@@ -300,5 +301,79 @@ describe('PerfilAlunoPage', () => {
 
     expect(httpGetMock).toHaveBeenCalledWith('/dashboardAluno');
     expect(listarAmigosMock).toHaveBeenCalledWith({ limit: 1 });
+  });
+
+  describe('navegacao pelos cards de estatisticas', () => {
+    it('mantem card sem onClick como elemento nao interativo', () => {
+      const { container } = render(
+        <CardStat
+          icon={<span aria-hidden="true">I</span>}
+          valor={10}
+          rotulo="Stat sem destino"
+          carregando={false}
+          tone="teal"
+        />,
+      );
+
+      expect(container.firstElementChild?.tagName).toBe('DIV');
+      expect(
+        screen.queryByRole('button', { name: /Stat sem destino/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('navega para o dashboard pelo card de questoes respondidas', async () => {
+      const user = userEvent.setup();
+
+      renderPerfil();
+
+      expect(await screen.findByText('348')).toBeInTheDocument();
+      await user.click(
+        screen.getByRole('button', { name: /Questões respondidas/i }),
+      );
+
+      expect(screen.getByTestId('location')).toHaveTextContent('/aluno/dashboard');
+    });
+
+    it('navega para o dashboard pelo card de taxa de acerto', async () => {
+      const user = userEvent.setup();
+
+      renderPerfil();
+
+      expect(await screen.findByText('76%')).toBeInTheDocument();
+      await user.click(
+        screen.getByRole('button', { name: /Taxa de acerto/i }),
+      );
+
+      expect(screen.getByTestId('location')).toHaveTextContent('/aluno/dashboard');
+    });
+
+    it('navega para a pagina de amigos pelo card de amigos', async () => {
+      const user = userEvent.setup();
+
+      renderPerfil();
+
+      expect(await screen.findByText('8')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /Amigos/i }));
+
+      expect(screen.getByTestId('location')).toHaveTextContent('/aluno/amigos');
+    });
+
+    it('renderiza os cards como botoes focaveis pelo teclado', async () => {
+      renderPerfil();
+
+      expect(await screen.findByText('348')).toBeInTheDocument();
+
+      const questoes = screen.getByRole('button', {
+        name: /Questões respondidas/i,
+      });
+      const taxa = screen.getByRole('button', { name: /Taxa de acerto/i });
+      const amigos = screen.getByRole('button', { name: /Amigos/i });
+
+      for (const card of [questoes, taxa, amigos]) {
+        expect(card).toHaveAttribute('type', 'button');
+        expect(card).not.toBeDisabled();
+        expect(card).not.toHaveAttribute('tabindex', '-1');
+      }
+    });
   });
 });
