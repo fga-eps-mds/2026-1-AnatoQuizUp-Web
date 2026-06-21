@@ -6,6 +6,10 @@ jest.mock('../../../../src/features/student-coins', () => ({
   StudentCoinsBootstrap: () => null,
 }));
 
+jest.mock('../../../../src/features/profile-cosmetics', () => ({
+  CosmeticsBootstrap: () => <span data-testid="cosmetics-bootstrap" />,
+}));
+
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthenticatedLayout } from '../../../../src/app/layouts/AuthenticatedLayout';
@@ -24,5 +28,6 @@ describe('AuthenticatedLayout', () => {
 
     expect(screen.getByText('App header')).toBeInTheDocument();
     expect(screen.getByText('Protected content')).toBeInTheDocument();
+    expect(screen.getByTestId('cosmetics-bootstrap')).toBeInTheDocument();
   });
 });
