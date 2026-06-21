@@ -1,3 +1,5 @@
+﻿import { Coins, Mail, Pencil, Plus } from 'lucide-react';
+
 import type { ItemInventario, TipoItemLoja } from '../../../features/loja';
 import logoAnatoQuiz from '../../assets/image/logo.png';
 import { montarIniciais } from '../../utils/iniciais';
@@ -17,6 +19,9 @@ export type ProfileIdentityCardProps = {
   tamanho?: 'sm' | 'md' | 'lg';
   readOnly?: boolean;
   onPersonalizar?: () => void;
+  email?: string;
+  saldo?: string;
+  onEditar?: () => void;
 };
 
 type TamanhoCard = NonNullable<ProfileIdentityCardProps['tamanho']>;
@@ -27,8 +32,8 @@ const TAMANHO_CIRCULO: Record<TamanhoCard, string> = {
   lg: 'h-24 w-24',
 };
 const TAMANHO_BANNER: Record<Exclude<TamanhoCard, 'sm'>, string> = {
-  md: 'h-16',
-  lg: 'h-20',
+  md: 'h-36',
+  lg: 'h-40',
 };
 const TAMANHO_TEXTO: Record<TamanhoCard, string> = {
   sm: 'text-sm',
@@ -114,6 +119,9 @@ export const ProfileIdentityCard = ({
   tamanho = 'md',
   readOnly = true,
   onPersonalizar,
+  email,
+  saldo,
+  onEditar,
 }: ProfileIdentityCardProps) => {
   const titulo = cosmeticos.TITULO;
 
@@ -136,39 +144,83 @@ export const ProfileIdentityCard = ({
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
       <div
         aria-label="Plano de fundo do perfil"
-        className={TAMANHO_BANNER[tamanho]}
+        className={`relative ${TAMANHO_BANNER[tamanho]}`}
         style={{ background: fundo?.valor ?? GRADIENTE_TEAL }}
-      />
-
-      <div className="-mt-10 flex flex-col items-center gap-2 px-6 pb-6">
-        <Circulo identidade={identidade} cosmeticos={cosmeticos} tamanho={tamanho} />
-
-        <h2 className={`mt-2 truncate font-black text-[#00214d] ${TAMANHO_TEXTO[tamanho]}`}>
-          {identidade.nome}
-        </h2>
-
-        {identidade.nickname && (
-          <p className="text-sm font-bold text-gray-500">@{identidade.nickname}</p>
-        )}
-
-        {titulo && (
-          <span className="inline-block rounded-full border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-3 py-0.5 text-xs font-black text-[#B45309]">
-            {titulo.nome}
+      >
+        {!readOnly && fundo && (
+          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+            <Plus size={12} aria-hidden="true" />
+            {`Fundo: ${fundo.nome}`}
           </span>
         )}
+      </div>
 
-        {identidade.curso && (
-          <p className="text-sm font-semibold text-gray-500">{identidade.curso}</p>
-        )}
+      <div className="flex items-start gap-5 px-6 pb-6">
+        <div className="-mt-12 shrink-0">
+          <Circulo identidade={identidade} cosmeticos={cosmeticos} tamanho={tamanho} />
+        </div>
 
-        {!readOnly && onPersonalizar && (
-          <button
-            type="button"
-            onClick={onPersonalizar}
-            className="mt-2 rounded-full bg-[#0A1128] px-4 py-2 text-sm font-bold text-white hover:bg-[#00214d]"
-          >
-            Personalizar perfil
-          </button>
+        <div className="flex min-w-0 flex-1 flex-col gap-1 pt-4">
+          {titulo && (
+            <span className="w-fit rounded-full border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-3 py-0.5 text-xs font-black text-[#B45309]">
+              {titulo.nome}
+            </span>
+          )}
+
+          <h2 className={`truncate font-black text-[#00214d] ${TAMANHO_TEXTO[tamanho]}`}>
+            {identidade.nome}
+          </h2>
+
+          {identidade.nickname && (
+            <p className="text-sm font-bold text-gray-500">{`@${identidade.nickname}`}</p>
+          )}
+
+          {(identidade.curso || (!readOnly && (email || saldo))) && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+              {identidade.curso && (
+                <span className="text-sm font-semibold text-gray-500">
+                  {identidade.curso}
+                </span>
+              )}
+              {!readOnly && email && (
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-500">
+                  <Mail size={14} aria-hidden="true" />
+                  {email}
+                </span>
+              )}
+              {!readOnly && saldo && (
+                <span className="flex items-center gap-1.5 text-sm font-bold text-amber-700">
+                  <Coins size={14} aria-hidden="true" />
+                  {saldo}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {!readOnly && (onPersonalizar || onEditar) && (
+          <div className="flex shrink-0 flex-col items-end gap-2 pt-4">
+            {onPersonalizar && (
+              <button
+                type="button"
+                onClick={onPersonalizar}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#0d9488]"
+              >
+                <Plus size={14} aria-hidden="true" />
+                Personalizar perfil
+              </button>
+            )}
+            {onEditar && (
+              <button
+                type="button"
+                onClick={onEditar}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-[#00214d] transition-colors hover:bg-gray-50"
+              >
+                <Pencil size={14} aria-hidden="true" />
+                Editar informações
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

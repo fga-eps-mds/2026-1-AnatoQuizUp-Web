@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
-  Coins,
-  Mail,
-  Pencil,
+  ChevronRight,
   Target,
   Users,
 } from 'lucide-react';
@@ -65,7 +63,7 @@ export const CardStat = ({
       >
         {icon}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         {carregando ? (
           <div
             role="status"
@@ -79,6 +77,9 @@ export const CardStat = ({
         )}
         <p className="mt-1 text-sm font-bold text-gray-500">{rotulo}</p>
       </div>
+      {onClick !== undefined && (
+        <ChevronRight size={16} className="shrink-0 text-gray-400" aria-hidden="true" />
+      )}
     </>
   );
 
@@ -150,6 +151,11 @@ export const PerfilAlunoPage = () => {
     'Curso não informado';
   const saldoFormatado = saldoMoedas.toLocaleString('pt-BR');
 
+  const fotoPerfil = cosmeticos.AVATAR ?? cosmeticos.ICONE_PERFIL;
+  const temItensEmUso = Boolean(
+    fotoPerfil ?? cosmeticos.MOLDURA ?? cosmeticos.TITULO ?? cosmeticos.PLANO_FUNDO,
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -158,50 +164,20 @@ export const PerfilAlunoPage = () => {
           <p className="mt-1 text-sm font-semibold text-gray-500">Sua conta no AnatoQuizUp</p>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
-          <ProfileIdentityCard
-            identidade={{
-              nome: user.name,
-              nickname,
-              curso: cursoLabel,
-            }}
-            cosmeticos={cosmeticos}
-            tamanho="md"
-            readOnly={false}
-            onPersonalizar={() => navigate('/aluno/loja')}
-          />
-
-          <aside
-            aria-label="Informações da conta"
-            className="flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <div>
-              <h2 className="text-lg font-black text-[#00214d]">Informações da conta</h2>
-              <p className="mt-1 text-sm font-semibold text-gray-500">
-                Seus dados de acesso e saldo atual.
-              </p>
-            </div>
-
-            <div className="flex min-w-0 items-start gap-2 text-sm font-semibold text-gray-500">
-              <Mail size={16} className="mt-0.5 shrink-0" />
-              <span className="min-w-0 break-all">{user.email}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
-              <Coins size={16} />
-              {saldoFormatado} ATP
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigate('/aluno/perfil/editar')}
-              className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#0d9488]"
-            >
-              <Pencil size={16} />
-              Editar informações
-            </button>
-          </aside>
-        </section>
+        <ProfileIdentityCard
+          identidade={{
+            nome: user.name,
+            nickname,
+            curso: cursoLabel,
+          }}
+          cosmeticos={cosmeticos}
+          tamanho="md"
+          readOnly={false}
+          onPersonalizar={() => navigate('/aluno/loja')}
+          email={user.email}
+          saldo={`${saldoFormatado} ATP`}
+          onEditar={() => navigate('/aluno/perfil/editar')}
+        />
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <CardStat
@@ -230,6 +206,41 @@ export const PerfilAlunoPage = () => {
           />
         </section>
 
+        {temItensEmUso && (
+          <section aria-label="Itens em uso">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-black text-[#00214d]">Itens em uso</h2>
+              <button
+                type="button"
+                onClick={() => navigate('/aluno/loja')}
+                className="text-sm font-bold text-[#14b8a6] hover:underline"
+              >
+                Personalizar →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { rotulo: 'FOTO DE PERFIL', item: fotoPerfil },
+                { rotulo: 'MOLDURA', item: cosmeticos.MOLDURA },
+                { rotulo: 'TÍTULO', item: cosmeticos.TITULO },
+                { rotulo: 'FUNDO', item: cosmeticos.PLANO_FUNDO },
+              ].map(({ rotulo, item }) => (
+                <div
+                  key={rotulo}
+                  className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">
+                    {rotulo}
+                  </p>
+                  <p className="mt-1 truncate text-sm font-bold text-[#00214d]">
+                    {item ? item.nome : '—'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

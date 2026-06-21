@@ -178,7 +178,7 @@ describe('PerfilAlunoPage', () => {
     expect(screen.getByRole('img', { name: 'Avatar Anatomico' })).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Icone Cerebro' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Moldura Moldura Dourada')).toBeInTheDocument();
-    expect(screen.getByText('Veterano dos Ossos')).toBeInTheDocument();
+    expect(screen.getAllByText('Veterano dos Ossos')).toHaveLength(2);
     expect(screen.getByLabelText('Plano de fundo do perfil')).toHaveStyle(
       'background: #123456',
     );
@@ -301,6 +301,60 @@ describe('PerfilAlunoPage', () => {
 
     expect(httpGetMock).toHaveBeenCalledWith('/dashboardAluno');
     expect(listarAmigosMock).toHaveBeenCalledWith({ limit: 1 });
+  });
+
+  describe('secao de itens em uso', () => {
+    it('exibe secao quando ao menos um cosmético esta equipado', async () => {
+      act(() => {
+        useEquippedCosmeticsStore.getState().setCosmeticos({
+          TITULO: criarCosmetico('TITULO', { nome: 'Veterano' }),
+        });
+      });
+
+      renderPerfil();
+
+      expect(screen.getByRole('region', { name: 'Itens em uso' })).toBeInTheDocument();
+      expect(screen.getByText('TÍTULO')).toBeInTheDocument();
+      expect(screen.getByText('MOLDURA')).toBeInTheDocument();
+      expect(screen.getByText('FOTO DE PERFIL')).toBeInTheDocument();
+      expect(screen.getByText('FUNDO')).toBeInTheDocument();
+    });
+
+    it('nao exibe secao quando nenhum cosmético esta equipado', () => {
+      renderPerfil();
+
+      expect(screen.queryByRole('region', { name: 'Itens em uso' })).not.toBeInTheDocument();
+    });
+
+    it('exibe nome dos itens equipados nos slots correspondentes', () => {
+      act(() => {
+        useEquippedCosmeticsStore.getState().setCosmeticos({
+          MOLDURA: criarCosmetico('MOLDURA', { nome: 'Moldura Dourada' }),
+          PLANO_FUNDO: criarCosmetico('PLANO_FUNDO', { nome: 'Fundo Anatomico', valor: '#123' }),
+        });
+      });
+
+      renderPerfil();
+
+      expect(screen.getByText('Moldura Dourada')).toBeInTheDocument();
+      expect(screen.getByText('Fundo Anatomico')).toBeInTheDocument();
+    });
+
+    it('botao Personalizar na secao navega para a loja', async () => {
+      const user = userEvent.setup();
+
+      act(() => {
+        useEquippedCosmeticsStore.getState().setCosmeticos({
+          TITULO: criarCosmetico('TITULO', { nome: 'Vet' }),
+        });
+      });
+
+      renderPerfil();
+
+      await user.click(screen.getByRole('button', { name: /Personalizar →/i }));
+
+      expect(screen.getByTestId('location')).toHaveTextContent('/aluno/loja');
+    });
   });
 
   describe('navegacao pelos cards de estatisticas', () => {

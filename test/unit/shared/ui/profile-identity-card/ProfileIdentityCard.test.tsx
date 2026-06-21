@@ -176,4 +176,91 @@ describe('ProfileIdentityCard', () => {
       screen.queryByRole('button', { name: 'Personalizar perfil' }),
     ).not.toBeInTheDocument();
   });
+
+  it('exibe email quando a prop email e fornecida e readOnly e false', () => {
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        email="joao@example.com"
+        readOnly={false}
+      />,
+    );
+
+    expect(screen.getByText('joao@example.com')).toBeInTheDocument();
+  });
+
+  it('exibe saldo quando a prop saldo e fornecida e readOnly e false', () => {
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        saldo="1.240 ATP"
+        readOnly={false}
+      />,
+    );
+
+    expect(screen.getByText('1.240 ATP')).toBeInTheDocument();
+  });
+
+  it('exibe e aciona botao de editar quando onEditar e fornecido e readOnly e false', async () => {
+    const onEditar = jest.fn();
+    const user = userEvent.setup();
+
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        readOnly={false}
+        onEditar={onEditar}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Editar informações/i }));
+
+    expect(onEditar).toHaveBeenCalledTimes(1);
+  });
+
+  it('nao exibe email, saldo ou editar quando readOnly e true', () => {
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        email="joao@example.com"
+        saldo="1.240 ATP"
+        onEditar={jest.fn()}
+        readOnly={true}
+      />,
+    );
+
+    expect(screen.queryByText('joao@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('1.240 ATP')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Editar informações/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('exibe chip de fundo no banner quando fundo equipado e readOnly e false', () => {
+    const fundo = criarItem('PLANO_FUNDO', { nome: 'Textura Anatomica', valor: '#123456' });
+
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        cosmeticos={{ PLANO_FUNDO: fundo }}
+        readOnly={false}
+      />,
+    );
+
+    expect(screen.getByText('Fundo: Textura Anatomica')).toBeInTheDocument();
+  });
+
+  it('nao exibe chip de fundo quando readOnly e true', () => {
+    const fundo = criarItem('PLANO_FUNDO', { nome: 'Textura Anatomica', valor: '#123456' });
+
+    render(
+      <ProfileIdentityCard
+        identidade={identidade}
+        cosmeticos={{ PLANO_FUNDO: fundo }}
+        readOnly={true}
+      />,
+    );
+
+    expect(screen.queryByText('Fundo: Textura Anatomica')).not.toBeInTheDocument();
+  });
 });
