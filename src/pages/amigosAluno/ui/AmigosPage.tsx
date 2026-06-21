@@ -15,6 +15,7 @@ import {
   recusarConvite,
 } from '../../../features/friendship';
 import type { ResumoAmigo, ResumoAmizade } from '../../../features/friendship';
+import { montarIniciais } from '../../../shared/utils/iniciais';
 
 type AbaAmigos = 'buscar' | 'convites' | 'amigos';
 
@@ -54,14 +55,6 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
     </div>
   </article>
 );
-
-const montarIniciais = (nome: string) => {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.[0] ?? '';
-  const segunda = partes.length > 1 ? partes[partes.length - 1][0] : '';
-
-  return `${primeira}${segunda}`.toUpperCase() || 'A';
-};
 
 export const AmigosPage = () => {
   const { user } = useAuth();

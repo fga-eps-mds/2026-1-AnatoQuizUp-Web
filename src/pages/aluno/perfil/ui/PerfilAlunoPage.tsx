@@ -16,6 +16,7 @@ import { useAuth } from '../../../../app/providers/AuthProvider';
 import { listarAmigos } from '../../../../features/friendship';
 import { useStudentCoinsStore } from '../../../../features/student-coins/model/useStudentCoinsStore';
 import { httpClient } from '../../../../shared/api/httpClient';
+import { montarIniciais } from '../../../../shared/utils/iniciais';
 import type { DashboardAlunoResponse } from '../../../dashboardAluno/types';
 
 type StatsPerfil = {
@@ -37,14 +38,6 @@ const statToneClass = {
   green: 'bg-emerald-50 text-emerald-700',
   blue: 'bg-blue-50 text-blue-700',
 } satisfies Record<CardStatProps['tone'], string>;
-
-const montarIniciais = (nome?: string | null) => {
-  const partes = (nome ?? '').trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.[0] ?? '';
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.[0] ?? '' : '';
-
-  return `${primeira}${ultima}`.toUpperCase() || 'A';
-};
 
 const formatarValor = (valor: number | string) => (
   typeof valor === 'number' ? valor.toLocaleString('pt-BR') : valor

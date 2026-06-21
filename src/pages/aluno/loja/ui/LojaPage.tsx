@@ -8,7 +8,6 @@ import {
   Check,
   Coins,
   Frame,
-  ImageOff,
   LayoutGrid,
   Lock,
   Palette,
@@ -19,7 +18,6 @@ import {
   X,
 } from 'lucide-react';
 
-import logoAnatoQuiz from '../../../../shared/assets/image/logo.png';
 import {
   comprarItem,
   listarCatalogo,
@@ -27,11 +25,11 @@ import {
 } from '../../../../features/loja';
 import type {
   InventarioItem,
-  ItemInventario,
   ItemLoja,
   TipoItemLoja,
 } from '../../../../features/loja';
 import { useStudentCoinsStore } from '../../../../features/student-coins/model/useStudentCoinsStore';
+import { CosmeticPreview } from '../../../../shared/ui/cosmetics';
 
 type Aba = 'TODOS' | TipoItemLoja | 'INVENTARIO';
 type Ordenacao = 'asc' | 'desc';
@@ -46,123 +44,7 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: 'INVENTARIO', label: 'Meu Inventário', icon: Backpack },
 ];
 
-const CODIGO_LOGO_PREMIUM = 'icone-anatoquiz-dourado';
-const GRADIENTE_OURO = 'linear-gradient(135deg, #FCD34D 0%, #D4AF37 100%)';
-
 type Feedback = { tipo: 'sucesso' | 'erro'; texto: string };
-
-// Esboço fictício de perfil para pré-visualizar como o fundo ficaria na página de perfil.
-const MockupPerfil = ({ valor }: { valor: string | null }) => (
-  <div className="w-56 overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
-    <div className="h-20" style={{ background: valor ?? '#0A1128' }} />
-    <div className="flex flex-col items-center px-3 pb-4">
-      <div className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-[#0A1128]/10">
-        <UserRound className="text-[#0A1128]/40" size={26} />
-      </div>
-      <div className="mt-2 h-3 w-24 rounded-full bg-[#0A1128]/15" />
-      <div className="mt-1.5 h-2.5 w-16 rounded-full bg-[#F59E0B]/40" />
-      <div className="mt-3 grid w-full grid-cols-3 gap-1.5">
-        <div className="h-6 rounded bg-[#0A1128]/5" />
-        <div className="h-6 rounded bg-[#0A1128]/5" />
-        <div className="h-6 rounded bg-[#0A1128]/5" />
-      </div>
-    </div>
-  </div>
-);
-
-const PreviewVisual = ({
-  item,
-  grande = false,
-}: {
-  item: ItemLoja | ItemInventario;
-  grande?: boolean;
-}) => {
-  const dimensao = grande ? 'h-36 w-36' : 'h-24 w-24';
-
-  if (item.tipo === 'PLANO_FUNDO') {
-    if (grande) return <MockupPerfil valor={item.valor} />;
-    return (
-      <div
-        className={`${dimensao} rounded-2xl border border-[#0A1128]/10 shadow-inner`}
-        style={{ background: item.valor ?? '#0A1128' }}
-        aria-label={`Pré-visualização do fundo ${item.nome}`}
-      />
-    );
-  }
-
-  if (item.tipo === 'TITULO') {
-    return (
-      <div
-        className={`${grande ? 'h-36 w-56 text-lg' : 'h-24 w-40 text-sm'} flex items-center justify-center rounded-2xl border border-[#F59E0B]/40 bg-gradient-to-br from-[#F59E0B]/15 to-[#F97316]/15 px-4 text-center`}
-      >
-        <span className="font-black leading-tight text-[#0A1128]">{item.nome}</span>
-      </div>
-    );
-  }
-
-  if (item.tipo === 'MOLDURA') {
-    // Anel decorativo (valor) ao redor do "slot" do ícone de perfil.
-    return (
-      <div
-        className={`${dimensao} rounded-full p-[7px] shadow-sm`}
-        style={{ background: item.valor ?? GRADIENTE_OURO }}
-        aria-label={`Pré-visualização da moldura ${item.nome}`}
-      >
-        <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-          <UserRound className="text-[#0A1128]/30" size={grande ? 52 : 34} />
-        </div>
-      </div>
-    );
-  }
-
-  if (item.tipo === 'ICONE_PERFIL') {
-    // Ícone premium: logo do AnatoQuiz em dourado.
-    if (item.codigo === CODIGO_LOGO_PREMIUM) {
-      return (
-        <div
-          className={`${dimensao} flex items-center justify-center rounded-2xl p-3 shadow-sm`}
-          style={{ background: item.valor ?? GRADIENTE_OURO }}
-        >
-          <img src={logoAnatoQuiz} alt={item.nome} className="h-full w-full object-contain drop-shadow" />
-        </div>
-      );
-    }
-
-    const src = item.previewImagemUrl ?? item.imagemUrl;
-    return (
-      <div
-        className={`${dimensao} flex items-center justify-center rounded-2xl p-4 shadow-sm`}
-        style={{ background: item.valor ?? '#0A1128' }}
-      >
-        {src ? (
-          <img src={src} alt={item.nome} className="h-full w-full object-contain" />
-        ) : (
-          <ImageOff className="text-white/70" size={grande ? 40 : 28} />
-        )}
-      </div>
-    );
-  }
-
-  // AVATAR
-  const src = item.previewImagemUrl ?? item.imagemUrl;
-  if (!src) {
-    return (
-      <div
-        className={`${dimensao} flex items-center justify-center rounded-2xl border border-[#0A1128]/10 bg-[#0A1128]/5 text-[#0A1128]/30`}
-      >
-        <ImageOff size={grande ? 40 : 28} />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={item.nome}
-      className={`${dimensao} rounded-2xl border border-[#0A1128]/10 bg-white object-contain p-1`}
-    />
-  );
-};
 
 const PrecoEtiqueta = ({ preco }: { preco: number }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F59E0B]/15 px-3 py-1 text-sm font-black text-[#B45309]">
@@ -458,7 +340,7 @@ const CatalogoGrid = ({
               className="flex h-32 cursor-pointer items-center justify-center"
               aria-label={`Pré-visualizar ${item.nome}`}
             >
-              <PreviewVisual item={item} />
+              <CosmeticPreview item={item} />
             </button>
 
             <div className="flex w-full flex-1 flex-col items-center gap-2 text-center">
@@ -517,7 +399,7 @@ const InventarioGrid = ({ inventario }: { inventario: InventarioItem[] }) => {
           className="flex flex-col items-center gap-3 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm"
         >
           <div className="flex h-32 items-center justify-center">
-            <PreviewVisual item={registro.item} />
+            <CosmeticPreview item={registro.item} />
           </div>
           <h3 className="line-clamp-2 text-center text-sm font-black text-[#0A1128]">
             {registro.item.nome}
@@ -574,7 +456,7 @@ const ModalPreview = ({
             Pré-visualização
           </span>
 
-          <PreviewVisual item={item} grande />
+          <CosmeticPreview item={item} grande />
 
           <h2 className="text-xl font-black text-[#0A1128]">{item.nome}</h2>
 
