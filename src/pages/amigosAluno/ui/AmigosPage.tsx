@@ -19,6 +19,7 @@ import type { ResumoAmigo, ResumoAmizade } from '../../../features/friendship';
 import { buscarEquipadosDe } from '../../../features/profile-cosmetics';
 import type { EquipadosPorUsuario } from '../../../features/profile-cosmetics';
 import { ProfileIdentityCard } from '../../../shared/ui/profile-identity-card';
+import { CardAmigo } from './CardAmigo';
 
 type AbaAmigos = 'buscar' | 'convites' | 'amigos';
 
@@ -644,63 +645,23 @@ export const AmigosPage = () => {
                   )}
 
                   {!carregandoAmigos &&
-                    amigos.map((amizade) => {
-                      const processando = processandoAmizadeId === amizade.id;
-
-                      return (
-                        <article
-                          key={amizade.id}
-                          onClick={() =>
-                            navigate(`/aluno/amigos/${amizade.amigo.id}`, {
-                              state: { amizadeId: amizade.id },
-                            })
-                          }
-                          className="flex min-h-[168px] cursor-pointer flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC]"
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <ProfileIdentityCard
-                              identidade={{
-                                nome: amizade.amigo.nome,
-                                nickname: amizade.amigo.nickname ?? null,
-                              }}
-                              cosmeticos={cosmeticosPorUsuario[amizade.amigo.id] ?? {}}
-                              tamanho="sm"
-                            />
-                            <div className="min-w-0">
-                              <h4 className="truncate text-base font-black text-[#0A1128]">
-                                {amizade.amigo.nome}
-                              </h4>
-                              <p className="text-sm font-semibold text-[#0A1128]/55">
-                                {amizade.amigo.nickname
-                                  ? `@${amizade.amigo.nickname}`
-                                  : 'Sem nickname'}
-                              </p>
-                              <p className="text-xs font-semibold text-[#0A1128]/45">
-                                {[
-                                  amizade.amigo.curso,
-                                  amizade.amigo.semestre &&
-                                    `${amizade.amigo.semestre} semestre`,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' - ') || 'Dados academicos nao informados'}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleDesfazerAmizade(amizade.id);
-                            }}
-                            disabled={processando}
-                            className="mt-5 min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
-                          >
-                            {processando ? 'Removendo...' : 'Desfazer amizade'}
-                          </button>
-                        </article>
-                      );
-                    })}
+                    amigos.map((amizade) => (
+                      <CardAmigo
+                        key={amizade.id}
+                        amizade={amizade}
+                        cosmeticos={cosmeticosPorUsuario[amizade.amigo.id] ?? {}}
+                        processando={processandoAmizadeId === amizade.id}
+                        onVerPerfil={() =>
+                          navigate(`/aluno/amigos/${amizade.amigo.id}`, {
+                            state: { amizadeId: amizade.id },
+                          })
+                        }
+                        onDesfazer={(event) => {
+                          event.stopPropagation();
+                          void handleDesfazerAmizade(amizade.id);
+                        }}
+                      />
+                    ))}
                 </div>
               </div>
             </div>

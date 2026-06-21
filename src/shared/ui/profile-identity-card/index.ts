@@ -1,5 +1,6 @@
-export { ProfileIdentityCard } from './ProfileIdentityCard';
+export { AvatarCosmetico, ProfileIdentityCard } from './ProfileIdentityCard';
 export type {
+  AvatarCosmeticoProps,
   IdentidadePerfil,
   ProfileIdentityCardProps,
   SlotsCosmeticos,

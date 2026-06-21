@@ -42,11 +42,13 @@ const TAMANHO_TEXTO: Record<TamanhoCard, string> = {
 };
 const GRADIENTE_TEAL = 'linear-gradient(to right, #71edc8, #14b8a6)';
 
-type CirculoProps = {
+export type AvatarCosmeticoProps = {
   identidade: IdentidadePerfil;
   cosmeticos: SlotsCosmeticos;
   tamanho: TamanhoCard;
 };
+
+type CirculoProps = AvatarCosmeticoProps;
 
 const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
   const moldura = cosmeticos.MOLDURA;
@@ -112,6 +114,8 @@ const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
 
   return <div className="rounded-full border-2 border-[#71edc8] shadow-sm">{conteudo}</div>;
 };
+
+export { Circulo as AvatarCosmetico };
 
 export const ProfileIdentityCard = ({
   identidade,
