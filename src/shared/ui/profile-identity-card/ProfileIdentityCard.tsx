@@ -145,10 +145,10 @@ export const ProfileIdentityCard = ({
   const fundo = cosmeticos.PLANO_FUNDO;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
       <div
         aria-label="Plano de fundo do perfil"
-        className={`relative ${TAMANHO_BANNER[tamanho]}`}
+        className={`relative overflow-hidden rounded-t-2xl ${TAMANHO_BANNER[tamanho]}`}
         style={{ background: fundo?.valor ?? GRADIENTE_TEAL }}
       >
         {!readOnly && fundo && (
@@ -160,7 +160,7 @@ export const ProfileIdentityCard = ({
       </div>
 
       <div className="flex items-start gap-5 px-6 pb-6">
-        <div className="-mt-12 shrink-0">
+        <div className="relative -mt-12 shrink-0">
           <Circulo identidade={identidade} cosmeticos={cosmeticos} tamanho={tamanho} />
         </div>
 
