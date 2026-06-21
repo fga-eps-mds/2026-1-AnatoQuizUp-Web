@@ -69,7 +69,7 @@ describe('cosmeticsService', () => {
 
       const resultado = await buscarEquipados();
 
-      expect(mockedGet).toHaveBeenCalledWith('/loja/equipados');
+      expect(mockedGet).toHaveBeenCalledWith('/inventario/meuPerfil');
       expect(resultado).toEqual({
         ICONE_PERFIL: registros[0].item,
         MOLDURA: registros[1].item,
@@ -117,7 +117,7 @@ describe('cosmeticsService', () => {
       ]);
 
       expect(mockedGet).toHaveBeenCalledTimes(1);
-      expect(mockedGet).toHaveBeenCalledWith('/loja/equipados/lote', {
+      expect(mockedGet).toHaveBeenCalledWith('/inventario/meuPerfil/lote', {
         params: { usuarioIds: 'ana,bruno' },
       });
       expect(resultado).toEqual({

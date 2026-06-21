@@ -8,7 +8,7 @@ import type {
 } from './types';
 import { converterEquipadosParaSlots } from './types';
 
-const EQUIPADOS_ENDPOINT = '/loja/equipados';
+const EQUIPADOS_ENDPOINT = '/inventario/meuPerfil';
 
 const normalizarIds = (ids: string[]): string[] => [
   ...new Set(ids.map((id) => id.trim()).filter(Boolean)),

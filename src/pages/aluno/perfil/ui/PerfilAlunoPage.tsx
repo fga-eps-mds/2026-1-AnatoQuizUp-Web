@@ -102,7 +102,11 @@ export const PerfilAlunoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
+  
   const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
+  // MODIFICAÇÃO: Pegando o setCosmeticos para atualizar a store no load
+  const setCosmeticos = useEquippedCosmeticsStore((state) => state.setCosmeticos);
+
   const [stats, setStats] = useState<StatsPerfil>({
     respondidas: 0,
     taxa: 0,
@@ -114,11 +118,13 @@ export const PerfilAlunoPage = () => {
     let ativo = true;
 
     const carregarStats = async () => {
-      const [dashboard, amigos] = await Promise.allSettled([
+      // MODIFICAÇÃO: httpClient.get adicionado ao array do Promise.allSettled
+      const [dashboard, amigos, inventario] = await Promise.allSettled([
         httpClient.get<Pick<DashboardAlunoResponse, 'totalRespondidas' | 'taxaAcerto'>>(
           '/dashboardAluno',
         ),
         listarAmigos({ limit: 1 }),
+        httpClient.get('/inventario/meuInventario'),
       ]);
 
       if (!ativo) {
@@ -132,6 +138,21 @@ export const PerfilAlunoPage = () => {
         taxa: dashboard.status === 'fulfilled' ? dashboard.value.data.taxaAcerto : 0,
         amigos: amigos.status === 'fulfilled' ? amigos.value.metadados.total : 0,
       });
+
+      // MODIFICAÇÃO: Sincroniza a store com o banco ao carregar a página (F5)
+      if (inventario.status === 'fulfilled' && inventario.value.data?.dados) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const equipadosReais: any = {};
+        
+        inventario.value.data.dados.forEach((item: { equipado: boolean; tipo: string }) => {
+          if (item.equipado) {
+            equipadosReais[item.tipo] = item;
+          }
+        });
+        
+        setCosmeticos(equipadosReais);
+      }
+
       setCarregandoStats(false);
     };
 
@@ -140,7 +161,7 @@ export const PerfilAlunoPage = () => {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [setCosmeticos]); // MODIFICAÇÃO: setCosmeticos adicionado à dependência
 
   if (!user) {
     return null;
@@ -173,7 +194,7 @@ export const PerfilAlunoPage = () => {
           cosmeticos={cosmeticos}
           tamanho="md"
           readOnly={false}
-          onPersonalizar={() => navigate('/aluno/loja')}
+          onPersonalizar={() => navigate('/aluno/perfil/personalizar')} 
           email={user.email}
           saldo={`${saldoFormatado} ATP`}
           onEditar={() => navigate('/aluno/perfil/editar')}

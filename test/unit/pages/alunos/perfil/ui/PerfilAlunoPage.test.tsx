@@ -131,7 +131,7 @@ describe('PerfilAlunoPage', () => {
     await waitFor(() => {
       expect(httpClient.get).toHaveBeenCalledWith('/dashboardAluno');
     });
-    expect(httpGetMock).toHaveBeenCalledTimes(1);
+    expect(httpGetMock).toHaveBeenCalledTimes(2);
   });
 
   it('usa os fallbacks do card quando nao ha cosmeticos equipados', async () => {
@@ -194,7 +194,7 @@ describe('PerfilAlunoPage', () => {
     expect(await screen.findByText('348')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Personalizar perfil' }));
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/loja');
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/perfil/personalizar');
   });
 
   it('esconde apelido quando usuario nao tem nickname', async () => {

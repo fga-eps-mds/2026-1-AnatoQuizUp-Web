@@ -8,7 +8,8 @@ jest.mock('../../../../../src/entities/resolucaoLista/api/resolucaoListaApi', ()
     listar: jest.fn(),
     buscarDetalhes: jest.fn(),
     autosave: jest.fn(),
-    submeter: jest.fn()
+    submeter: jest.fn(),
+    baixarPdfAluno: jest.fn()
   }
 }));
 
@@ -29,6 +30,7 @@ describe('ListagemListas', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
     (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
   });
 
@@ -80,6 +82,17 @@ describe('ListagemListas', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/aluno/turmas/t1/listas/l2');
   });
 
+  it('deve renderizar listas com status EM_ANDAMENTO na aba de Pendentes', async () => {
+    const mockListas = [
+      { listaTurmaId: 'l-andamento', nome: 'Lista Em Andamento', temas: ['Anatomia'], quantidadeQuestoes: 5, prazo: null, status: 'EM_ANDAMENTO', gabaritoLiberado: false },
+    ];
+    (resolucaoListaApi.listar as jest.Mock).mockResolvedValue(mockListas);
+
+    render(<ListagemListas turmaId="t1" />);
+    
+    expect(await screen.findByText('Lista Em Andamento')).toBeInTheDocument();
+    expect(screen.getByText('Pendentes')).toBeInTheDocument();
+  });
 
   it('deve cobrir os diferentes calculos de prazo (renderInfoRodape)', async () => {
     const mockListasData = [
@@ -93,12 +106,12 @@ describe('ListagemListas', () => {
     render(<ListagemListas turmaId="t1" />);
 
     expect(await screen.findByText('Sem prazo')).toBeInTheDocument();
-    expect(screen.getByText(/Prazo: 20\/06\/2026/i)).toBeInTheDocument(); // Prazo longo (sem os "dias restantes")
-    expect(screen.getByText(/Expirou em 01\/06\/2026/i)).toBeInTheDocument(); // Prazo Vencido
-    expect(screen.getByText(/Prazo: 10\/06\/2026/i)).toBeInTheDocument(); // Prazo Respondido
+    expect(screen.getByText(/Prazo: 20\/06\/2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/Expirou em 01\/06\/2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/Prazo: 10\/06\/2026/i)).toBeInTheDocument();
   });
 
-  it('deve permitir clicar em Gabarito Bloqueado e Ver Detalhes (Expirada)', async () => {
+  it('deve permitir clicar em Gabarito Bloqueado e baixar o PDF inicial', async () => {
     const mockListasData = [
       { listaTurmaId: 'resp-bloq', nome: 'Bloqueada', temas: [], quantidadeQuestoes: 1, prazo: null, status: 'RESPONDIDA', gabaritoLiberado: false },
       { listaTurmaId: 'exp-det', nome: 'Expirada Detalhe', temas: [], quantidadeQuestoes: 1, prazo: null, status: 'EXPIRADA', gabaritoLiberado: false },
@@ -114,5 +127,28 @@ describe('ListagemListas', () => {
 
     const btnBaixarPdf = screen.getByRole('button', { name: /Baixar PDF/i });
     expect(btnBaixarPdf).toBeInTheDocument();
+  });
+
+  it('deve disparar um alert se ocorrer um erro durante o download do PDF', async () => {
+    const mockListasData = [
+      { listaTurmaId: 'l-pdf-erro', nome: 'Lista Erro', temas: [], quantidadeQuestoes: 1, prazo: null, status: 'EXPIRADA', gabaritoLiberado: false },
+    ];
+    (resolucaoListaApi.listar as jest.Mock).mockResolvedValue(mockListasData);
+    (resolucaoListaApi.baixarPdfAluno as jest.Mock).mockRejectedValue(new Error('Erro backend PDF'));
+
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(jest.fn());
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(jest.fn());
+
+    render(<ListagemListas turmaId="t1" />);
+    const btnBaixarPdf = await screen.findByRole('button', { name: /Baixar PDF/i });
+
+    fireEvent.click(btnBaixarPdf);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith('Erro ao gerar o PDF da lista. Tente novamente mais tarde.');
+    });
+
+    expect(screen.getByRole('button', { name: /Baixar PDF/i })).not.toBeDisabled();
   });
 });

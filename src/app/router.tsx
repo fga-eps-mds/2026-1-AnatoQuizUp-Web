@@ -16,6 +16,7 @@ import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 import { TurmaDetalhesPage } from "../pages/TurmaDetalhes";
 import { ResponderListaPage } from "../pages/resolucaoLista/ui/ResolucaoListaPage";
+import { PersonalizarPerfilPage } from '../pages/aluno/perfil/personalizar/PersonalizarPerfilPage';
 
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
@@ -85,6 +86,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <EditarPerfilPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/perfil/personalizar"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <PersonalizarPerfilPage />
             </ProtectedRoute>
           }
         />
