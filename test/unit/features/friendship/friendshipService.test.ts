@@ -3,6 +3,7 @@ import {
   aceitarConvite,
   alterarVisibilidade,
   buscarColegas,
+  buscarPerfilPublico,
   desfazerAmizade,
   enviarSolicitacao,
   listarAmigos,
@@ -177,5 +178,33 @@ describe('friendshipService', () => {
     (httpClient.get as jest.Mock).mockRejectedValue(new Error('Falha'));
 
     await expect(buscarColegas()).rejects.toThrow('Erro simulado pelo mock');
+  });
+
+  it('deve buscar perfil de amigo e desembrulhar o envelope da API', async () => {
+    const perfil = {
+      id: 'usuario-2',
+      nome: 'Maria Souza',
+      nickname: 'maria',
+      curso: 'Medicina',
+      semestre: '5',
+      perfilPrivado: false,
+    };
+    (httpClient.get as jest.Mock).mockResolvedValue({
+      data: {
+        mensagem: 'Perfil encontrado',
+        dados: perfil,
+      },
+    });
+
+    await expect(buscarPerfilPublico('usuario-2')).resolves.toEqual(perfil);
+    expect(httpClient.get).toHaveBeenCalledWith('/usuarios/usuario-2/perfil');
+  });
+
+  it('deve normalizar erro ao buscar perfil de amigo', async () => {
+    (httpClient.get as jest.Mock).mockRejectedValue(new Error('Falha'));
+
+    await expect(buscarPerfilPublico('usuario-2')).rejects.toThrow(
+      'Erro simulado pelo mock',
+    );
   });
 });

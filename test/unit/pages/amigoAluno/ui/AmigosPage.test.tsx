@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 jest.mock('../../../../../src/app/providers/AuthProvider', () => ({
   useAuth: () => ({
@@ -1029,6 +1029,38 @@ describe('AmigosPage', () => {
 
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/aluno/amigos/aluno-2',
+      );
+    });
+
+    it('passa amizadeId no state ao navegar por uma amizade ativa', async () => {
+      const user = userEvent.setup();
+      const StateCapture = () => {
+        const estadoNavegacao = useLocation().state;
+        return (
+          <span data-testid="navigation-state">
+            {JSON.stringify(estadoNavegacao)}
+          </span>
+        );
+      };
+      listarAmigosMock.mockResolvedValue({
+        dados: [amizadeAtiva],
+        metadados: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/aluno/amigos']}>
+          <Routes>
+            <Route path="/aluno/amigos" element={<AmigosPage />} />
+            <Route path="/aluno/amigos/:id" element={<StateCapture />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await user.click(screen.getByRole('button', { name: /Meus amigos/i }));
+      await user.click(await screen.findByText('Rafael Oliveira'));
+
+      expect(screen.getByTestId('navigation-state')).toHaveTextContent(
+        '{"amizadeId":"amizade-ativa-1"}',
       );
     });
   });

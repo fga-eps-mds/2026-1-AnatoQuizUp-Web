@@ -27,6 +27,7 @@ import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 
 import { DashboardAlunoPage } from "../pages/dashboardAluno";
 import { AmigosPage } from "../pages/amigosAluno";
+import { AmigoPerfilPage } from "../pages/aluno/amigo";
 import { PerfilAlunoPage } from "../pages/aluno/perfil";
 import { EditarPerfilPage } from "../pages/aluno/perfil/editar";
 import { LojaPage } from "../pages/aluno/loja";
@@ -120,6 +121,15 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <AmigosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/amigos/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <AmigoPerfilPage />
             </ProtectedRoute>
           }
         />

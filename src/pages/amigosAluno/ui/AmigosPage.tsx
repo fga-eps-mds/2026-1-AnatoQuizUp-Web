@@ -650,7 +650,11 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={amizade.id}
-                          onClick={() => navigate(`/aluno/amigos/${amizade.amigo.id}`)}
+                          onClick={() =>
+                            navigate(`/aluno/amigos/${amizade.amigo.id}`, {
+                              state: { amizadeId: amizade.id },
+                            })
+                          }
                           className="flex min-h-[168px] cursor-pointer flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC]"
                         >
                           <div className="flex min-w-0 items-center gap-3">

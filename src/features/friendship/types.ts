@@ -68,3 +68,12 @@ export type EnviarSolicitacaoResponse = {
 export type MensagemResponse = {
   mensagem: string;
 };
+
+export type PerfilPublico = {
+  id: string;
+  nome: string;
+  nickname: string | null;
+  curso: string | null;
+  semestre: string | null;
+  perfilPrivado: boolean;
+};

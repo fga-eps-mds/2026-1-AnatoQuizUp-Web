@@ -6,12 +6,18 @@ import type {
   ListarAmigosParams,
   ListarConvitesParams,
   MensagemResponse,
+  PerfilPublico,
   RespostaPaginada,
   ResumoAmigo,
   ResumoAmizade,
 } from './types';
 
 const AMIZADE_ENDPOINT = '/amizade';
+
+type RespostaPerfilPublico = {
+  mensagem: string;
+  dados: PerfilPublico;
+};
 
 export const buscarColegas = async (
   params?: BuscarColegasParams,
@@ -137,6 +143,18 @@ export const alterarVisibilidade = async (
     );
 
     return data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const buscarPerfilPublico = async (id: string): Promise<PerfilPublico> => {
+  try {
+    const { data } = await httpClient.get<RespostaPerfilPublico>(
+      `/usuarios/${id}/perfil`,
+    );
+
+    return data.dados;
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
