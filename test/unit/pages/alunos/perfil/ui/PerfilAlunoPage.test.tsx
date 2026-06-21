@@ -12,12 +12,25 @@ jest.mock('../../../../../../src/features/friendship', () => ({
   listarAmigos: jest.fn(),
 }));
 
+jest.mock(
+  '../../../../../../src/features/profile-cosmetics/cosmeticsService',
+  () => ({
+    buscarEquipados: jest.fn(),
+    buscarEquipadosDe: jest.fn(),
+  }),
+);
+
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../../../../../../src/app/providers/AuthProvider';
 import { listarAmigos } from '../../../../../../src/features/friendship';
+import type {
+  ItemInventario,
+  TipoItemLoja,
+} from '../../../../../../src/features/loja';
+import { useEquippedCosmeticsStore } from '../../../../../../src/features/profile-cosmetics';
 import { useStudentCoinsStore } from '../../../../../../src/features/student-coins/model/useStudentCoinsStore';
 import { PerfilAlunoPage } from '../../../../../../src/pages/aluno/perfil';
 import { httpClient } from '../../../../../../src/shared/api/httpClient';
@@ -53,6 +66,23 @@ const respostaAmigos = (total: number) => ({
   },
 });
 
+const criarCosmetico = (
+  tipo: TipoItemLoja,
+  dados: Partial<ItemInventario> = {},
+): ItemInventario => ({
+  id: `item-${tipo.toLowerCase()}`,
+  codigo: `codigo-${tipo.toLowerCase()}`,
+  nome: `Item ${tipo}`,
+  descricao: null,
+  tipo,
+  precoMoedas: 100,
+  valor: null,
+  imagemUrl: null,
+  previewImagemUrl: null,
+  ativo: true,
+  ...dados,
+});
+
 function criarDeferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((resolver) => {
@@ -74,6 +104,7 @@ describe('PerfilAlunoPage', () => {
     jest.clearAllMocks();
     useStudentCoinsStore.getState().reset();
     useStudentCoinsStore.getState().setSaldoMoedas(1240);
+    useEquippedCosmeticsStore.getState().reset();
     useAuthMock.mockReturnValue({
       user: aluno,
     });
@@ -99,9 +130,73 @@ describe('PerfilAlunoPage', () => {
     await waitFor(() => {
       expect(httpClient.get).toHaveBeenCalledWith('/dashboardAluno');
     });
+    expect(httpGetMock).toHaveBeenCalledTimes(1);
   });
 
-  it('esconde apelido quando usuario nao tem nickname', () => {
+  it('usa os fallbacks do card quando nao ha cosmeticos equipados', async () => {
+    renderPerfil();
+
+    expect(screen.getByText('JS')).toBeInTheDocument();
+    expect(screen.getByLabelText('Plano de fundo do perfil')).toBeInTheDocument();
+    expect(await screen.findByText('348')).toBeInTheDocument();
+  });
+
+  it('renderiza os cosmeticos equipados no card de identidade', async () => {
+    const avatar = criarCosmetico('AVATAR', {
+      nome: 'Avatar Anatomico',
+      imagemUrl: '/avatar-anatomico.png',
+    });
+    const icone = criarCosmetico('ICONE_PERFIL', {
+      nome: 'Icone Cerebro',
+      imagemUrl: '/icone-cerebro.png',
+    });
+    const moldura = criarCosmetico('MOLDURA', {
+      nome: 'Moldura Dourada',
+      valor: '#f59e0b',
+    });
+    const titulo = criarCosmetico('TITULO', {
+      nome: 'Veterano dos Ossos',
+    });
+    const fundo = criarCosmetico('PLANO_FUNDO', {
+      nome: 'Fundo Anatomico',
+      valor: '#123456',
+    });
+
+    act(() => {
+      useEquippedCosmeticsStore.getState().setCosmeticos({
+        AVATAR: avatar,
+        ICONE_PERFIL: icone,
+        MOLDURA: moldura,
+        TITULO: titulo,
+        PLANO_FUNDO: fundo,
+      });
+    });
+
+    renderPerfil();
+
+    expect(screen.getByRole('img', { name: 'Avatar Anatomico' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Icone Cerebro' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Moldura Moldura Dourada')).toBeInTheDocument();
+    expect(screen.getByText('Veterano dos Ossos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Plano de fundo do perfil')).toHaveStyle(
+      'background: #123456',
+    );
+    expect(await screen.findByText('348')).toBeInTheDocument();
+  });
+
+  it('navega para a loja pelo botao de personalizar e remove o teaser', async () => {
+    const user = userEvent.setup();
+
+    renderPerfil();
+
+    expect(screen.queryByText(/Em breve/i)).not.toBeInTheDocument();
+    expect(await screen.findByText('348')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Personalizar perfil' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/loja');
+  });
+
+  it('esconde apelido quando usuario nao tem nickname', async () => {
     useAuthMock.mockReturnValue({
       user: {
         ...aluno,
@@ -112,6 +207,7 @@ describe('PerfilAlunoPage', () => {
     renderPerfil();
 
     expect(screen.queryByText('@joaojose')).not.toBeInTheDocument();
+    expect(await screen.findByText('348')).toBeInTheDocument();
   });
 
   it('mostra stats carregadas do dashboard e de amigos', async () => {
@@ -142,6 +238,7 @@ describe('PerfilAlunoPage', () => {
 
     renderPerfil();
 
+    expect(await screen.findByText('348')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Editar informações/i }));
 
     expect(screen.getByTestId('location')).toHaveTextContent('/aluno/perfil/editar');
@@ -162,6 +259,8 @@ describe('PerfilAlunoPage', () => {
     useAuthMock.mockReturnValue({
       user: null,
     });
+    httpGetMock.mockImplementation(() => new Promise(() => {}));
+    listarAmigosMock.mockImplementation(() => new Promise(() => {}));
 
     const { container } = render(
       <MemoryRouter>

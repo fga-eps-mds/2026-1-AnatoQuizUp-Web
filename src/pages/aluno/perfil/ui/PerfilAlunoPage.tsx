@@ -4,19 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Coins,
-  GraduationCap,
   Mail,
   Pencil,
-  Sparkles,
   Target,
   Users,
 } from 'lucide-react';
 
 import { useAuth } from '../../../../app/providers/AuthProvider';
 import { listarAmigos } from '../../../../features/friendship';
+import { useEquippedCosmeticsStore } from '../../../../features/profile-cosmetics';
 import { useStudentCoinsStore } from '../../../../features/student-coins/model/useStudentCoinsStore';
 import { httpClient } from '../../../../shared/api/httpClient';
-import { montarIniciais } from '../../../../shared/utils/iniciais';
+import { ProfileIdentityCard } from '../../../../shared/ui/profile-identity-card';
 import type { DashboardAlunoResponse } from '../../../dashboardAluno/types';
 
 type StatsPerfil = {
@@ -67,6 +66,7 @@ export const PerfilAlunoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
+  const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
   const [stats, setStats] = useState<StatsPerfil>({
     respondidas: 0,
     taxa: 0,
@@ -112,7 +112,7 @@ export const PerfilAlunoPage = () => {
 
   const nickname = user.nickname?.trim();
   const cursoLabel = [user.course, user.institution].filter(Boolean).join(' · ') ||
-    'Curso nao informado';
+    'Curso não informado';
   const saldoFormatado = saldoMoedas.toLocaleString('pt-BR');
 
   return (
@@ -123,44 +123,49 @@ export const PerfilAlunoPage = () => {
           <p className="mt-1 text-sm font-semibold text-gray-500">Sua conta no AnatoQuizUp</p>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="h-1.5 bg-gradient-to-r from-[#71edc8] to-[#14b8a6]" />
-          <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-[#71edc8] bg-gradient-to-br from-[#0A1128] to-[#0d9488] text-2xl font-black text-[#71edc8]">
-              {montarIniciais(user.name)}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
+          <ProfileIdentityCard
+            identidade={{
+              nome: user.name,
+              nickname,
+              curso: cursoLabel,
+            }}
+            cosmeticos={cosmeticos}
+            tamanho="md"
+            readOnly={false}
+            onPersonalizar={() => navigate('/aluno/loja')}
+          />
+
+          <aside
+            aria-label="Informações da conta"
+            className="flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+          >
+            <div>
+              <h2 className="text-lg font-black text-[#00214d]">Informações da conta</h2>
+              <p className="mt-1 text-sm font-semibold text-gray-500">
+                Seus dados de acesso e saldo atual.
+              </p>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-2xl font-black text-[#00214d]">{user.name}</h2>
-              {nickname && (
-                <p className="mt-1 text-sm font-bold text-gray-500">@{nickname}</p>
-              )}
+            <div className="flex min-w-0 items-start gap-2 text-sm font-semibold text-gray-500">
+              <Mail size={16} className="mt-0.5 shrink-0" />
+              <span className="min-w-0 break-all">{user.email}</span>
+            </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-gray-500">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <GraduationCap size={15} />
-                  <span className="truncate">{cursoLabel}</span>
-                </span>
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Mail size={15} />
-                  <span className="truncate">{user.email}</span>
-                </span>
-                <span className="flex items-center gap-1.5 text-amber-700">
-                  <Coins size={15} />
-                  {saldoFormatado} ATP
-                </span>
-              </div>
+            <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
+              <Coins size={16} />
+              {saldoFormatado} ATP
             </div>
 
             <button
               type="button"
               onClick={() => navigate('/aluno/perfil/editar')}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#0d9488]"
+              className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#14b8a6] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#0d9488]"
             >
               <Pencil size={16} />
               Editar informações
             </button>
-          </div>
+          </aside>
         </section>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -187,20 +192,6 @@ export const PerfilAlunoPage = () => {
           />
         </section>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-dashed border-gray-300 bg-white p-4 sm:flex-row sm:items-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500">
-            <Sparkles size={20} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-black text-[#00214d]">Personalização de perfil</h3>
-            <p className="mt-1 text-xs font-semibold text-gray-500">
-              Em breve você poderá usar avatares e itens da Loja para deixar seu perfil com a sua cara.
-            </p>
-          </div>
-          <span className="w-fit shrink-0 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
-            Em breve
-          </span>
-        </section>
       </div>
     </div>
   );
