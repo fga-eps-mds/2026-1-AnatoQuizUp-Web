@@ -6,6 +6,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
 import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
+import { useEquippedCosmeticsStore } from "../../../features/profile-cosmetics";
+import { AvatarCosmetico } from "../../../shared/ui/profile-identity-card";
 
 type NavItem = {
   key: string;
@@ -18,6 +20,7 @@ type NavItem = {
 export const Header = () => {
   const { user, logout } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
+  const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
   const navigate = useNavigate();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -204,7 +207,6 @@ export const Header = () => {
   };
 
   const navItems = buildNavItems(user.role);
-  const initial = user.name?.charAt(0).toUpperCase() || "U";
   const shouldShowCoins = user.role === "STUDENT";
   const isPerfilAlunoActive = location.pathname.startsWith("/aluno/perfil");
 
@@ -271,8 +273,12 @@ export const Header = () => {
               isPerfilAlunoActive ? "bg-[#71edc8]/10" : "hover:bg-[#00214d]"
             }`}
           >
-            <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
-              {initial}
+            <div className="shrink-0">
+              <AvatarCosmetico
+                identidade={{ nome: user.name }}
+                cosmeticos={cosmeticos}
+                tamanho="sm"
+              />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-bold text-[#fffffe]">
@@ -286,8 +292,12 @@ export const Header = () => {
           </button>
         ) : (
           <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
-              {initial}
+            <div className="shrink-0">
+              <AvatarCosmetico
+                identidade={{ nome: user.name }}
+                cosmeticos={{}}
+                tamanho="sm"
+              />
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-[#fffffe] truncate">

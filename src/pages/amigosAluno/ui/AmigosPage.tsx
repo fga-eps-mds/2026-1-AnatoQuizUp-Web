@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import {
   aceitarConvite,
@@ -62,8 +62,11 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
 
 export const AmigosPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>('buscar');
+  const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>(
+    (location.state as { aba?: AbaAmigos } | null)?.aba ?? 'buscar',
+  );
   const [termoBusca, setTermoBusca] = useState('');
   const [resultadosBusca, setResultadosBusca] = useState<ResumoAmigo[]>([]);
   const [idsSolicitados, setIdsSolicitados] = useState<Set<string>>(new Set());

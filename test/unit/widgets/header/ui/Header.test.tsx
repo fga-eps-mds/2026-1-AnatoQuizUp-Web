@@ -2,6 +2,12 @@ jest.mock('../../../../../src/app/providers/AuthProvider', () => ({
   useAuth: jest.fn(),
 }));
 
+jest.mock('../../../../../src/features/profile-cosmetics', () => ({
+  useEquippedCosmeticsStore: jest.fn((selector: (s: { cosmeticos: Record<string, never> }) => unknown) =>
+    selector({ cosmeticos: {} }),
+  ),
+}));
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';

@@ -202,7 +202,7 @@ export const PerfilAlunoPage = () => {
             rotulo="Amigos"
             carregando={carregandoStats}
             tone="blue"
-            onClick={() => navigate('/aluno/amigos')}
+            onClick={() => navigate('/aluno/amigos', { state: { aba: 'amigos' } })}
           />
         </section>
 
