@@ -1,4 +1,5 @@
 import type { QuestionTopic, ApiQuestionType, ApiQuestionDifficulty, QuestionAlternativeKey, PaginationMetadata, QuestionAlternatives } from "../manage-questions";
+import type { ConquistaDesbloqueada } from '../achievements';
 
 export type QuizQuestion = {
   id: string;
@@ -29,6 +30,7 @@ export type QuestaoQuizFeedback = {
   moedasConcedidas: number;
   saldoMoedas: number;
   moedasJaConcedidas: boolean;
+  conquistasDesbloqueadas: ConquistaDesbloqueada[];
 }
 
 export type SaldoMoedasResponse = {

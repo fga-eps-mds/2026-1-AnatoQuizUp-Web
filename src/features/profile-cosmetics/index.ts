@@ -3,3 +3,4 @@ export { useEquippedCosmeticsStore } from './model/useEquippedCosmeticsStore';
 export { CosmeticsBootstrap } from './ui/CosmeticsBootstrap';
 
 export type { EquipadosPorUsuario, SlotsCosmeticos } from './types';
+export { converterEquipadosParaSlots, converterItensEquipadosParaSlots } from './types';

@@ -10,14 +10,14 @@ import {
   buscarColegas,
   desfazerAmizade,
   enviarSolicitacao,
-  listarAmigos,
   listarConvitesEnviados,
   listarConvitesRecebidos,
   recusarConvite,
 } from '../../../features/friendship';
 import type { ResumoAmigo, ResumoAmizade } from '../../../features/friendship';
-import { buscarEquipadosDe } from '../../../features/profile-cosmetics';
 import type { EquipadosPorUsuario } from '../../../features/profile-cosmetics';
+import { converterItensEquipadosParaSlots } from '../../../features/profile-cosmetics';
+import { listarAmigosSociais, type ResumoAmigoSocial } from '../../../features/social-profile';
 import { ProfileIdentityCard } from '../../../shared/ui/profile-identity-card';
 import { CardAmigo } from './CardAmigo';
 
@@ -78,15 +78,14 @@ export const AmigosPage = () => {
   const [carregandoConvites, setCarregandoConvites] = useState(true);
   const [erroConvites, setErroConvites] = useState<string | null>(null);
   const [processandoConviteId, setProcessandoConviteId] = useState<string | null>(null);
-  const [amigos, setAmigos] = useState<ResumoAmizade[]>([]);
+  const [amigos, setAmigos] = useState<ResumoAmigoSocial[]>([]);
   const [carregandoAmigos, setCarregandoAmigos] = useState(true);
   const [erroAmigos, setErroAmigos] = useState<string | null>(null);
   const [processandoAmizadeId, setProcessandoAmizadeId] = useState<string | null>(null);
   const [perfilVisivel, setPerfilVisivel] = useState(user?.visivel ?? true);
   const [alterandoPrivacidade, setAlterandoPrivacidade] = useState(false);
   const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
-  const [cosmeticosPorUsuario, setCosmeticosPorUsuario] =
-    useState<EquipadosPorUsuario>({});
+  const [cosmeticosPorUsuario, setCosmeticosPorUsuario] = useState<EquipadosPorUsuario>({});
 
   useEffect(() => {
     let ativo = true;
@@ -106,25 +105,10 @@ export const AmigosPage = () => {
           setIdsSolicitados(
             new Set(convitesEnviadosResposta.dados.map((convite) => convite.amigo.id)),
           );
-
-          try {
-            const idsConvites = convitesRecebidosResposta.dados.map(
-              (convite) => convite.amigo.id,
-            );
-            const slots = await buscarEquipadosDe(idsConvites);
-
-            if (ativo) {
-              setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
-            }
-          } catch {
-            // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
-          }
         }
       } catch (error) {
         if (ativo) {
-          setErroConvites(
-            error instanceof Error ? error.message : 'Erro ao carregar convites.',
-          );
+          setErroConvites(error instanceof Error ? error.message : 'Erro ao carregar convites.');
         }
       } finally {
         if (ativo) {
@@ -138,21 +122,18 @@ export const AmigosPage = () => {
       setErroAmigos(null);
 
       try {
-        const resposta = await listarAmigos({ limit: 100 });
+        const resposta = await listarAmigosSociais({ limit: 100 });
 
         if (ativo) {
           setAmigos(resposta.dados);
-
-          try {
-            const idsAmigos = resposta.dados.map((amizade) => amizade.amigo.id);
-            const slots = await buscarEquipadosDe(idsAmigos);
-
-            if (ativo) {
-              setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
-            }
-          } catch {
-            // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
-          }
+          setCosmeticosPorUsuario(
+            Object.fromEntries(
+              resposta.dados.map((amizade) => [
+                amizade.amigo.id,
+                converterItensEquipadosParaSlots(amizade.cosmeticos),
+              ]),
+            ),
+          );
         }
       } catch (error) {
         if (ativo) {
@@ -191,14 +172,6 @@ export const AmigosPage = () => {
       const resposta = await buscarColegas(params);
 
       setResultadosBusca(resposta.dados);
-
-      try {
-        const idsBusca = resposta.dados.map((colega) => colega.id);
-        const slots = await buscarEquipadosDe(idsBusca);
-        setCosmeticosPorUsuario((atuais) => ({ ...atuais, ...slots }));
-      } catch {
-        // Cosméticos são uma melhoria visual; o fallback mantém os cards utilizáveis.
-      }
     } catch (error) {
       setResultadosBusca([]);
       setErroBusca(error instanceof Error ? error.message : 'Erro ao buscar colegas.');
@@ -222,9 +195,7 @@ export const AmigosPage = () => {
   };
 
   const removerConviteDaLista = (id: string) => {
-    setConvitesRecebidos((convitesAtuais) =>
-      convitesAtuais.filter((convite) => convite.id !== id),
-    );
+    setConvitesRecebidos((convitesAtuais) => convitesAtuais.filter((convite) => convite.id !== id));
   };
 
   const adicionarAmigoDaSolicitacao = (convite: ResumoAmizade) => {
@@ -237,6 +208,8 @@ export const AmigosPage = () => {
         {
           ...convite,
           statusAmizade: 'ATIVO',
+          cosmeticos: [],
+          conquistasDestacadas: [],
         },
         ...amigosAtuais,
       ];
@@ -283,9 +256,7 @@ export const AmigosPage = () => {
       await alterarVisibilidade(proximoValor);
     } catch (error) {
       setPerfilVisivel(!proximoValor);
-      setErroPrivacidade(
-        error instanceof Error ? error.message : 'Erro ao atualizar privacidade.',
-      );
+      setErroPrivacidade(error instanceof Error ? error.message : 'Erro ao atualizar privacidade.');
     } finally {
       setAlterandoPrivacidade(false);
     }
@@ -528,13 +499,11 @@ export const AmigosPage = () => {
                     </p>
                   )}
 
-                  {!carregandoConvites &&
-                    convitesRecebidos.length === 0 &&
-                    !erroConvites && (
-                      <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60">
-                        Nenhum convite pendente.
-                      </p>
-                    )}
+                  {!carregandoConvites && convitesRecebidos.length === 0 && !erroConvites && (
+                    <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60">
+                      Nenhum convite pendente.
+                    </p>
+                  )}
 
                   {!carregandoConvites &&
                     convitesRecebidos.map((convite) => {
@@ -567,8 +536,7 @@ export const AmigosPage = () => {
                               <p className="text-xs font-semibold text-[#0A1128]/45">
                                 {[
                                   convite.amigo.curso,
-                                  convite.amigo.semestre &&
-                                    `${convite.amigo.semestre} semestre`,
+                                  convite.amigo.semestre && `${convite.amigo.semestre} semestre`,
                                 ]
                                   .filter(Boolean)
                                   .join(' - ') || 'Dados academicos nao informados'}

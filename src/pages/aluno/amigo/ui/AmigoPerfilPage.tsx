@@ -2,13 +2,10 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, UserX } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import {
-  buscarPerfilPublico,
-  desfazerAmizade,
-} from '../../../../features/friendship';
-import type { PerfilPublico } from '../../../../features/friendship';
-import { buscarEquipadosDe } from '../../../../features/profile-cosmetics';
+import { desfazerAmizade } from '../../../../features/friendship';
+import { converterItensEquipadosParaSlots } from '../../../../features/profile-cosmetics';
 import type { SlotsCosmeticos } from '../../../../features/profile-cosmetics';
+import { buscarPerfilSocial, type PerfilSocial } from '../../../../features/social-profile';
 import { ProfileIdentityCard } from '../../../../shared/ui/profile-identity-card';
 
 type EstadoNavegacao = {
@@ -23,12 +20,10 @@ export const AmigoPerfilPage = () => {
   const { state } = useLocation();
   const amizadeId = (state as EstadoNavegacao)?.amizadeId ?? null;
 
-  const [perfil, setPerfil] = useState<PerfilPublico | null>(null);
+  const [perfil, setPerfil] = useState<PerfilSocial | null>(null);
   const [cosmeticos, setCosmeticos] = useState<SlotsCosmeticos>({});
   const [carregando, setCarregando] = useState(Boolean(id));
-  const [erro, setErro] = useState<string | null>(() =>
-    id ? null : MENSAGEM_ERRO_PERFIL,
-  );
+  const [erro, setErro] = useState<string | null>(() => (id ? null : MENSAGEM_ERRO_PERFIL));
   const [desfazendo, setDesfazendo] = useState(false);
   const [erroDesfazer, setErroDesfazer] = useState<string | null>(null);
 
@@ -45,26 +40,19 @@ export const AmigoPerfilPage = () => {
       setPerfil(null);
       setCosmeticos({});
 
-      const [resultadoPerfil, resultadoCosmeticos] = await Promise.allSettled([
-        buscarPerfilPublico(id),
-        buscarEquipadosDe([id]),
-      ]);
+      try {
+        const resultadoPerfil = await buscarPerfilSocial(id);
 
-      if (!ativo) {
-        return;
-      }
+        if (!ativo) return;
 
-      if (resultadoPerfil.status === 'fulfilled') {
-        setPerfil(resultadoPerfil.value);
-      } else {
+        setPerfil(resultadoPerfil);
+        setCosmeticos(converterItensEquipadosParaSlots(resultadoPerfil.cosmeticos));
+      } catch {
+        if (!ativo) return;
         setErro(MENSAGEM_ERRO_PERFIL);
+      } finally {
+        if (ativo) setCarregando(false);
       }
-
-      if (resultadoCosmeticos.status === 'fulfilled') {
-        setCosmeticos(resultadoCosmeticos.value[id] ?? {});
-      }
-
-      setCarregando(false);
     };
 
     void carregarPerfil();
@@ -134,26 +122,14 @@ export const AmigoPerfilPage = () => {
           <>
             <ProfileIdentityCard
               identidade={{
-                nome: perfil.nome,
-                nickname: perfil.nickname,
-                curso: perfil.curso,
+                nome: perfil.usuario.nome,
+                nickname: perfil.usuario.nickname,
+                curso: perfil.usuario.curso,
               }}
               cosmeticos={cosmeticos}
               tamanho="md"
               readOnly
             />
-
-            {perfil.perfilPrivado && (
-              <div
-                role="note"
-                aria-label="Perfil privado"
-                className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-              >
-                <p className="text-sm font-semibold text-gray-500">
-                  Este aluno optou por manter o perfil privado.
-                </p>
-              </div>
-            )}
 
             {amizadeId && (
               <div className="flex flex-col gap-2">

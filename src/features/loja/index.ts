@@ -1,4 +1,9 @@
-export { listarCatalogo, listarInventario, comprarItem } from './lojaService';
+export {
+  buscarInventarioCompleto,
+  comprarItem,
+  listarCatalogo,
+  listarInventario,
+} from './lojaService';
 export type {
   CompraItemResponse,
   InventarioItem,
@@ -7,4 +12,6 @@ export type {
   ListarCatalogoParams,
   RespostaPaginada,
   TipoItemLoja,
+  OrigemItemInventario,
 } from './types';
+export { normalizarInventarioPlano } from './types';

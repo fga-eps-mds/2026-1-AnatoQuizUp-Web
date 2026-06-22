@@ -1,16 +1,13 @@
 ﻿import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BookOpen,
-  ChevronRight,
-  Target,
-  Users,
-} from 'lucide-react';
+import { BookOpen, ChevronRight, Target, Users } from 'lucide-react';
 
 import { useAuth } from '../../../../app/providers/AuthProvider';
 import { listarAmigos } from '../../../../features/friendship';
 import { useEquippedCosmeticsStore } from '../../../../features/profile-cosmetics';
+import { converterEquipadosParaSlots } from '../../../../features/profile-cosmetics';
+import { buscarInventarioCompleto } from '../../../../features/loja';
 import { useStudentCoinsStore } from '../../../../features/student-coins/model/useStudentCoinsStore';
 import { httpClient } from '../../../../shared/api/httpClient';
 import { ProfileIdentityCard } from '../../../../shared/ui/profile-identity-card';
@@ -37,9 +34,8 @@ const statToneClass = {
   blue: 'bg-blue-50 text-blue-700',
 } satisfies Record<CardStatProps['tone'], string>;
 
-const formatarValor = (valor: number | string) => (
-  typeof valor === 'number' ? valor.toLocaleString('pt-BR') : valor
-);
+const formatarValor = (valor: number | string) =>
+  typeof valor === 'number' ? valor.toLocaleString('pt-BR') : valor;
 
 const CARD_STAT_BASE_CLASS =
   'flex min-h-28 items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm';
@@ -48,14 +44,7 @@ const CARD_STAT_INTERATIVO_CLASS =
   'w-full cursor-pointer text-left transition-colors hover:bg-gray-50 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#71edc8] focus-visible:ring-offset-2';
 
-export const CardStat = ({
-  icon,
-  valor,
-  rotulo,
-  carregando,
-  tone,
-  onClick,
-}: CardStatProps) => {
+export const CardStat = ({ icon, valor, rotulo, carregando, tone, onClick }: CardStatProps) => {
   const conteudo = (
     <>
       <div
@@ -71,9 +60,7 @@ export const CardStat = ({
             className="h-8 w-20 animate-pulse rounded-md bg-gray-200"
           />
         ) : (
-          <p className="text-3xl font-black tabular-nums text-[#00214d]">
-            {formatarValor(valor)}
-          </p>
+          <p className="text-3xl font-black tabular-nums text-[#00214d]">{formatarValor(valor)}</p>
         )}
         <p className="mt-1 text-sm font-bold text-gray-500">{rotulo}</p>
       </div>
@@ -102,7 +89,7 @@ export const PerfilAlunoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
-  
+
   const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
   // MODIFICAÇÃO: Pegando o setCosmeticos para atualizar a store no load
   const setCosmeticos = useEquippedCosmeticsStore((state) => state.setCosmeticos);
@@ -124,7 +111,7 @@ export const PerfilAlunoPage = () => {
           '/dashboardAluno',
         ),
         listarAmigos({ limit: 1 }),
-        httpClient.get('/inventario/meuInventario'),
+        buscarInventarioCompleto(),
       ]);
 
       if (!ativo) {
@@ -132,25 +119,14 @@ export const PerfilAlunoPage = () => {
       }
 
       setStats({
-        respondidas: dashboard.status === 'fulfilled'
-          ? dashboard.value.data.totalRespondidas
-          : 0,
+        respondidas: dashboard.status === 'fulfilled' ? dashboard.value.data.totalRespondidas : 0,
         taxa: dashboard.status === 'fulfilled' ? dashboard.value.data.taxaAcerto : 0,
         amigos: amigos.status === 'fulfilled' ? amigos.value.metadados.total : 0,
       });
 
       // MODIFICAÇÃO: Sincroniza a store com o banco ao carregar a página (F5)
-      if (inventario.status === 'fulfilled' && inventario.value.data?.dados) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const equipadosReais: any = {};
-        
-        inventario.value.data.dados.forEach((item: { equipado: boolean; tipo: string }) => {
-          if (item.equipado) {
-            equipadosReais[item.tipo] = item;
-          }
-        });
-        
-        setCosmeticos(equipadosReais);
+      if (inventario.status === 'fulfilled') {
+        setCosmeticos(converterEquipadosParaSlots(inventario.value));
       }
 
       setCarregandoStats(false);
@@ -168,8 +144,8 @@ export const PerfilAlunoPage = () => {
   }
 
   const nickname = user.nickname?.trim();
-  const cursoLabel = [user.course, user.institution].filter(Boolean).join(' · ') ||
-    'Curso não informado';
+  const cursoLabel =
+    [user.course, user.institution].filter(Boolean).join(' · ') || 'Curso não informado';
   const saldoFormatado = saldoMoedas.toLocaleString('pt-BR');
 
   const fotoPerfil = cosmeticos.AVATAR ?? cosmeticos.ICONE_PERFIL;
@@ -194,7 +170,7 @@ export const PerfilAlunoPage = () => {
           cosmeticos={cosmeticos}
           tamanho="md"
           readOnly={false}
-          onPersonalizar={() => navigate('/aluno/perfil/personalizar')} 
+          onPersonalizar={() => navigate('/aluno/perfil/personalizar')}
           email={user.email}
           saldo={`${saldoFormatado} ATP`}
           onEditar={() => navigate('/aluno/perfil/editar')}

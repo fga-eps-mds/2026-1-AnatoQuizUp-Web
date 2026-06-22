@@ -5,8 +5,10 @@ import type {
   InventarioItem,
   ItemLoja,
   ListarCatalogoParams,
+  RespostaInventarioCompleto,
   RespostaPaginada,
 } from './types';
+import { normalizarInventarioPlano } from './types';
 
 const LOJA_ENDPOINT = '/loja';
 
@@ -14,10 +16,9 @@ export const listarCatalogo = async (
   params?: ListarCatalogoParams,
 ): Promise<RespostaPaginada<ItemLoja>> => {
   try {
-    const { data } = await httpClient.get<RespostaPaginada<ItemLoja>>(
-      `${LOJA_ENDPOINT}/catalogo`,
-      { params },
-    );
+    const { data } = await httpClient.get<RespostaPaginada<ItemLoja>>(`${LOJA_ENDPOINT}/catalogo`, {
+      params,
+    });
 
     return data;
   } catch (error) {
@@ -25,9 +26,10 @@ export const listarCatalogo = async (
   }
 };
 
-export const listarInventario = async (
-  params?: { page?: number; limit?: number },
-): Promise<RespostaPaginada<InventarioItem>> => {
+export const listarInventario = async (params?: {
+  page?: number;
+  limit?: number;
+}): Promise<RespostaPaginada<InventarioItem>> => {
   try {
     const { data } = await httpClient.get<RespostaPaginada<InventarioItem>>(
       `${LOJA_ENDPOINT}/meu-inventario`,
@@ -40,14 +42,21 @@ export const listarInventario = async (
   }
 };
 
-export const comprarItem = async (
-  itemLojaId: string,
-): Promise<CompraItemResponse> => {
+export const buscarInventarioCompleto = async (): Promise<InventarioItem[]> => {
   try {
-    const { data } = await httpClient.post<CompraItemResponse>(
-      `${LOJA_ENDPOINT}/comprar`,
-      { itemLojaId },
-    );
+    const { data } = await httpClient.get<RespostaInventarioCompleto>('/inventario/meuInventario');
+
+    return normalizarInventarioPlano(data.dados);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const comprarItem = async (itemLojaId: string): Promise<CompraItemResponse> => {
+  try {
+    const { data } = await httpClient.post<CompraItemResponse>(`${LOJA_ENDPOINT}/comprar`, {
+      itemLojaId,
+    });
 
     return data;
   } catch (error) {

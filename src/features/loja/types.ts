@@ -1,4 +1,5 @@
 export type TipoItemLoja = 'ICONE_PERFIL' | 'MOLDURA' | 'AVATAR' | 'TITULO' | 'PLANO_FUNDO';
+export type OrigemItemInventario = 'COMPRA' | 'CONQUISTA';
 
 export type ItemLoja = {
   id: string;
@@ -11,16 +12,27 @@ export type ItemLoja = {
   imagemUrl: string | null;
   previewImagemUrl: string | null;
   ativo: boolean;
+  disponivelNaLoja: boolean;
   adquirido: boolean;
 };
 
-export type ItemInventario = Omit<ItemLoja, 'adquirido'>;
+export type ItemInventario = Omit<ItemLoja, 'adquirido' | 'disponivelNaLoja'> & {
+  disponivelNaLoja?: boolean;
+};
 
 export type InventarioItem = {
   id: string;
   equipado: boolean;
-  adquiridoEm: string;
+  origem?: OrigemItemInventario;
+  adquiridoEm: string | null;
   item: ItemInventario;
+};
+
+export type InventarioItemPlano = ItemInventario & {
+  inventarioId: string;
+  equipado: boolean;
+  origem: OrigemItemInventario;
+  adquiridoEm?: string;
 };
 
 export type MetadadosPaginacao = {
@@ -46,3 +58,17 @@ export type ListarCatalogoParams = {
   page?: number;
   limit?: number;
 };
+
+export type RespostaInventarioCompleto = {
+  mensagem: string;
+  dados: InventarioItemPlano[];
+};
+
+export const normalizarInventarioPlano = (registros: InventarioItemPlano[]): InventarioItem[] =>
+  registros.map(({ inventarioId, equipado, origem, adquiridoEm, ...item }) => ({
+    id: inventarioId,
+    equipado,
+    origem,
+    adquiridoEm: adquiridoEm ?? null,
+    item,
+  }));

@@ -1,55 +1,32 @@
 import { httpClient } from '../../shared/api/httpClient';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
-import type {
-  EquipadosPorUsuario,
-  RespostaEquipados,
-  RespostaEquipadosLote,
-  SlotsCosmeticos,
-} from './types';
-import { converterEquipadosParaSlots } from './types';
+import { buscarPerfilSocial } from '../social-profile/socialProfileService';
+import type { EquipadosPorUsuario, RespostaEquipados, SlotsCosmeticos } from './types';
+import { converterItensEquipadosParaSlots } from './types';
 
 const EQUIPADOS_ENDPOINT = '/inventario/meuPerfil';
-
-const normalizarIds = (ids: string[]): string[] => [
-  ...new Set(ids.map((id) => id.trim()).filter(Boolean)),
-];
 
 export const buscarEquipados = async (): Promise<SlotsCosmeticos> => {
   try {
     const { data } = await httpClient.get<RespostaEquipados>(EQUIPADOS_ENDPOINT);
 
-    return converterEquipadosParaSlots(data.dados);
+    return converterItensEquipadosParaSlots(data.dados);
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
 };
 
-export const buscarEquipadosDe = async (
-  ids: string[],
-): Promise<EquipadosPorUsuario> => {
-  const idsNormalizados = normalizarIds(ids);
+/**
+ * Compatibilidade temporaria para consumidores antigos.
+ * Novas telas devem usar os endpoints agregados de perfil social.
+ */
+export const buscarEquipadosDe = async (ids: string[]): Promise<EquipadosPorUsuario> => {
+  const idsNormalizados = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  const perfis = await Promise.all(
+    idsNormalizados.map(async (id) => [id, await buscarPerfilSocial(id)] as const),
+  );
 
-  if (idsNormalizados.length === 0) {
-    return {};
-  }
-
-  try {
-    const { data } = await httpClient.get<RespostaEquipadosLote>(
-      `${EQUIPADOS_ENDPOINT}/lote`,
-      {
-        params: {
-          usuarioIds: idsNormalizados.join(','),
-        },
-      },
-    );
-
-    return Object.fromEntries(
-      idsNormalizados.map((id) => [
-        id,
-        converterEquipadosParaSlots(data.dados[id] ?? []),
-      ]),
-    );
-  } catch (error) {
-    throw new Error(extractErrorMessage(error));
-  }
+  return Object.fromEntries(
+    perfis.map(([id, perfil]) => [id, converterItensEquipadosParaSlots(perfil.cosmeticos)]),
+  );
 };
