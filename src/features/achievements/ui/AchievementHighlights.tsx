@@ -10,7 +10,7 @@ type AchievementHighlightsProps = {
 };
 
 export const AchievementHighlights = ({
-  conquistas,
+  conquistas = [],
   onManage,
   compact = false,
 }: AchievementHighlightsProps) => (

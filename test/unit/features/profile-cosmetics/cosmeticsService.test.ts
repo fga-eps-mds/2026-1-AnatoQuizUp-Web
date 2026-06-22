@@ -4,10 +4,10 @@ import {
   buscarEquipadosDe,
 } from '../../../../src/features/profile-cosmetics/cosmeticsService';
 import type {
-  InventarioItem,
   ItemInventario,
   TipoItemLoja,
 } from '../../../../src/features/loja';
+import { buscarPerfilSocial } from '../../../../src/features/social-profile/socialProfileService';
 
 jest.mock('../../../../src/shared/api/httpClient', () => ({
   httpClient: {
@@ -22,7 +22,12 @@ jest.mock(
   }),
 );
 
+jest.mock('../../../../src/features/social-profile/socialProfileService', () => ({
+  buscarPerfilSocial: jest.fn(),
+}));
+
 const mockedGet = httpClient.get as jest.MockedFunction<typeof httpClient.get>;
+const mockedBuscarPerfilSocial = jest.mocked(buscarPerfilSocial);
 
 const criarItem = (
   tipo: TipoItemLoja,
@@ -40,17 +45,6 @@ const criarItem = (
   ativo: true,
 });
 
-const criarRegistro = (
-  tipo: TipoItemLoja,
-  equipado = true,
-  id?: string,
-): InventarioItem => ({
-  id: `inventario-${id ?? tipo.toLowerCase()}`,
-  equipado,
-  adquiridoEm: '2026-06-20T12:00:00.000Z',
-  item: criarItem(tipo, id),
-});
-
 describe('cosmeticsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -58,37 +52,29 @@ describe('cosmeticsService', () => {
 
   describe('buscarEquipados', () => {
     it('busca e organiza todos os cosméticos equipados por slot', async () => {
-      const registros = [
-        criarRegistro('ICONE_PERFIL'),
-        criarRegistro('MOLDURA'),
-        criarRegistro('AVATAR'),
-        criarRegistro('TITULO'),
-        criarRegistro('PLANO_FUNDO'),
+      const itens = [
+        criarItem('ICONE_PERFIL'),
+        criarItem('MOLDURA'),
+        criarItem('AVATAR'),
+        criarItem('TITULO'),
+        criarItem('PLANO_FUNDO'),
       ];
-      mockedGet.mockResolvedValueOnce({ data: { dados: registros } });
+      mockedGet.mockResolvedValueOnce({ data: { dados: itens } });
 
       const resultado = await buscarEquipados();
 
       expect(mockedGet).toHaveBeenCalledWith('/inventario/meuPerfil');
       expect(resultado).toEqual({
-        ICONE_PERFIL: registros[0].item,
-        MOLDURA: registros[1].item,
-        AVATAR: registros[2].item,
-        TITULO: registros[3].item,
-        PLANO_FUNDO: registros[4].item,
+        ICONE_PERFIL: itens[0],
+        MOLDURA: itens[1],
+        AVATAR: itens[2],
+        TITULO: itens[3],
+        PLANO_FUNDO: itens[4],
       });
     });
 
     it('retorna slots vazios quando não há itens equipados', async () => {
       mockedGet.mockResolvedValueOnce({ data: { dados: [] } });
-
-      await expect(buscarEquipados()).resolves.toEqual({});
-    });
-
-    it('ignora registros que não estão equipados', async () => {
-      mockedGet.mockResolvedValueOnce({
-        data: { dados: [criarRegistro('AVATAR', false)] },
-      });
 
       await expect(buscarEquipados()).resolves.toEqual({});
     });
@@ -103,11 +89,31 @@ describe('cosmeticsService', () => {
   });
 
   describe('buscarEquipadosDe', () => {
-    it('faz uma única requisição em lote e preserva todos os usuários pedidos', async () => {
-      const avatar = criarRegistro('AVATAR', true, 'avatar-ana');
-      mockedGet.mockResolvedValueOnce({
-        data: { dados: { ana: [avatar], bruno: [] } },
-      });
+    it('usa os perfis sociais agregados e preserva todos os usuários pedidos', async () => {
+      const avatar = criarItem('AVATAR', 'avatar-ana');
+      mockedBuscarPerfilSocial
+        .mockResolvedValueOnce({
+          usuario: {
+            id: 'ana',
+            nome: 'Ana',
+            nickname: 'ana',
+            curso: 'Medicina',
+            semestre: '3',
+          },
+          cosmeticos: [avatar],
+          conquistasDestacadas: [],
+        })
+        .mockResolvedValueOnce({
+          usuario: {
+            id: 'bruno',
+            nome: 'Bruno',
+            nickname: 'bruno',
+            curso: null,
+            semestre: null,
+          },
+          cosmeticos: [],
+          conquistasDestacadas: [],
+        });
 
       const resultado = await buscarEquipadosDe([
         ' ana ',
@@ -116,34 +122,25 @@ describe('cosmeticsService', () => {
         '',
       ]);
 
-      expect(mockedGet).toHaveBeenCalledTimes(1);
-      expect(mockedGet).toHaveBeenCalledWith('/inventario/meuPerfil/lote', {
-        params: { usuarioIds: 'ana,bruno' },
-      });
+      expect(mockedBuscarPerfilSocial).toHaveBeenCalledTimes(2);
+      expect(mockedBuscarPerfilSocial).toHaveBeenNthCalledWith(1, 'ana');
+      expect(mockedBuscarPerfilSocial).toHaveBeenNthCalledWith(2, 'bruno');
       expect(resultado).toEqual({
-        ana: { AVATAR: avatar.item },
+        ana: { AVATAR: avatar },
         bruno: {},
-      });
-    });
-
-    it('cria slots vazios para usuários omitidos pela resposta', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { dados: {} } });
-
-      await expect(buscarEquipadosDe(['usuario-sem-item'])).resolves.toEqual({
-        'usuario-sem-item': {},
       });
     });
 
     it('não chama a API quando a lista de ids está vazia', async () => {
       await expect(buscarEquipadosDe(['', '   '])).resolves.toEqual({});
-      expect(mockedGet).not.toHaveBeenCalled();
+      expect(mockedBuscarPerfilSocial).not.toHaveBeenCalled();
     });
 
-    it('normaliza erros da requisição em lote', async () => {
-      mockedGet.mockRejectedValueOnce(new Error('falha original'));
+    it('propaga erros da consulta de perfil social', async () => {
+      mockedBuscarPerfilSocial.mockRejectedValueOnce(new Error('falha original'));
 
       await expect(buscarEquipadosDe(['ana'])).rejects.toThrow(
-        'Erro simulado pelo mock',
+        'falha original',
       );
     });
   });
