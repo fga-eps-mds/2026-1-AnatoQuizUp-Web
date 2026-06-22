@@ -121,8 +121,21 @@ describe('App', () => {
     expect(screen.getByText('Turmas route')).toBeInTheDocument();
   });
 
-  it('redirects unknown routes to the public home route', () => {
-    renderAppAt('/unknown');
-    expect(screen.getByText('Home route')).toBeInTheDocument();
-  });
+  it('deve exibir a página 404 para rotas desconhecidas', () => {
+  renderAppAt('/unknown');
+
+  expect(
+    screen.getByRole('heading', {
+      name: 'Página não encontrada',
+    }),
+  ).toBeInTheDocument();
+
+  expect(screen.getByText('404')).toBeInTheDocument();
+
+  expect(
+    screen.getByRole('link', {
+      name: /voltar ao início/i,
+    }),
+  ).toHaveAttribute('href', '/home');
+});
 });

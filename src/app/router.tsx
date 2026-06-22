@@ -28,6 +28,8 @@ import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 import { DashboardAlunoPage } from "../pages/dashboardAluno";
 import { AmigosPage } from "../pages/amigosAluno";
 
+import { NotFoundPage } from '../pages/not-found';
+
 export const AppRouter = () => {
   return (
     <Routes>
@@ -214,7 +216,7 @@ export const AppRouter = () => {
         
       </Route>
 
-      <Route path="*" element={<Navigate to="/home" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };
