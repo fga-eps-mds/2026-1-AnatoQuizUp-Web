@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -138,6 +138,24 @@ describe('LojaPage', () => {
     await waitFor(() => expect(comprarItemMock).toHaveBeenCalledWith('icone-1'));
   });
 
+  it('fecha a pré-visualização somente ao interagir com o fundo', async () => {
+    render(<LojaPage />);
+    await screen.findByText('Coruja');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Pré-visualizar Coruja/i }),
+    );
+
+    const dialog = await screen.findByRole('dialog');
+    const backdrop = dialog.parentElement as HTMLElement;
+
+    fireEvent.mouseDown(dialog);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.mouseDown(backdrop);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('mostra os itens adquiridos na aba de inventário', async () => {
     listarInventarioMock.mockResolvedValue({
       dados: [
@@ -157,6 +175,76 @@ describe('LojaPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Meu Inventário/i }));
 
     expect(await screen.findByText('Azul Noturno')).toBeInTheDocument();
+  });
+
+  it('exibe o inventário vazio', async () => {
+    render(<LojaPage />);
+    await screen.findByText('Coruja');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Meu Inventário/i }),
+    );
+
+    expect(
+      screen.getByText('Você ainda não possui itens. Compre algo na loja!'),
+    ).toBeInTheDocument();
+  });
+
+  it('exibe erro de carregamento e tenta novamente', async () => {
+    listarCatalogoMock.mockRejectedValueOnce(new Error('Loja indisponível'));
+    render(<LojaPage />);
+
+    expect(await screen.findByText('Loja indisponível')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Tentar novamente' }),
+    );
+
+    expect(await screen.findByText('Coruja')).toBeInTheDocument();
+    expect(listarCatalogoMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('usa mensagem padrão para falha de carregamento não tipada', async () => {
+    listarCatalogoMock.mockRejectedValueOnce('falha');
+    render(<LojaPage />);
+
+    expect(await screen.findByText('Erro ao carregar a loja.')).toBeInTheDocument();
+  });
+
+  it('informa falha não tipada ao comprar um item', async () => {
+    comprarItemMock.mockRejectedValueOnce('falha');
+    render(<LojaPage />);
+    const card = (await screen.findByText('Coruja')).closest(
+      'article',
+    ) as HTMLElement;
+
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Comprar' }),
+    );
+
+    expect(
+      await screen.findByText('Não foi possível comprar o item.'),
+    ).toBeInTheDocument();
+  });
+
+  it('exibe item já adquirido e categoria sem itens', async () => {
+    listarCatalogoMock.mockResolvedValueOnce({
+      ...catalogo,
+      dados: [
+        item({
+          id: 'icone-1',
+          nome: 'Coruja',
+          tipo: 'ICONE_PERFIL',
+          adquirido: true,
+        }),
+      ],
+    });
+    render(<LojaPage />);
+
+    expect(await screen.findByText('Adquirido')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Molduras/i }));
+    expect(
+      screen.getByText('Nenhum item disponível nesta categoria.'),
+    ).toBeInTheDocument();
   });
 
   it('bloqueia a compra quando o saldo é insuficiente', async () => {

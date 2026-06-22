@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 
@@ -146,6 +146,73 @@ describe('AmigosPage', () => {
     expect(await screen.findByText('Solicitacao pendente')).toBeInTheDocument();
   });
 
+  it('permite abrir o resultado da busca pelo teclado', async () => {
+    mocks.buscar.mockResolvedValue({
+      ...vazio,
+      dados: [amizade.amigo],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(
+      screen.getByLabelText('Buscar por nome ou nickname'),
+      'Rafael',
+    );
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    const resultado = await screen.findByRole('link', {
+      name: /Rafael Oliveira/i,
+    });
+
+    fireEvent.keyDown(resultado, { key: 'Escape' });
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/amigos');
+
+    fireEvent.keyDown(resultado, { key: 'Enter' });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/aluno/amigos/amigo-1',
+    );
+
+    fireEvent.keyDown(resultado, { key: ' ' });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/aluno/amigos/amigo-1',
+    );
+  });
+
+  it('busca colega por nickname', async () => {
+    mocks.buscar.mockResolvedValue({
+      ...vazio,
+      dados: [amizade.amigo],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(
+      screen.getByLabelText('Buscar por nome ou nickname'),
+      '@rafael',
+    );
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(mocks.buscar).toHaveBeenCalledWith({
+      nickname: 'rafael',
+      limit: 10,
+    });
+    expect(await screen.findByText('Rafael Oliveira')).toBeInTheDocument();
+  });
+
+  it('exibe mensagem padrão quando a busca falha sem Error', async () => {
+    mocks.buscar.mockRejectedValueOnce('falha');
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(
+      screen.getByLabelText('Buscar por nome ou nickname'),
+      'Rafael',
+    );
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(await screen.findByText('Erro ao buscar colegas.')).toBeInTheDocument();
+  });
+
   it('lista e aceita convite recebido', async () => {
     mocks.recebidos.mockResolvedValue({
       ...vazio,
@@ -158,6 +225,50 @@ describe('AmigosPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Aceitar' }));
 
     expect(mocks.aceitar).toHaveBeenCalledWith('amizade-1');
+  });
+
+  it('permite abrir um convite recebido pelo teclado', async () => {
+    mocks.recebidos.mockResolvedValue({
+      ...vazio,
+      dados: [{ ...amizade, statusAmizade: 'PENDENTE' }],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Convites' }));
+    const convite = await screen.findByRole('link', {
+      name: /Rafael Oliveira/i,
+    });
+
+    fireEvent.keyDown(convite, { key: 'Escape' });
+    expect(screen.getByTestId('location')).toHaveTextContent('/aluno/amigos');
+
+    fireEvent.keyDown(convite, { key: 'Enter' });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/aluno/amigos/amigo-1',
+    );
+
+    fireEvent.keyDown(convite, { key: ' ' });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/aluno/amigos/amigo-1',
+    );
+  });
+
+  it('recusa um convite recebido', async () => {
+    mocks.recebidos.mockResolvedValue({
+      ...vazio,
+      dados: [{ ...amizade, statusAmizade: 'PENDENTE' }],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Convites' }));
+    await user.click(await screen.findByRole('button', { name: 'Recusar' }));
+
+    expect(mocks.recusar).toHaveBeenCalledWith('amizade-1');
+    await waitFor(() => {
+      expect(screen.queryByText('Rafael Oliveira')).not.toBeInTheDocument();
+    });
   });
 
   it('desfaz amizade na aba de amigos', async () => {
@@ -181,6 +292,34 @@ describe('AmigosPage', () => {
 
     expect(mocks.privacidade).toHaveBeenCalledWith(false);
     expect(await screen.findAllByText('Privado')).not.toHaveLength(0);
+  });
+
+  it('desfaz a alteração visual quando a privacidade falha', async () => {
+    mocks.privacidade.mockRejectedValueOnce('falha');
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole('switch', { name: 'Alternar privacidade da rede' }),
+    );
+
+    expect(
+      await screen.findByText('Erro ao atualizar privacidade.'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Ativo')).not.toHaveLength(0);
+  });
+
+  it('exibe falhas ao carregar convites e amigos', async () => {
+    mocks.recebidos.mockRejectedValueOnce(new Error('Falha nos convites'));
+    mocks.amigos.mockRejectedValueOnce('falha');
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Convites' }));
+    expect(await screen.findByText('Falha nos convites')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Meus amigos' }));
+    expect(await screen.findByText('Erro ao carregar amigos.')).toBeInTheDocument();
   });
 
   it('navega para o perfil social do amigo', async () => {
