@@ -6,6 +6,7 @@ export {
 } from './achievementService';
 export { useAchievementStore } from './model/useAchievementStore';
 export { AchievementCard } from './ui/AchievementCard';
+export { AchievementDetailsModal } from './ui/AchievementDetailsModal';
 export { AchievementMedal } from './ui/AchievementMedal';
 export { AchievementProgress } from './ui/AchievementProgress';
 export { AchievementReward } from './ui/AchievementReward';

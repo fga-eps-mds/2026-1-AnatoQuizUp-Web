@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -134,6 +134,14 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/aluno/loja"),
     };
 
+    const studentConquistasItem: NavItem = {
+      key: "aluno-conquistas",
+      label: "Conquistas",
+      icon: Trophy,
+      onSelect: () => navigate("/aluno/conquistas"),
+      isActive: location.pathname.startsWith("/aluno/conquistas"),
+    };
+
     const listasItem: NavItem = {
       key: "listas",
       label: "Listas",
@@ -200,6 +208,7 @@ export const Header = () => {
           studentQuestaoItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
+          studentConquistasItem,
           studentLojaItem,
           studentHistoricoItem,
         ];
