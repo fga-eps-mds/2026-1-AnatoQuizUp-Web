@@ -6,6 +6,7 @@ import {
   CircleDashed,
   LockKeyhole,
   RotateCcw,
+  Star,
   Trophy,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AchievementCard,
   AchievementDetailsModal,
+  AchievementHighlightsModal,
   AchievementMedal,
   AchievementProgress,
   listarProgressoConquistas,
@@ -67,6 +69,8 @@ export const ConquistasPage = () => {
   const [recarregar, setRecarregar] = useState(0);
   const [conquistaSelecionada, setConquistaSelecionada] =
     useState<ProgressoConquista | null>(null);
+  const [gerenciandoDestaques, setGerenciandoDestaques] = useState(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -133,6 +137,23 @@ export const ConquistasPage = () => {
     setQuantidadeVisivel(QUANTIDADE_INICIAL);
   };
 
+  const atualizarDestaques = (desbloqueiosDestacados: Set<string>) => {
+    setConquistas((atuais) =>
+      atuais.map((conquista) => ({
+        ...conquista,
+        tiers: conquista.tiers.map((tier) => ({
+          ...tier,
+          destaque:
+            tier.desbloqueioId !== null &&
+            desbloqueiosDestacados.has(tier.desbloqueioId),
+        })),
+      })),
+    );
+    setGerenciandoDestaques(false);
+    setMensagemSucesso('Conquistas em destaque atualizadas.');
+    window.setTimeout(() => setMensagemSucesso(null), 3500);
+  };
+
   useEffect(() => {
     const abrirConquistaId = (
       location.state as { abrirConquistaId?: string } | null
@@ -152,7 +173,7 @@ export const ConquistasPage = () => {
   return (
     <main className="min-h-full bg-[#F8FAFC] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="flex flex-col gap-2">
+        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#14B8A6]/12 text-[#0D9488]">
               <Trophy size={24} aria-hidden="true" />
@@ -164,7 +185,26 @@ export const ConquistasPage = () => {
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setGerenciandoDestaques(true)}
+            disabled={!conquistas.some(possuiTierDesbloqueado)}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#14B8A6] bg-white px-4 text-sm font-black text-[#0D9488] hover:bg-[#ECFDF8] disabled:cursor-not-allowed disabled:border-[#CBD5E1] disabled:text-[#94A3B8]"
+          >
+            <Star size={17} aria-hidden="true" />
+            Gerenciar destaques
+          </button>
         </header>
+
+        {mensagemSucesso && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-lg border border-[#14B8A6]/30 bg-[#ECFDF8] px-4 py-3 text-sm font-bold text-[#0D9488]"
+          >
+            <CheckCircle2 size={18} aria-hidden="true" />
+            {mensagemSucesso}
+          </div>
+        )}
 
         {carregando ? (
           <ResumoSkeleton />
@@ -339,6 +379,14 @@ export const ConquistasPage = () => {
         <AchievementDetailsModal
           conquista={conquistaSelecionada}
           onClose={() => setConquistaSelecionada(null)}
+        />
+      )}
+
+      {gerenciandoDestaques && (
+        <AchievementHighlightsModal
+          conquistas={conquistas}
+          onClose={() => setGerenciandoDestaques(false)}
+          onSaved={atualizarDestaques}
         />
       )}
     </main>
