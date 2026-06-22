@@ -4,8 +4,8 @@ import {
   CheckCircle2,
   ChevronDown,
   CircleDashed,
+  LockKeyhole,
   RotateCcw,
-  Star,
   Trophy,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -19,14 +19,7 @@ import {
   type ProgressoConquista,
 } from '../../../../features/achievements';
 
-type FiltroConquista = 'TODAS' | 'DESBLOQUEADAS' | 'EM_PROGRESSO' | 'BLOQUEADAS';
-
-const FILTROS: Array<{ id: FiltroConquista; label: string }> = [
-  { id: 'TODAS', label: 'Todas' },
-  { id: 'DESBLOQUEADAS', label: 'Desbloqueadas' },
-  { id: 'EM_PROGRESSO', label: 'Em progresso' },
-  { id: 'BLOQUEADAS', label: 'Bloqueadas' },
-];
+type FiltroConquista = 'DESBLOQUEADAS' | 'EM_PROGRESSO' | 'BLOQUEADAS';
 
 const QUANTIDADE_INICIAL = 6;
 
@@ -45,8 +38,7 @@ const filtrarConquista = (
 ) => {
   if (filtro === 'DESBLOQUEADAS') return possuiTierDesbloqueado(conquista);
   if (filtro === 'EM_PROGRESSO') return estaEmProgresso(conquista);
-  if (filtro === 'BLOQUEADAS') return estaBloqueada(conquista);
-  return true;
+  return estaBloqueada(conquista);
 };
 
 const ResumoSkeleton = () => (
@@ -68,7 +60,7 @@ export const ConquistasPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [conquistas, setConquistas] = useState<ProgressoConquista[]>([]);
-  const [filtro, setFiltro] = useState<FiltroConquista>('TODAS');
+  const [filtro, setFiltro] = useState<FiltroConquista>('DESBLOQUEADAS');
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(QUANTIDADE_INICIAL);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -110,19 +102,11 @@ export const ConquistasPage = () => {
   }, [recarregar]);
 
   const resumo = useMemo(() => {
-    const tiersDesbloqueados = conquistas.reduce(
-      (total, conquista) =>
-        total + conquista.tiers.filter((tier) => tier.desbloqueado).length,
-      0,
-    );
+    const desbloqueadas = conquistas.filter(possuiTierDesbloqueado).length;
     const emProgresso = conquistas.filter(estaEmProgresso).length;
-    const destaques = conquistas.reduce(
-      (total, conquista) =>
-        total + conquista.tiers.filter((tier) => tier.destaque).length,
-      0,
-    );
+    const bloqueadas = conquistas.filter(estaBloqueada).length;
 
-    return { tiersDesbloqueados, emProgresso, destaques };
+    return { desbloqueadas, emProgresso, bloqueadas };
   }, [conquistas]);
 
   const proximaConquista = useMemo(
@@ -188,24 +172,27 @@ export const ConquistasPage = () => {
           <section className="grid gap-3 sm:grid-cols-3" aria-label="Resumo de conquistas">
             <ResumoCard
               icon={CheckCircle2}
-              valor={resumo.tiersDesbloqueados}
-              titulo="tiers desbloqueados"
-              descricao="Marcos conquistados"
+              valor={resumo.desbloqueadas}
+              titulo="Conquistas desbloqueadas"
               tom="teal"
+              ativo={filtro === 'DESBLOQUEADAS'}
+              onClick={() => selecionarFiltro('DESBLOQUEADAS')}
             />
             <ResumoCard
               icon={CircleDashed}
               valor={resumo.emProgresso}
-              titulo="em progresso"
-              descricao="Desafios em andamento"
+              titulo="Em progresso"
               tom="amber"
+              ativo={filtro === 'EM_PROGRESSO'}
+              onClick={() => selecionarFiltro('EM_PROGRESSO')}
             />
             <ResumoCard
-              icon={Star}
-              valor={resumo.destaques}
-              titulo="destaques no perfil"
-              descricao="Máximo de 3 medalhas"
+              icon={LockKeyhole}
+              valor={resumo.bloqueadas}
+              titulo="Bloqueadas"
               tom="rose"
+              ativo={filtro === 'BLOQUEADAS'}
+              onClick={() => selecionarFiltro('BLOQUEADAS')}
             />
           </section>
         )}
@@ -228,37 +215,63 @@ export const ConquistasPage = () => {
         )}
 
         {!erro && (
-          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex flex-col gap-5">
+            <section className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <h2 className="text-base font-black text-[#0A1128]">
+                Próximo desbloqueio
+              </h2>
+
+              {carregando ? (
+                <div className="mt-5 flex gap-4">
+                  <div className="h-20 w-20 animate-pulse rounded-full bg-[#E2E8F0]" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-5 animate-pulse rounded bg-[#E2E8F0]" />
+                    <div className="h-4 animate-pulse rounded bg-[#E2E8F0]" />
+                    <div className="h-2 animate-pulse rounded bg-[#E2E8F0]" />
+                  </div>
+                </div>
+              ) : proximaConquista ? (
+                <div className="mt-4 grid items-center gap-5 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                  <AchievementMedal
+                    tipo={proximaConquista.tipoConquista}
+                    tier={proximaConquista.proximoTier}
+                    tamanho="sm"
+                    nome={proximaConquista.nome}
+                  />
+                  <div className="min-w-0">
+                    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="text-sm font-black text-[#0A1128]">
+                        {proximaConquista.nome}
+                      </p>
+                      <p className="text-xs font-bold uppercase text-[#64748B]">
+                        Próximo tier: {proximaConquista.proximoTier?.toLowerCase()}
+                      </p>
+                    </div>
+                    <AchievementProgress
+                      valor={proximaConquista.valorProgresso}
+                      objetivo={proximaConquista.proximoObjetivo}
+                      percentual={proximaConquista.percentual}
+                      compacto
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setConquistaSelecionada(proximaConquista)}
+                    className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#ECFDF8] px-5 text-sm font-black text-[#0D9488] hover:bg-[#D8FAEF]"
+                  >
+                    Ver detalhes
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-lg bg-[#ECFDF8] p-4 text-sm font-bold text-[#0D9488]">
+                  Todos os desafios disponíveis foram concluídos.
+                </div>
+              )}
+            </section>
+
             <section className="min-w-0">
-              <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[#E2E8F0] bg-white sm:grid-cols-4">
-                {FILTROS.map((item) => {
-                  const ativo = filtro === item.id;
-                  const quantidade = conquistas.filter((conquista) =>
-                    filtrarConquista(conquista, item.id),
-                  ).length;
-
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => selecionarFiltro(item.id)}
-                      aria-pressed={ativo}
-                      className={`min-h-12 border-b border-r border-[#E2E8F0] px-3 text-sm font-black transition-colors last:border-r-0 sm:border-b-0 ${
-                        ativo
-                          ? 'bg-[#ECFDF8] text-[#0D9488]'
-                          : 'bg-white text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0A1128]'
-                      }`}
-                    >
-                      {item.label}
-                      <span className="ml-2 text-xs tabular-nums opacity-70">
-                        {quantidade}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4">
                 {carregando &&
                   Array.from({ length: 6 }, (_, index) => (
                     <AchievementCard key={index} carregando />
@@ -300,78 +313,24 @@ export const ConquistasPage = () => {
               )}
             </section>
 
-            <aside className="flex flex-col gap-4 xl:sticky xl:top-6">
-              <section className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                <h2 className="text-base font-black text-[#0A1128]">
-                  Próximo desbloqueio
-                </h2>
-
-                {carregando ? (
-                  <div className="mt-5 flex gap-4">
-                    <div className="h-20 w-20 animate-pulse rounded-full bg-[#E2E8F0]" />
-                    <div className="flex-1 space-y-3">
-                      <div className="h-5 animate-pulse rounded bg-[#E2E8F0]" />
-                      <div className="h-4 animate-pulse rounded bg-[#E2E8F0]" />
-                      <div className="h-2 animate-pulse rounded bg-[#E2E8F0]" />
-                    </div>
-                  </div>
-                ) : proximaConquista ? (
-                  <div className="mt-5">
-                    <div className="flex items-center gap-4">
-                      <AchievementMedal
-                        tipo={proximaConquista.tipoConquista}
-                        tier={proximaConquista.proximoTier}
-                        tamanho="sm"
-                        nome={proximaConquista.nome}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-[#0A1128]">
-                          {proximaConquista.nome}
-                        </p>
-                        <p className="mt-1 text-xs font-bold uppercase text-[#64748B]">
-                          Próximo tier: {proximaConquista.proximoTier?.toLowerCase()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <AchievementProgress
-                        valor={proximaConquista.valorProgresso}
-                        objetivo={proximaConquista.proximoObjetivo}
-                        percentual={proximaConquista.percentual}
-                        compacto
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setConquistaSelecionada(proximaConquista)}
-                      className="mt-4 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#ECFDF8] text-sm font-black text-[#0D9488] hover:bg-[#D8FAEF]"
-                    >
-                      Ver detalhes
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-5 rounded-lg bg-[#ECFDF8] p-4 text-sm font-bold text-[#0D9488]">
-                    Todos os desafios disponíveis foram concluídos.
-                  </div>
-                )}
-              </section>
-
-              <section className="rounded-lg border border-[#E2E8F0] bg-white p-5">
-                <h2 className="text-base font-black text-[#0A1128]">Como evoluir</h2>
-                <p className="mt-2 text-sm font-medium leading-6 text-[#64748B]">
-                  Acertos totais, domínio dos temas e sequências sem erro aumentam seu
-                  progresso automaticamente.
-                </p>
+            <section className="rounded-lg border border-[#E2E8F0] bg-white p-5">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                  <h2 className="text-base font-black text-[#0A1128]">Como evoluir</h2>
+                  <p className="mt-2 text-sm font-medium leading-6 text-[#64748B]">
+                    Acertos totais, domínio dos temas e sequências sem erro aumentam seu
+                    progresso automaticamente.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => navigate('/aluno/quiz/escolha')}
-                  className="mt-4 min-h-10 w-full rounded-lg bg-[#14B8A6] px-4 text-sm font-black text-white hover:bg-[#0D9488]"
+                  className="min-h-10 shrink-0 rounded-lg bg-[#14B8A6] px-5 text-sm font-black text-white hover:bg-[#0D9488]"
                 >
                   Continuar estudando
                 </button>
-              </section>
-            </aside>
+              </div>
+            </section>
           </div>
         )}
       </div>
@@ -390,8 +349,9 @@ type ResumoCardProps = {
   icon: typeof Trophy;
   valor: number;
   titulo: string;
-  descricao: string;
   tom: 'teal' | 'amber' | 'rose';
+  ativo: boolean;
+  onClick: () => void;
 };
 
 const TONS = {
@@ -404,10 +364,20 @@ const ResumoCard = ({
   icon: Icon,
   valor,
   titulo,
-  descricao,
   tom,
+  ativo,
+  onClick,
 }: ResumoCardProps) => (
-  <article className="flex min-h-28 items-center gap-4 rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={ativo}
+    className={`flex min-h-24 items-center gap-4 rounded-lg border bg-white p-4 text-left shadow-sm transition-colors ${
+      ativo
+        ? 'border-[#14B8A6] ring-2 ring-[#14B8A6]/10'
+        : 'border-[#E2E8F0] hover:border-[#14B8A6]/50'
+    }`}
+  >
     <span
       className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${TONS[tom]}`}
     >
@@ -416,7 +386,6 @@ const ResumoCard = ({
     <div className="min-w-0">
       <p className="text-2xl font-black tabular-nums text-[#0A1128]">{valor}</p>
       <h2 className="text-sm font-black text-[#0A1128]">{titulo}</h2>
-      <p className="mt-1 text-xs font-semibold text-[#64748B]">{descricao}</p>
     </div>
-  </article>
+  </button>
 );

@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { CheckCircle2, LockKeyhole, X } from 'lucide-react';
+import { CheckCircle2, Gift, ImageOff, LockKeyhole, X } from 'lucide-react';
 
 import type { ProgressoConquista } from '../types';
 import { AchievementMedal } from './AchievementMedal';
 import { AchievementProgress } from './AchievementProgress';
-import { AchievementReward } from './AchievementReward';
 import { AchievementTierBadge } from './AchievementTierBadge';
 import {
   obterTierMaisAlto,
@@ -118,17 +117,12 @@ export const AchievementDetailsModal = ({
           </div>
 
           <section className="mt-7" aria-labelledby="achievement-tiers-title">
-            <div className="flex items-center justify-between gap-3">
-              <h3
-                id="achievement-tiers-title"
-                className="text-base font-black text-[#0A1128]"
-              >
-                Tiers
-              </h3>
-              <span className="text-xs font-bold text-[#64748B]">
-                Bronze, prata e ouro
-              </span>
-            </div>
+            <h3
+              id="achievement-tiers-title"
+              className="text-base font-black text-[#0A1128]"
+            >
+              Tiers
+            </h3>
 
             <div className="mt-3 grid gap-3 md:grid-cols-3">
               {ORDEM_TIERS.map((tier) => {
@@ -142,9 +136,11 @@ export const AchievementDetailsModal = ({
                 return (
                   <article
                     key={tier}
-                    className={`flex min-h-64 flex-col rounded-lg border p-4 ${
+                    className={`flex min-h-72 flex-col rounded-lg border p-4 transition-colors ${
                       atual
                         ? 'border-[#14B8A6] bg-[#F3FFFB] shadow-[0_0_0_3px_rgba(20,184,166,0.1)]'
+                        : bloqueado
+                          ? 'border-[#E2E8F0] bg-[#F8FAFC] text-[#94A3B8]'
                         : 'border-[#E2E8F0] bg-white'
                     }`}
                   >
@@ -172,10 +168,18 @@ export const AchievementDetailsModal = ({
                       />
                     </div>
 
-                    <p className="mt-4 text-center text-sm font-black text-[#0A1128]">
+                    <p
+                      className={`mt-4 text-center text-sm font-black ${
+                        bloqueado ? 'text-[#94A3B8]' : 'text-[#0A1128]'
+                      }`}
+                    >
                       Objetivo: {registro.objetivo}
                     </p>
-                    <p className="mt-1 min-h-9 text-center text-xs font-semibold text-[#64748B]">
+                    <p
+                      className={`mt-1 min-h-9 text-center text-xs font-semibold ${
+                        bloqueado ? 'text-[#A8B3C2]' : 'text-[#64748B]'
+                      }`}
+                    >
                       {registro.desbloqueado
                         ? 'Tier conquistado'
                         : atual
@@ -184,27 +188,58 @@ export const AchievementDetailsModal = ({
                     </p>
 
                     <div className="mt-auto pt-4">
-                      <AchievementReward
-                        moedas={registro.moedas}
-                        item={registro.item}
-                        compacto
-                      />
+                      <p
+                        className={`mb-2 text-center text-[10px] font-black uppercase ${
+                          bloqueado ? 'text-[#A8B3C2]' : 'text-[#64748B]'
+                        }`}
+                      >
+                        Item exclusivo
+                      </p>
+                      {registro.item ? (
+                        <div
+                          className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border p-3 text-center ${
+                            bloqueado
+                              ? 'border-[#E2E8F0] bg-[#F1F5F9] grayscale'
+                              : 'border-[#14B8A6]/25 bg-[#ECFDF8]'
+                          }`}
+                        >
+                          <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
+                            {registro.item.previewImagemUrl ?? registro.item.imagemUrl ? (
+                              <img
+                                src={
+                                  registro.item.previewImagemUrl ??
+                                  registro.item.imagemUrl ??
+                                  undefined
+                                }
+                                alt=""
+                                className="h-full w-full object-contain p-1"
+                              />
+                            ) : (
+                              <ImageOff size={18} className="text-[#94A3B8]" aria-hidden="true" />
+                            )}
+                          </span>
+                          <span
+                            className={`text-xs font-black leading-4 ${
+                              bloqueado ? 'text-[#94A3B8]' : 'text-[#0A1128]'
+                            }`}
+                          >
+                            {registro.item.nome}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-3 text-center text-[#94A3B8]">
+                          <Gift size={18} aria-hidden="true" />
+                          <span className="text-xs font-bold">
+                            Sem item exclusivo
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </article>
                 );
               })}
             </div>
           </section>
-
-          <footer className="mt-6 flex justify-end border-t border-[#E2E8F0] pt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-h-11 rounded-lg bg-[#0A1128] px-6 text-sm font-black text-white hover:bg-[#16244A]"
-            >
-              Fechar
-            </button>
-          </footer>
         </div>
       </section>
     </div>
