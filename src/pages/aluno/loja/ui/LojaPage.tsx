@@ -432,12 +432,15 @@ const ModalPreview = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onFechar}
+      onMouseDown={(evento) => {
+        if (evento.target === evento.currentTarget) {
+          onFechar();
+        }
+      }}
       role="presentation"
     >
       <div
         className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-        onClick={(evento) => evento.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`Pré-visualização de ${item.nome}`}

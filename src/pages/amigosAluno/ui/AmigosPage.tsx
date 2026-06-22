@@ -411,6 +411,14 @@ export const AmigosPage = () => {
                         <article
                           key={colega.id}
                           onClick={() => navigate(`/aluno/amigos/${colega.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/aluno/amigos/${colega.id}`);
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
                           className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
@@ -513,6 +521,14 @@ export const AmigosPage = () => {
                         <article
                           key={convite.id}
                           onClick={() => navigate(`/aluno/amigos/${convite.amigo.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/aluno/amigos/${convite.amigo.id}`);
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
                           className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
