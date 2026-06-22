@@ -5,6 +5,11 @@ export {
   listarProgressoConquistas,
 } from './achievementService';
 export { useAchievementStore } from './model/useAchievementStore';
+export { AchievementCard } from './ui/AchievementCard';
+export { AchievementMedal } from './ui/AchievementMedal';
+export { AchievementProgress } from './ui/AchievementProgress';
+export { AchievementReward } from './ui/AchievementReward';
+export { AchievementTierBadge } from './ui/AchievementTierBadge';
 export type {
   ConquistaDesbloqueada,
   ConquistaDestacada,
