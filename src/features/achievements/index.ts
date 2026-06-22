@@ -11,6 +11,7 @@ export { AchievementMedal } from './ui/AchievementMedal';
 export { AchievementProgress } from './ui/AchievementProgress';
 export { AchievementReward } from './ui/AchievementReward';
 export { AchievementTierBadge } from './ui/AchievementTierBadge';
+export { AchievementUnlockModal } from './ui/AchievementUnlockModal';
 export type {
   ConquistaDesbloqueada,
   ConquistaDestacada,

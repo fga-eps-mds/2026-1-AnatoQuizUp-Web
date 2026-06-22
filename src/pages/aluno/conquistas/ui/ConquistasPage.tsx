@@ -8,7 +8,7 @@ import {
   Star,
   Trophy,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   AchievementCard,
@@ -66,6 +66,7 @@ const ResumoSkeleton = () => (
 
 export const ConquistasPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [conquistas, setConquistas] = useState<ProgressoConquista[]>([]);
   const [filtro, setFiltro] = useState<FiltroConquista>('TODAS');
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(QUANTIDADE_INICIAL);
@@ -147,6 +148,22 @@ export const ConquistasPage = () => {
     setFiltro(novoFiltro);
     setQuantidadeVisivel(QUANTIDADE_INICIAL);
   };
+
+  useEffect(() => {
+    const abrirConquistaId = (
+      location.state as { abrirConquistaId?: string } | null
+    )?.abrirConquistaId;
+
+    if (!abrirConquistaId || conquistas.length === 0) return;
+
+    const conquista = conquistas.find((item) => item.id === abrirConquistaId);
+
+    if (conquista) {
+      setConquistaSelecionada(conquista);
+    }
+
+    navigate('/aluno/conquistas', { replace: true, state: null });
+  }, [conquistas, location.state, navigate]);
 
   return (
     <main className="min-h-full bg-[#F8FAFC] px-4 py-6 sm:px-6 lg:px-8">
