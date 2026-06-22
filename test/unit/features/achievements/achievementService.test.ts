@@ -54,7 +54,16 @@ describe('achievementService', () => {
   });
 
   it('lista somente os destaques do aluno', async () => {
-    const destaques = [{ desbloqueioId: 'desbloqueio-1' }];
+    const destaques = [{
+      desbloqueioId: 'desbloqueio-1',
+      conquistaId: 'conquista-1',
+      nome: 'Primeiros passos',
+      descricao: 'Acerte questões.',
+      tier: 'BRONZE',
+      tipoConquista: 'TOTAL_ACERTOS',
+      tema: null,
+      conquistadoEm: '2026-06-22T00:00:00.000Z',
+    }];
     getMock.mockResolvedValueOnce({
       data: { mensagem: 'ok', dados: destaques },
     });

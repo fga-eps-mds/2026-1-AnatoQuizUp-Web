@@ -1,4 +1,4 @@
-import { LockKeyhole, Star } from 'lucide-react';
+import { LockKeyhole, Star, Trophy } from 'lucide-react';
 
 import type { TierConquista, TipoConquista } from '../types';
 import {
@@ -44,8 +44,8 @@ export const AchievementMedal = ({
   tamanho = 'md',
   nome = 'Conquista',
 }: AchievementMedalProps) => {
-  const Icone = ICONE_POR_TIPO[tipo];
-  const estilo = ESTILO_POR_TIER[tier ?? 'BRONZE'];
+  const Icone = ICONE_POR_TIPO[tipo] ?? Trophy;
+  const estilo = ESTILO_POR_TIER[tier ?? 'BRONZE'] ?? ESTILO_POR_TIER.BRONZE;
   const dimensoes = TAMANHOS[tamanho];
 
   return (
