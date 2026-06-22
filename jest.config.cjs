@@ -18,11 +18,20 @@ const config = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^src/shared/config/env(?:\\.ts)?$': '<rootDir>/src/shared/config/__mocks__/env.ts',
+    '^(?:.*\\/)?config/env(?:\\.ts)?$':
+      '<rootDir>/src/shared/config/__mocks__/env.ts',
     '\\.(png|jpg|jpeg|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.ts',
     '\\.(css|less|scss)$': '<rootDir>/src/__mocks__/styleMock.ts',
   },
   coverageReporters: ['text', 'lcov', 'json-summary'],
+  coverageThreshold: {
+    global: {
+      branches: 85,
+      functions: 85,
+      lines: 85,
+      statements: 85,
+    },
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

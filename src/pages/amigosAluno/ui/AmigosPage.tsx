@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import {
   aceitarConvite,
@@ -9,12 +10,16 @@ import {
   buscarColegas,
   desfazerAmizade,
   enviarSolicitacao,
-  listarAmigos,
   listarConvitesEnviados,
   listarConvitesRecebidos,
   recusarConvite,
 } from '../../../features/friendship';
 import type { ResumoAmigo, ResumoAmizade } from '../../../features/friendship';
+import type { EquipadosPorUsuario } from '../../../features/profile-cosmetics';
+import { converterItensEquipadosParaSlots } from '../../../features/profile-cosmetics';
+import { listarAmigosSociais, type ResumoAmigoSocial } from '../../../features/social-profile';
+import { ProfileIdentityCard } from '../../../shared/ui/profile-identity-card';
+import { CardAmigo } from './CardAmigo';
 
 type AbaAmigos = 'buscar' | 'convites' | 'amigos';
 
@@ -55,17 +60,13 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
   </article>
 );
 
-const montarIniciais = (nome: string) => {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.[0] ?? '';
-  const segunda = partes.length > 1 ? partes[partes.length - 1][0] : '';
-
-  return `${primeira}${segunda}`.toUpperCase() || 'A';
-};
-
 export const AmigosPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>('buscar');
+  const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>(
+    (location.state as { aba?: AbaAmigos } | null)?.aba ?? 'buscar',
+  );
   const [termoBusca, setTermoBusca] = useState('');
   const [resultadosBusca, setResultadosBusca] = useState<ResumoAmigo[]>([]);
   const [idsSolicitados, setIdsSolicitados] = useState<Set<string>>(new Set());
@@ -77,13 +78,14 @@ export const AmigosPage = () => {
   const [carregandoConvites, setCarregandoConvites] = useState(true);
   const [erroConvites, setErroConvites] = useState<string | null>(null);
   const [processandoConviteId, setProcessandoConviteId] = useState<string | null>(null);
-  const [amigos, setAmigos] = useState<ResumoAmizade[]>([]);
+  const [amigos, setAmigos] = useState<ResumoAmigoSocial[]>([]);
   const [carregandoAmigos, setCarregandoAmigos] = useState(true);
   const [erroAmigos, setErroAmigos] = useState<string | null>(null);
   const [processandoAmizadeId, setProcessandoAmizadeId] = useState<string | null>(null);
   const [perfilVisivel, setPerfilVisivel] = useState(user?.visivel ?? true);
   const [alterandoPrivacidade, setAlterandoPrivacidade] = useState(false);
   const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
+  const [cosmeticosPorUsuario, setCosmeticosPorUsuario] = useState<EquipadosPorUsuario>({});
 
   useEffect(() => {
     let ativo = true;
@@ -106,9 +108,7 @@ export const AmigosPage = () => {
         }
       } catch (error) {
         if (ativo) {
-          setErroConvites(
-            error instanceof Error ? error.message : 'Erro ao carregar convites.',
-          );
+          setErroConvites(error instanceof Error ? error.message : 'Erro ao carregar convites.');
         }
       } finally {
         if (ativo) {
@@ -122,10 +122,18 @@ export const AmigosPage = () => {
       setErroAmigos(null);
 
       try {
-        const resposta = await listarAmigos({ limit: 100 });
+        const resposta = await listarAmigosSociais({ limit: 100 });
 
         if (ativo) {
           setAmigos(resposta.dados);
+          setCosmeticosPorUsuario(
+            Object.fromEntries(
+              resposta.dados.map((amizade) => [
+                amizade.amigo.id,
+                converterItensEquipadosParaSlots(amizade.cosmeticos),
+              ]),
+            ),
+          );
         }
       } catch (error) {
         if (ativo) {
@@ -187,9 +195,7 @@ export const AmigosPage = () => {
   };
 
   const removerConviteDaLista = (id: string) => {
-    setConvitesRecebidos((convitesAtuais) =>
-      convitesAtuais.filter((convite) => convite.id !== id),
-    );
+    setConvitesRecebidos((convitesAtuais) => convitesAtuais.filter((convite) => convite.id !== id));
   };
 
   const adicionarAmigoDaSolicitacao = (convite: ResumoAmizade) => {
@@ -202,6 +208,8 @@ export const AmigosPage = () => {
         {
           ...convite,
           statusAmizade: 'ATIVO',
+          cosmeticos: [],
+          conquistasDestacadas: [],
         },
         ...amigosAtuais,
       ];
@@ -248,9 +256,7 @@ export const AmigosPage = () => {
       await alterarVisibilidade(proximoValor);
     } catch (error) {
       setPerfilVisivel(!proximoValor);
-      setErroPrivacidade(
-        error instanceof Error ? error.message : 'Erro ao atualizar privacidade.',
-      );
+      setErroPrivacidade(error instanceof Error ? error.message : 'Erro ao atualizar privacidade.');
     } finally {
       setAlterandoPrivacidade(false);
     }
@@ -404,12 +410,26 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={colega.id}
-                          className="flex flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                          onClick={() => navigate(`/aluno/amigos/${colega.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/aluno/amigos/${colega.id}`);
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
+                          className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(colega.nome)}
-                            </span>
+                            <ProfileIdentityCard
+                              identidade={{
+                                nome: colega.nome,
+                                nickname: colega.nickname ?? null,
+                              }}
+                              cosmeticos={cosmeticosPorUsuario[colega.id] ?? {}}
+                              tamanho="sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="truncate text-base font-black text-[#0A1128]">
                                 {colega.nome}
@@ -427,7 +447,10 @@ export const AmigosPage = () => {
 
                           <button
                             type="button"
-                            onClick={() => void handleEnviarSolicitacao(colega.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleEnviarSolicitacao(colega.id);
+                            }}
                             disabled={jaSolicitado || enviando}
                             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#00A88F]/40 px-4 text-sm font-black text-[#008f7a] transition hover:bg-[#71edc8]/15 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#71edc8]/20 disabled:text-[#008f7a]/70"
                           >
@@ -484,13 +507,11 @@ export const AmigosPage = () => {
                     </p>
                   )}
 
-                  {!carregandoConvites &&
-                    convitesRecebidos.length === 0 &&
-                    !erroConvites && (
-                      <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60">
-                        Nenhum convite pendente.
-                      </p>
-                    )}
+                  {!carregandoConvites && convitesRecebidos.length === 0 && !erroConvites && (
+                    <p className="rounded-xl border border-[#0A1128]/10 bg-[#F8FAFC] px-4 py-4 text-sm font-semibold text-[#0A1128]/60">
+                      Nenhum convite pendente.
+                    </p>
+                  )}
 
                   {!carregandoConvites &&
                     convitesRecebidos.map((convite) => {
@@ -499,12 +520,26 @@ export const AmigosPage = () => {
                       return (
                         <article
                           key={convite.id}
-                          className="flex flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                          onClick={() => navigate(`/aluno/amigos/${convite.amigo.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/aluno/amigos/${convite.amigo.id}`);
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
+                          className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(convite.amigo.nome)}
-                            </span>
+                            <ProfileIdentityCard
+                              identidade={{
+                                nome: convite.amigo.nome,
+                                nickname: convite.amigo.nickname ?? null,
+                              }}
+                              cosmeticos={cosmeticosPorUsuario[convite.amigo.id] ?? {}}
+                              tamanho="sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="truncate text-base font-black text-[#0A1128]">
                                 {convite.amigo.nome}
@@ -517,8 +552,7 @@ export const AmigosPage = () => {
                               <p className="text-xs font-semibold text-[#0A1128]/45">
                                 {[
                                   convite.amigo.curso,
-                                  convite.amigo.semestre &&
-                                    `${convite.amigo.semestre} semestre`,
+                                  convite.amigo.semestre && `${convite.amigo.semestre} semestre`,
                                 ]
                                   .filter(Boolean)
                                   .join(' - ') || 'Dados academicos nao informados'}
@@ -529,7 +563,10 @@ export const AmigosPage = () => {
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <button
                               type="button"
-                              onClick={() => void handleAceitarConvite(convite)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleAceitarConvite(convite);
+                              }}
                               disabled={processando}
                               className="min-h-11 rounded-xl bg-[#00A88F] px-5 text-sm font-black text-white transition hover:bg-[#008f7a] disabled:cursor-not-allowed disabled:bg-[#0A1128]/20"
                             >
@@ -537,7 +574,10 @@ export const AmigosPage = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => void handleRecusarConvite(convite.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleRecusarConvite(convite.id);
+                              }}
                               disabled={processando}
                               className="min-h-11 rounded-xl border border-rose-200 px-5 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
                             >
@@ -592,50 +632,24 @@ export const AmigosPage = () => {
                   )}
 
                   {!carregandoAmigos &&
-                    amigos.map((amizade) => {
-                      const processando = processandoAmizadeId === amizade.id;
-
-                      return (
-                        <article
-                          key={amizade.id}
-                          className="flex min-h-[168px] flex-col justify-between rounded-2xl border border-[#0A1128]/10 bg-white p-4 shadow-sm"
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0A1128] text-sm font-black text-[#71edc8]">
-                              {montarIniciais(amizade.amigo.nome)}
-                            </span>
-                            <div className="min-w-0">
-                              <h4 className="truncate text-base font-black text-[#0A1128]">
-                                {amizade.amigo.nome}
-                              </h4>
-                              <p className="text-sm font-semibold text-[#0A1128]/55">
-                                {amizade.amigo.nickname
-                                  ? `@${amizade.amigo.nickname}`
-                                  : 'Sem nickname'}
-                              </p>
-                              <p className="text-xs font-semibold text-[#0A1128]/45">
-                                {[
-                                  amizade.amigo.curso,
-                                  amizade.amigo.semestre &&
-                                    `${amizade.amigo.semestre} semestre`,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' - ') || 'Dados academicos nao informados'}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => void handleDesfazerAmizade(amizade.id)}
-                            disabled={processando}
-                            className="mt-5 min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-black text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#0A1128]/10 disabled:text-[#0A1128]/40"
-                          >
-                            {processando ? 'Removendo...' : 'Desfazer amizade'}
-                          </button>
-                        </article>
-                      );
-                    })}
+                    amigos.map((amizade) => (
+                      <CardAmigo
+                        key={amizade.id}
+                        amizade={amizade}
+                        cosmeticos={cosmeticosPorUsuario[amizade.amigo.id] ?? {}}
+                        conquistasDestacadas={amizade.conquistasDestacadas}
+                        processando={processandoAmizadeId === amizade.id}
+                        onVerPerfil={() =>
+                          navigate(`/aluno/amigos/${amizade.amigo.id}`, {
+                            state: { amizadeId: amizade.id },
+                          })
+                        }
+                        onDesfazer={(event) => {
+                          event.stopPropagation();
+                          void handleDesfazerAmizade(amizade.id);
+                        }}
+                      />
+                    ))}
                 </div>
               </div>
             </div>

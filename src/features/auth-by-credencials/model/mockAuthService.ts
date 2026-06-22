@@ -8,6 +8,7 @@ const DISABLED_EMAIL = 'desativado@unb.br';
 const STUDENT_USER: User = {
   id: '123e4567-e89b-12d3-a456-426614174000',
   name: 'Joao Jose',
+  nickname: 'joaojose',
   email: STUDENT_EMAIL,
   role: 'STUDENT',
   status: 'ACTIVE',
@@ -20,6 +21,7 @@ const STUDENT_USER: User = {
 const PROFESSOR_USER: User = {
   id: '123e4567-e89b-12d3-a456-426614174001',
   name: 'Professor UnB',
+  nickname: null,
   email: PROFESSOR_EMAIL,
   role: 'PROFESSOR',
   status: 'ACTIVE',
@@ -40,6 +42,15 @@ const PROFESSOR_TOKENS: LoginResponse = {
 };
 
 let authenticatedMockUser: User = STUDENT_USER;
+
+export const atualizarUsuarioAutenticadoMock = (
+  dados: Partial<Pick<User, 'name' | 'nickname'>>,
+) => {
+  authenticatedMockUser = {
+    ...authenticatedMockUser,
+    ...dados,
+  };
+};
 
 const getStoredAccessToken = (): string | null => {
   try {
@@ -78,11 +89,11 @@ export const getAuthenticatedUserMock = async (): Promise<User> => {
   const storedAccessToken = getStoredAccessToken();
 
   if (storedAccessToken === PROFESSOR_TOKENS.accessToken) {
-    return PROFESSOR_USER;
+    return authenticatedMockUser.role === 'PROFESSOR' ? authenticatedMockUser : PROFESSOR_USER;
   }
 
   if (storedAccessToken === STUDENT_TOKENS.accessToken) {
-    return STUDENT_USER;
+    return authenticatedMockUser.role === 'STUDENT' ? authenticatedMockUser : STUDENT_USER;
   }
 
   return authenticatedMockUser;

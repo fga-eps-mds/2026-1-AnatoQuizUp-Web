@@ -97,6 +97,7 @@ describe('loginWithCredencials', () => {
     expect(getMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       email: 'aluno@unb.br',
+      nickname: 'joaojose',
       role: 'STUDENT',
       status: 'ACTIVE',
       authProvider: 'LOCAL',
@@ -130,6 +131,7 @@ describe('loginWithCredencials', () => {
           usuario: {
             id: 'user-1',
             nome: 'Professor UnB',
+            nickname: 'prof.anato',
             email: 'professor@unb.br',
             papel: 'PROFESSOR',
             status: 'ATIVO',
@@ -147,6 +149,7 @@ describe('loginWithCredencials', () => {
     expect(result).toEqual({
       id: 'user-1',
       name: 'Professor UnB',
+      nickname: 'prof.anato',
       email: 'professor@unb.br',
       role: 'PROFESSOR',
       status: 'ACTIVE',
@@ -186,6 +189,7 @@ describe('loginWithCredencials', () => {
     expect(result).toMatchObject({
       role,
       status: 'ACTIVE',
+      nickname: null,
       institution: null,
       course: null,
       period: null,

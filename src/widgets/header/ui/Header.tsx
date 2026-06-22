@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
 import logo from "../../../shared/assets/image/logo.png";
 import { useStudentCoinsStore } from "../../../features/student-coins/model/useStudentCoinsStore";
+import { useEquippedCosmeticsStore } from "../../../features/profile-cosmetics";
+import { AvatarCosmetico } from "../../../shared/ui/profile-identity-card";
 
 type NavItem = {
   key: string;
@@ -18,6 +20,7 @@ type NavItem = {
 export const Header = () => {
   const { user, logout } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
+  const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
   const navigate = useNavigate();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -123,6 +126,22 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/aluno/amigos"),
     };
 
+    const studentLojaItem: NavItem = {
+      key: "aluno-loja",
+      label: "Loja",
+      icon: ShoppingBag,
+      onSelect: () => navigate("/aluno/loja"),
+      isActive: location.pathname.startsWith("/aluno/loja"),
+    };
+
+    const studentConquistasItem: NavItem = {
+      key: "aluno-conquistas",
+      label: "Conquistas",
+      icon: Trophy,
+      onSelect: () => navigate("/aluno/conquistas"),
+      isActive: location.pathname.startsWith("/aluno/conquistas"),
+    };
+
     const listasItem: NavItem = {
       key: "listas",
       label: "Listas",
@@ -189,27 +208,34 @@ export const Header = () => {
           studentQuestaoItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
+          studentConquistasItem,
+          studentLojaItem,
           studentHistoricoItem,
         ];
     }
   };
 
   const navItems = buildNavItems(user.role);
-  const initial = user.name?.charAt(0).toUpperCase() || "U";
   const shouldShowCoins = user.role === "STUDENT";
+  const isPerfilAlunoActive = location.pathname.startsWith("/aluno/perfil");
 
   const handleSelect = (item: NavItem) => {
     item.onSelect();
     setIsDrawerOpen(false);
   };
 
+  const handlePerfilAluno = () => {
+    navigate("/aluno/perfil");
+    setIsDrawerOpen(false);
+  };
+
   const sidebarContent = (
     <>
-      <div className="flex items-center justify-center px-4 py-6 border-b border-[#00214d]">
-        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[200px]" />
+      <div className="flex items-center justify-center px-4 py-4 border-b border-[#00214d]">
+        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[170px]" />
       </div>
 
-      <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
+      <nav className="flex-1 py-3 flex flex-col gap-0.5 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const estiloItem = item.isActive
@@ -221,18 +247,18 @@ export const Header = () => {
               key={item.key}
               onClick={() => handleSelect(item)}
               aria-current={item.isActive ? "page" : undefined}
-              className={`cursor-pointer flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
+              className={`cursor-pointer flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
             >
-              <Icon size={22} />
+              <Icon size={20} />
               <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="border-t border-[#00214d] p-4 flex flex-col gap-3">
+      <div className="border-t border-[#00214d] p-3 flex flex-col gap-2.5">
         {shouldShowCoins && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-[#fffffe]">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2.5 text-[#fffffe]">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-[#0A1128] flex items-center justify-center shrink-0">
                 <Coins size={18} />
@@ -247,19 +273,51 @@ export const Header = () => {
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 bg-[#00214d] border border-[#71edc8] rounded-full flex items-center justify-center text-[#71edc8] text-sm font-black shrink-0">
-            {initial}
+        {shouldShowCoins ? (
+          <button
+            type="button"
+            onClick={handlePerfilAluno}
+            aria-current={isPerfilAlunoActive ? "page" : undefined}
+            className={`flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors ${
+              isPerfilAlunoActive ? "bg-[#71edc8]/10" : "hover:bg-[#00214d]"
+            }`}
+          >
+            <div className="shrink-0">
+              <AvatarCosmetico
+                identidade={{ nome: user.name }}
+                cosmeticos={cosmeticos}
+                tamanho="sm"
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-bold text-[#fffffe]">
+                {user.name}
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
+                Meu Perfil
+              </span>
+            </div>
+            <ChevronRight size={16} className="shrink-0 text-[#fffffe]/40" />
+          </button>
+        ) : (
+          <div className="flex items-center gap-3 px-2">
+            <div className="shrink-0">
+              <AvatarCosmetico
+                identidade={{ nome: user.name }}
+                cosmeticos={{}}
+                tamanho="sm"
+              />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-[#fffffe] truncate">
+                {user.name}
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
+                {user.role}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-[#fffffe] truncate">
-              {user.name}
-            </span>
-            <span className="text-[10px] uppercase tracking-widest text-[#fffffe]/40">
-              {user.role}
-            </span>
-          </div>
-        </div>
+        )}
 
         <button
           onClick={() => void handleLogout()}

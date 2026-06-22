@@ -22,6 +22,7 @@ type BackendStatus = 'ATIVO' | 'INATIVO' | 'PENDENTE' | 'RECUSADO';
 interface BackendUsuarioAutenticado {
   id: string;
   nome: string;
+  nickname?: string | null;
   email: string;
   papel: BackendPapel;
   status: BackendStatus;
@@ -57,6 +58,7 @@ const mapPeriodo = (periodo?: string | null): number | null => {
 const mapUsuarioAutenticado = (usuario: BackendUsuarioAutenticado): User => ({
   id: usuario.id,
   name: usuario.nome,
+  nickname: usuario.nickname ?? null,
   email: usuario.email,
   role: mapPapelToRole(usuario.papel),
   status: mapStatusToUserStatus(usuario.status),

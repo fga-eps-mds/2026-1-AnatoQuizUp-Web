@@ -32,7 +32,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     return () => {
       cancelado = true;
     };
-  }, [busca, tentativas]);
+  }, [busca, tentativas, turmaId]);
 
   const handleBaixarPdf = async (listaTurmaId: string, nomeLista: string) => {
     try {

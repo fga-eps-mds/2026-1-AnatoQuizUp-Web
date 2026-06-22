@@ -6,6 +6,7 @@ import { buscarQuestoesQuiz, responderQuestaoQuiz } from '../../../features/rand
 import type { QuizQuestion, QuestaoQuizFeedback } from '../../../features/random-quiz/types';
 import type { ApiQuestionDifficulty } from '../../../features/manage-questions';
 import { useStudentCoinsStore } from '../../../features/student-coins/model/useStudentCoinsStore';
+import { useAchievementStore } from '../../../features/achievements';
 
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
@@ -14,6 +15,9 @@ export const ResponderQuizPage = () => {
   const temaQuery = searchParams.get('tema') || '';
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
   const setSaldoMoedas = useStudentCoinsStore((state) => state.setSaldoMoedas);
+  const adicionarDesbloqueios = useAchievementStore(
+    (state) => state.adicionarDesbloqueios,
+  );
 
   const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
   const [feedback, setFeedback] = useState<QuestaoQuizFeedback & { respostaCorreta?: string } | null>(null);
@@ -129,6 +133,7 @@ export const ResponderQuizPage = () => {
 
       setFeedback(response);
       setSaldoMoedas(response.saldoMoedas);
+      adicionarDesbloqueios(response.conquistasDesbloqueadas ?? []);
       setJaRespondeu(true);
       setIsPaused(true);
       setQuestoesRespondidas(prev => prev + 1);

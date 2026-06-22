@@ -48,3 +48,51 @@
     transform: translateY(0) scale(1);
   }
 }
+
+@keyframes achievement-unlock-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes achievement-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-5vh) rotate(0deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(105vh) rotate(540deg);
+  }
+}
+
+.achievement-unlock-pop {
+  animation: achievement-unlock-pop 420ms ease-out both;
+}
+
+.achievement-confetti {
+  animation: achievement-confetti-fall 1200ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .achievement-unlock-pop,
+  .achievement-confetti {
+    animation: none;
+  }
+}

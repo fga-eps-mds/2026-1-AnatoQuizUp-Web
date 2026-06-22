@@ -16,6 +16,7 @@ import { MinhasTurmasAlunoPage } from "../pages/aluno/minhas-turmas";
 import { TurmaDetalheAlunoPage } from "../pages/aluno/turma";
 import { TurmaDetalhesPage } from "../pages/TurmaDetalhes";
 import { ResponderListaPage } from "../pages/resolucaoLista/ui/ResolucaoListaPage";
+import { PersonalizarPerfilPage } from '../pages/aluno/perfil/personalizar/PersonalizarPerfilPage';
 
 import { ListaPage } from "../pages/lista-professor/ui/ListaPage";
 import { EscolhaQuizPage, ResponderQuizPage } from "../pages/quizAluno";
@@ -27,6 +28,11 @@ import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 
 import { DashboardAlunoPage } from "../pages/dashboardAluno";
 import { AmigosPage } from "../pages/amigosAluno";
+import { AmigoPerfilPage } from "../pages/aluno/amigo";
+import { PerfilAlunoPage } from "../pages/aluno/perfil";
+import { EditarPerfilPage } from "../pages/aluno/perfil/editar";
+import { LojaPage } from "../pages/aluno/loja";
+import { ConquistasPage } from "../pages/aluno/conquistas";
 
 import { NotFoundPage } from '../pages/not-found';
 
@@ -70,6 +76,33 @@ export const AppRouter = () => {
         />
 
         <Route
+          path="/aluno/perfil"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <PerfilAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/perfil/editar"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <EditarPerfilPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/perfil/personalizar"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <PersonalizarPerfilPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/aluno/turmas"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
@@ -101,6 +134,33 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <AmigosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/amigos/:id"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <AmigoPerfilPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/loja"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <LojaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/aluno/conquistas"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ConquistasPage />
             </ProtectedRoute>
           }
         />

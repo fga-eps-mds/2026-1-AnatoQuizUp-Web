@@ -5,6 +5,7 @@ export type AuthProviderType = 'LOCAL' | 'MICROSOFT';
 export interface User {
   id: string;
   name: string;
+  nickname?: string | null;
   email: string;
   role: Role;
   status: UserStatus;
@@ -22,4 +23,5 @@ export interface AuthState {
   isLoading: boolean;
   login: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  recarregarUsuario: () => Promise<void>;
 }
