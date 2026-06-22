@@ -155,18 +155,27 @@ export const ConquistasPage = () => {
   };
 
   useEffect(() => {
-    const abrirConquistaId = (
-      location.state as { abrirConquistaId?: string } | null
-    )?.abrirConquistaId;
+    const estado = location.state as {
+      abrirConquistaId?: string;
+      gerenciarDestaques?: boolean;
+    } | null;
+    const abrirConquistaId = estado?.abrirConquistaId;
 
-    if (!abrirConquistaId || conquistas.length === 0) return;
+    if (conquistas.length === 0) return;
 
-    const conquista = conquistas.find((item) => item.id === abrirConquistaId);
+    if (abrirConquistaId) {
+      const conquista = conquistas.find((item) => item.id === abrirConquistaId);
 
-    if (conquista) {
-      setConquistaSelecionada(conquista);
+      if (conquista) {
+        setConquistaSelecionada(conquista);
+      }
     }
 
+    if (estado?.gerenciarDestaques) {
+      setGerenciandoDestaques(true);
+    }
+
+    if (!abrirConquistaId && !estado?.gerenciarDestaques) return;
     navigate('/aluno/conquistas', { replace: true, state: null });
   }, [conquistas, location.state, navigate]);
 

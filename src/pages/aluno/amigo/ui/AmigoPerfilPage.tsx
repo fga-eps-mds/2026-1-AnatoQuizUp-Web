@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, UserX } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { AchievementHighlights } from '../../../../features/achievements';
 import { desfazerAmizade } from '../../../../features/friendship';
 import { converterItensEquipadosParaSlots } from '../../../../features/profile-cosmetics';
 import type { SlotsCosmeticos } from '../../../../features/profile-cosmetics';
@@ -130,6 +131,8 @@ export const AmigoPerfilPage = () => {
               tamanho="md"
               readOnly
             />
+
+            <AchievementHighlights conquistas={perfil.conquistasDestacadas} />
 
             {amizadeId && (
               <div className="flex flex-col gap-2">

@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronRight, Target, Users } from 'lucide-react';
 
 import { useAuth } from '../../../../app/providers/AuthProvider';
+import {
+  AchievementHighlights,
+  listarConquistasDestacadas,
+  type ConquistaDestacada,
+} from '../../../../features/achievements';
 import { listarAmigos } from '../../../../features/friendship';
 import { useEquippedCosmeticsStore } from '../../../../features/profile-cosmetics';
 import { converterEquipadosParaSlots } from '../../../../features/profile-cosmetics';
@@ -100,18 +105,20 @@ export const PerfilAlunoPage = () => {
     amigos: 0,
   });
   const [carregandoStats, setCarregandoStats] = useState(true);
+  const [conquistasDestacadas, setConquistasDestacadas] = useState<ConquistaDestacada[]>([]);
 
   useEffect(() => {
     let ativo = true;
 
     const carregarStats = async () => {
       // MODIFICAÇÃO: httpClient.get adicionado ao array do Promise.allSettled
-      const [dashboard, amigos, inventario] = await Promise.allSettled([
+      const [dashboard, amigos, inventario, destaques] = await Promise.allSettled([
         httpClient.get<Pick<DashboardAlunoResponse, 'totalRespondidas' | 'taxaAcerto'>>(
           '/dashboardAluno',
         ),
         listarAmigos({ limit: 1 }),
         buscarInventarioCompleto(),
+        listarConquistasDestacadas(),
       ]);
 
       if (!ativo) {
@@ -129,6 +136,9 @@ export const PerfilAlunoPage = () => {
         setCosmeticos(converterEquipadosParaSlots(inventario.value));
       }
 
+      setConquistasDestacadas(
+        destaques.status === 'fulfilled' ? destaques.value : [],
+      );
       setCarregandoStats(false);
     };
 
@@ -202,6 +212,11 @@ export const PerfilAlunoPage = () => {
             onClick={() => navigate('/aluno/amigos', { state: { aba: 'amigos' } })}
           />
         </section>
+
+        <AchievementHighlights
+          conquistas={conquistasDestacadas}
+          onManage={() => navigate('/aluno/conquistas', { state: { gerenciarDestaques: true } })}
+        />
 
         {temItensEmUso && (
           <section aria-label="Itens em uso">

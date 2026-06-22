@@ -621,6 +621,7 @@ export const AmigosPage = () => {
                         key={amizade.id}
                         amizade={amizade}
                         cosmeticos={cosmeticosPorUsuario[amizade.amigo.id] ?? {}}
+                        conquistasDestacadas={amizade.conquistasDestacadas}
                         processando={processandoAmizadeId === amizade.id}
                         onVerPerfil={() =>
                           navigate(`/aluno/amigos/${amizade.amigo.id}`, {

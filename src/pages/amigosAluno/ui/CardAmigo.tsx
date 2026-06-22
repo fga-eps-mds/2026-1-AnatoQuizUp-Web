@@ -1,6 +1,7 @@
 ﻿import { ChevronRight } from 'lucide-react';
 import type { MouseEvent } from 'react';
 
+import { AchievementMedal, type ConquistaDestacada } from '../../../features/achievements';
 import type { ResumoAmizade } from '../../../features/friendship';
 import type { SlotsCosmeticos } from '../../../shared/ui/profile-identity-card';
 import { AvatarCosmetico } from '../../../shared/ui/profile-identity-card';
@@ -8,6 +9,7 @@ import { AvatarCosmetico } from '../../../shared/ui/profile-identity-card';
 export type CardAmigoProps = {
   amizade: ResumoAmizade;
   cosmeticos: SlotsCosmeticos;
+  conquistasDestacadas?: ConquistaDestacada[];
   processando: boolean;
   onVerPerfil: () => void;
   onDesfazer: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -18,6 +20,7 @@ const FUNDO_PADRAO = 'linear-gradient(135deg, #e8f9f4 0%, #c5f5e7 100%)';
 export const CardAmigo = ({
   amizade,
   cosmeticos,
+  conquistasDestacadas = [],
   processando,
   onVerPerfil,
   onDesfazer,
@@ -36,7 +39,17 @@ export const CardAmigo = ({
   return (
     <article
       onClick={onVerPerfil}
-      className="flex min-h-[160px] cursor-pointer overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          (event.key === 'Enter' || event.key === ' ')
+        ) {
+          event.preventDefault();
+          onVerPerfil();
+        }
+      }}
+      className="group relative flex min-h-[160px] cursor-pointer overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]"
     >
       {/* Painel lateral colorido com o fundo do amigo */}
       <div
@@ -77,6 +90,21 @@ export const CardAmigo = ({
               {cursoLabel}
             </p>
           )}
+
+          {conquistasDestacadas.length > 0 && (
+            <div className="mt-3 flex gap-2 sm:hidden" aria-label="Conquistas em destaque">
+              {conquistasDestacadas.slice(0, 3).map((conquista) => (
+                <AchievementMedal
+                  key={conquista.desbloqueioId}
+                  tipo={conquista.tipoConquista}
+                  tier={conquista.tier}
+                  destacada
+                  tamanho="sm"
+                  nome={conquista.nome}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -105,6 +133,33 @@ export const CardAmigo = ({
           </button>
         </div>
       </div>
+
+      {conquistasDestacadas.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 hidden translate-y-2 rounded-xl border border-[#E2E8F0] bg-white/95 p-3 opacity-0 shadow-xl backdrop-blur transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:block">
+          <p className="mb-2 text-[10px] font-black uppercase text-[#64748B]">
+            Conquistas em destaque
+          </p>
+          <div className="flex gap-3">
+            {conquistasDestacadas.slice(0, 3).map((conquista) => (
+              <div
+                key={conquista.desbloqueioId}
+                className="flex min-w-0 flex-1 items-center gap-2"
+              >
+                <AchievementMedal
+                  tipo={conquista.tipoConquista}
+                  tier={conquista.tier}
+                  destacada
+                  tamanho="sm"
+                  nome={conquista.nome}
+                />
+                <span className="line-clamp-2 text-[10px] font-black leading-3 text-[#0A1128]">
+                  {conquista.nome}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </article>
   );
 };
