@@ -137,7 +137,9 @@ export const PerfilAlunoPage = () => {
       }
 
       setConquistasDestacadas(
-        destaques.status === 'fulfilled' ? destaques.value : [],
+        destaques.status === 'fulfilled' && Array.isArray(destaques.value)
+          ? destaques.value
+          : [],
       );
       setCarregandoStats(false);
     };

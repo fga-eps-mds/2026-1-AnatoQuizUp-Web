@@ -44,8 +44,48 @@ type MockZustandState = {
   setCosmeticos: jest.Mock;
 };
 
-const ITEM_CORUJA = { id: 'item-1', nome: 'Coruja', tipo: 'ICONE_PERFIL', equipado: true, valor: '#14b8a6' };
-const ITEM_CEREBRO = { id: 'item-2', nome: 'Cérebro', tipo: 'ICONE_PERFIL', equipado: false, valor: '#00214d' };
+const ITEM_CORUJA = {
+  inventarioId: 'inventario-1',
+  id: 'item-1',
+  codigo: 'coruja',
+  nome: 'Coruja',
+  descricao: null,
+  tipo: 'ICONE_PERFIL',
+  precoMoedas: 0,
+  valor: '#14b8a6',
+  imagemUrl: null,
+  previewImagemUrl: null,
+  ativo: true,
+  equipado: true,
+  origem: 'COMPRA',
+};
+const ITEM_CEREBRO = {
+  inventarioId: 'inventario-2',
+  id: 'item-2',
+  codigo: 'cerebro',
+  nome: 'Cérebro',
+  descricao: null,
+  tipo: 'ICONE_PERFIL',
+  precoMoedas: 0,
+  valor: '#00214d',
+  imagemUrl: null,
+  previewImagemUrl: null,
+  ativo: true,
+  equipado: false,
+  origem: 'COMPRA',
+};
+const ITEM_CORUJA_EQUIPADO = {
+  id: ITEM_CORUJA.id,
+  codigo: ITEM_CORUJA.codigo,
+  nome: ITEM_CORUJA.nome,
+  descricao: ITEM_CORUJA.descricao,
+  tipo: ITEM_CORUJA.tipo,
+  precoMoedas: ITEM_CORUJA.precoMoedas,
+  valor: ITEM_CORUJA.valor,
+  imagemUrl: ITEM_CORUJA.imagemUrl,
+  previewImagemUrl: ITEM_CORUJA.previewImagemUrl,
+  ativo: ITEM_CORUJA.ativo,
+};
 
 describe('PersonalizarPerfilPage', () => {
   beforeEach(() => {
@@ -69,7 +109,7 @@ describe('PersonalizarPerfilPage', () => {
     mockedUseEquippedCosmeticsStore.mockImplementation((selector: unknown) => {
       const state: MockZustandState = {
         cosmeticos: {
-          ICONE_PERFIL: ITEM_CORUJA,
+          ICONE_PERFIL: ITEM_CORUJA_EQUIPADO,
         },
         setCosmeticos: mockSetCosmeticosGlobais,
       };

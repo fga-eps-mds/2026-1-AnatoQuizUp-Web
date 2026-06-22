@@ -12,6 +12,10 @@ jest.mock('../../../../../../src/features/friendship', () => ({
   listarAmigos: jest.fn(),
 }));
 
+jest.mock('../../../../../../src/features/achievements/achievementService', () => ({
+  listarConquistasDestacadas: jest.fn(),
+}));
+
 jest.mock(
   '../../../../../../src/features/profile-cosmetics/cosmeticsService',
   () => ({
@@ -25,6 +29,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../../../../../../src/app/providers/AuthProvider';
+import { listarConquistasDestacadas } from '../../../../../../src/features/achievements';
 import { listarAmigos } from '../../../../../../src/features/friendship';
 import type {
   ItemInventario,
@@ -39,6 +44,7 @@ import { httpClient } from '../../../../../../src/shared/api/httpClient';
 const useAuthMock = useAuth as jest.Mock;
 const httpGetMock = httpClient.get as jest.Mock;
 const listarAmigosMock = listarAmigos as jest.Mock;
+const listarConquistasDestacadasMock = listarConquistasDestacadas as jest.Mock;
 
 const aluno = {
   id: 'aluno-1',
@@ -116,6 +122,7 @@ describe('PerfilAlunoPage', () => {
       },
     });
     listarAmigosMock.mockResolvedValue(respostaAmigos(8));
+    listarConquistasDestacadasMock.mockResolvedValue([]);
   });
 
   it('renderiza identidade do aluno e saldo de ATP', async () => {
