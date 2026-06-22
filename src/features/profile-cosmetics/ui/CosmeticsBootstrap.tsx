@@ -48,7 +48,6 @@ export const CosmeticsBootstrap = () => {
 
     return () => {
       isMounted = false;
-      reset();
     };
   }, [reset, setCosmeticos, setError, setLoading, user?.id, user?.role]);
 

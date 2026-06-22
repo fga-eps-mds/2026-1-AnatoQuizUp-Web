@@ -185,6 +185,31 @@ describe('PersonalizarPerfilPage', () => {
     expect(mockSetCosmeticosGlobais).toHaveBeenCalled();
   });
 
+  it('deve desequipar (PATCH /inventario/desequipar) ao escolher "Nenhum (padrão)" e salvar', async () => {
+    const mockResponse: Partial<AxiosResponse> = {
+      data: {
+        dados: [ITEM_CORUJA, ITEM_CEREBRO],
+      },
+    };
+    mockedHttpClient.get.mockResolvedValueOnce(mockResponse as AxiosResponse);
+    mockedHttpClient.patch.mockResolvedValueOnce({ status: 200 } as AxiosResponse);
+
+    renderWithProviders(<PersonalizarPerfilPage />);
+    await waitFor(() => expect(screen.getByText('Coruja')).toBeInTheDocument());
+
+    // Remove o item equipado escolhendo "Nenhum (padrão)".
+    fireEvent.click(screen.getByText('Nenhum (padrão)'));
+
+    const saveBtn = await screen.findByRole('button', { name: /Salvar alterações/i });
+    fireEvent.click(saveBtn);
+
+    expect(await screen.findByText('Sucesso!')).toBeInTheDocument();
+    expect(mockedHttpClient.patch).toHaveBeenCalledWith('/inventario/desequipar', {
+      itemLojaId: 'item-1',
+    });
+    expect(mockSetCosmeticosGlobais).toHaveBeenCalled();
+  });
+
   it('deve navegar para a loja ao clicar em Ver mais na Loja', async () => {
     const mockResponse: Partial<AxiosResponse> = { data: { dados: [] } };
     mockedHttpClient.get.mockResolvedValueOnce(mockResponse as AxiosResponse);
