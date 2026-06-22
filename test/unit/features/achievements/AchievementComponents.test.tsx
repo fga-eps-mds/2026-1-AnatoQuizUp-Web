@@ -121,6 +121,17 @@ describe('componentes de conquistas', () => {
     expect(screen.getByRole('img')).toHaveAccessibleName(/Conquista/i);
   });
 
+  it('usa uma medalha padrão quando recebe um tipo desconhecido', () => {
+    render(
+      <AchievementMedal
+        tipo={'TIPO_DESCONHECIDO' as TipoConquista}
+        nome="Conquista legada"
+      />,
+    );
+
+    expect(screen.getByRole('img')).toHaveAccessibleName(/Conquista legada/i);
+  });
+
   it('renderiza badges normal, atual e bloqueado', () => {
     const { rerender } = render(<AchievementTierBadge tier="BRONZE" />);
     expect(screen.getByText('Bronze')).toBeInTheDocument();
