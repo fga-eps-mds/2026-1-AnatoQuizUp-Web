@@ -61,15 +61,22 @@ const ResumoSkeleton = () => (
 export const ConquistasPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const estadoNavegacao = location.state as {
+    abrirConquistaId?: string;
+    gerenciarDestaques?: boolean;
+  } | null;
   const [conquistas, setConquistas] = useState<ProgressoConquista[]>([]);
   const [filtro, setFiltro] = useState<FiltroConquista>('DESBLOQUEADAS');
   const [quantidadeVisivel, setQuantidadeVisivel] = useState(QUANTIDADE_INICIAL);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [recarregar, setRecarregar] = useState(0);
-  const [conquistaSelecionada, setConquistaSelecionada] =
-    useState<ProgressoConquista | null>(null);
-  const [gerenciandoDestaques, setGerenciandoDestaques] = useState(false);
+  const [conquistaSelecionadaId, setConquistaSelecionadaId] = useState<string | null>(
+    estadoNavegacao?.abrirConquistaId ?? null,
+  );
+  const [gerenciandoDestaques, setGerenciandoDestaques] = useState(
+    estadoNavegacao?.gerenciarDestaques ?? false,
+  );
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,6 +138,12 @@ export const ConquistasPage = () => {
 
   const conquistasVisiveis = conquistasFiltradas.slice(0, quantidadeVisivel);
   const podeCarregarMais = quantidadeVisivel < conquistasFiltradas.length;
+  const conquistaSelecionada = useMemo(
+    () =>
+      conquistas.find((conquista) => conquista.id === conquistaSelecionadaId) ??
+      null,
+    [conquistaSelecionadaId, conquistas],
+  );
 
   const selecionarFiltro = (novoFiltro: FiltroConquista) => {
     setFiltro(novoFiltro);
@@ -155,29 +168,19 @@ export const ConquistasPage = () => {
   };
 
   useEffect(() => {
-    const estado = location.state as {
-      abrirConquistaId?: string;
-      gerenciarDestaques?: boolean;
-    } | null;
-    const abrirConquistaId = estado?.abrirConquistaId;
-
-    if (conquistas.length === 0) return;
-
-    if (abrirConquistaId) {
-      const conquista = conquistas.find((item) => item.id === abrirConquistaId);
-
-      if (conquista) {
-        setConquistaSelecionada(conquista);
-      }
+    if (
+      !estadoNavegacao?.abrirConquistaId &&
+      !estadoNavegacao?.gerenciarDestaques
+    ) {
+      return;
     }
 
-    if (estado?.gerenciarDestaques) {
-      setGerenciandoDestaques(true);
-    }
-
-    if (!abrirConquistaId && !estado?.gerenciarDestaques) return;
     navigate('/aluno/conquistas', { replace: true, state: null });
-  }, [conquistas, location.state, navigate]);
+  }, [
+    estadoNavegacao?.abrirConquistaId,
+    estadoNavegacao?.gerenciarDestaques,
+    navigate,
+  ]);
 
   return (
     <main className="min-h-full bg-[#F8FAFC] px-4 py-6 sm:px-6 lg:px-8">
@@ -305,7 +308,7 @@ export const ConquistasPage = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConquistaSelecionada(proximaConquista)}
+                    onClick={() => setConquistaSelecionadaId(proximaConquista.id)}
                     className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#ECFDF8] px-5 text-sm font-black text-[#0D9488] hover:bg-[#D8FAEF]"
                   >
                     Ver detalhes
@@ -331,7 +334,7 @@ export const ConquistasPage = () => {
                     <AchievementCard
                       key={conquista.id}
                       conquista={conquista}
-                      onSelect={setConquistaSelecionada}
+                      onSelect={(item) => setConquistaSelecionadaId(item.id)}
                     />
                   ))}
               </div>
@@ -387,7 +390,7 @@ export const ConquistasPage = () => {
       {conquistaSelecionada && (
         <AchievementDetailsModal
           conquista={conquistaSelecionada}
-          onClose={() => setConquistaSelecionada(null)}
+          onClose={() => setConquistaSelecionadaId(null)}
         />
       )}
 
