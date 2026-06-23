@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Info, Save, ShoppingBag, X } from 'lucide-react';
+import { Ban, Check, Info, Save, ShoppingBag, X } from 'lucide-react';
 
 import { useAuth } from '../../../../app/providers/AuthProvider';
 import { useEquippedCosmeticsStore } from '../../../../features/profile-cosmetics';
@@ -111,6 +111,14 @@ export const PersonalizarPerfilPage = () => {
     });
   };
 
+  const removerCosmetico = (tipo: TipoItemLoja) => {
+    setStagedCosmetics((prev) => {
+      const novoStage = { ...prev };
+      delete novoStage[tipo];
+      return novoStage;
+    });
+  };
+
   const descartarAlteracoes = () => {
     setStagedCosmetics(cosmeticosEquipados);
   };
@@ -118,15 +126,22 @@ export const PersonalizarPerfilPage = () => {
   const salvarAlteracoes = async () => {
     setSalvando(true);
     try {
-      const promises = Object.values(stagedCosmetics).map(async (item) => {
-        if (!item) return;
+      const tipos: TipoItemLoja[] = [
+        'ICONE_PERFIL',
+        'MOLDURA',
+        'AVATAR',
+        'TITULO',
+        'PLANO_FUNDO',
+      ];
 
-        const itemOriginal = cosmeticosEquipados[item.tipo];
-        if (itemOriginal?.id !== item.id) {
+      const operacoes = tipos.map(async (tipo) => {
+        const original = cosmeticosEquipados[tipo];
+        const staged = stagedCosmetics[tipo];
+
+        // Equipar: há um item novo/diferente selecionado para o slot.
+        if (staged && staged.id !== original?.id) {
           try {
-            await httpClient.patch('/inventario/equipar', {
-              itemLojaId: item.id,
-            });
+            await httpClient.patch('/inventario/equipar', { itemLojaId: staged.id });
           } catch (error) {
             // Correção de lint: aserção de tipo em vez de 'any'
             const err = error as { response?: { status?: number } };
@@ -134,10 +149,16 @@ export const PersonalizarPerfilPage = () => {
               throw error;
             }
           }
+          return;
+        }
+
+        // Desequipar: o slot tinha um item equipado e foi removido (voltar ao padrão).
+        if (!staged && original) {
+          await httpClient.patch('/inventario/desequipar', { itemLojaId: original.id });
         }
       });
 
-      await Promise.all(promises);
+      await Promise.all(operacoes);
 
       setCosmeticosGlobais(stagedCosmetics);
       setModalSucesso(true);
@@ -237,6 +258,37 @@ export const PersonalizarPerfilPage = () => {
                 <div className="h-32 animate-pulse rounded-xl bg-gray-200" />
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => removerCosmetico(abaAtiva)}
+                    className={`relative flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 bg-white p-4 transition-all ${
+                      !stagedCosmetics[abaAtiva]
+                        ? 'border-[#14b8a6] bg-teal-50/30 shadow-[0_0_0_4px_rgba(20,184,166,0.15)]'
+                        : 'border-gray-100 hover:border-[#14b8a6] hover:shadow-md'
+                    }`}
+                  >
+                    {!stagedCosmetics[abaAtiva] && (
+                      <div className="absolute right-3 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#14b8a6] text-white">
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                    )}
+                    <div className="flex h-24 w-full items-center justify-center">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400">
+                        <Ban size={28} />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-center text-sm font-black leading-tight text-[#00214d]">
+                        Nenhum (padrão)
+                      </span>
+                      {!stagedCosmetics[abaAtiva] && (
+                        <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-teal-600">
+                          Em uso
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
                   {itensDaAbaAtual.map((registro) => {
                     const item = registro.item;
                     const estaEquipado = stagedCosmetics[abaAtiva]?.id === item.id;
