@@ -27,6 +27,8 @@ import { AdminDashboardPage } from "../pages/admin/ui/AdminDashboardPage";
 import { HomeAdminPage } from "../pages/admin/ui/HomeAdminPage";
 
 import { DashboardAlunoPage } from "../pages/dashboardAluno";
+import { RankingAlunoPage } from "../pages/aluno/ranking";
+import { RankingProfessorPage } from "../pages/professor/ranking";
 import { AmigosPage } from "../pages/amigosAluno";
 import { AmigoPerfilPage } from "../pages/aluno/amigo";
 import { PerfilAlunoPage } from "../pages/aluno/perfil";
@@ -130,6 +132,15 @@ export const AppRouter = () => {
         />
 
         <Route
+          path="/aluno/ranking"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <RankingAlunoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/aluno/amigos"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
@@ -208,6 +219,15 @@ export const AppRouter = () => {
               <HomeProfessorPage />
             </ProtectedRoute>
           } 
+        />
+
+        <Route
+          path="/professor/ranking"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR', 'ADMIN']}>
+              <RankingProfessorPage />
+            </ProtectedRoute>
+          }
         />
 
         <Route

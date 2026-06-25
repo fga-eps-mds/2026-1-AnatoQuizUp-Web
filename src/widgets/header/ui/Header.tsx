@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy } from "lucide-react";
+import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -126,6 +126,22 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/aluno/amigos"),
     };
 
+    const studentRankingItem: NavItem = {
+      key: "aluno-ranking",
+      label: "Ranking",
+      icon: Medal,
+      onSelect: () => navigate("/aluno/ranking"),
+      isActive: location.pathname.startsWith("/aluno/ranking"),
+    };
+
+    const professorRankingItem: NavItem = {
+      key: "professor-ranking",
+      label: "Ranking",
+      icon: Medal,
+      onSelect: () => navigate("/professor/ranking"),
+      isActive: location.pathname.startsWith("/professor/ranking"),
+    };
+
     const studentLojaItem: NavItem = {
       key: "aluno-loja",
       label: "Loja",
@@ -174,6 +190,7 @@ export const Header = () => {
           },
           listasItem,
           turmasItem,
+          professorRankingItem,
         ];
 
       case "ADMIN":
@@ -208,6 +225,7 @@ export const Header = () => {
           studentQuestaoItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
+          studentRankingItem,
           studentConquistasItem,
           studentLojaItem,
           studentHistoricoItem,
@@ -231,11 +249,11 @@ export const Header = () => {
 
   const sidebarContent = (
     <>
-      <div className="flex items-center justify-center px-4 py-4 border-b border-[#00214d]">
-        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[170px]" />
+      <div className="flex items-center justify-center px-4 py-2.5 border-b border-[#00214d]">
+        <img src={logo} alt="AnatoQuizUp" className="w-full max-w-[140px]" />
       </div>
 
-      <nav className="flex-1 py-3 flex flex-col gap-0.5 px-3 overflow-y-auto">
+      <nav className="flex-1 min-h-0 py-2 flex flex-col gap-0.5 px-3 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const estiloItem = item.isActive
@@ -247,7 +265,7 @@ export const Header = () => {
               key={item.key}
               onClick={() => handleSelect(item)}
               aria-current={item.isActive ? "page" : undefined}
-              className={`cursor-pointer flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
+              className={`cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-bold transition-colors text-left ${estiloItem}`}
             >
               <Icon size={20} />
               <span>{item.label}</span>
@@ -256,9 +274,9 @@ export const Header = () => {
         })}
       </nav>
 
-      <div className="border-t border-[#00214d] p-3 flex flex-col gap-2.5">
+      <div className="border-t border-[#00214d] p-2.5 flex flex-col gap-2">
         {shouldShowCoins && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2.5 text-[#fffffe]">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2 text-[#fffffe]">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-[#0A1128] flex items-center justify-center shrink-0">
                 <Coins size={18} />
