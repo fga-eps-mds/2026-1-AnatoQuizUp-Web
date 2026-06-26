@@ -315,23 +315,36 @@ export const ResponderQuizPage = () => {
               })}
             </div>
 
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-6">
-                <span className="flex items-center gap-2 text-[10px] text-[#0A1128]/50 font-bold uppercase tracking-wider">
-                  Dificuldade: <span className="bg-[#E6FCFA] text-[#14D5C2] px-2 py-0.5 rounded">{questaoAtual.dificuldade}</span>
+            <div className="mt-8 flex flex-col gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-6">
+                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#0A1128]/50">
+                  Dificuldade:
+                  <span className="rounded bg-[#E6FCFA] px-2 py-0.5 text-[#14D5C2]">
+                    {questaoAtual.dificuldade}
+                  </span>
                 </span>
-                <button className="flex items-center gap-1.5 text-[10px] text-rose-500/70 hover:text-rose-500 font-bold uppercase tracking-wider transition-colors">
-                  <Flag className="w-3 h-3" /> Reportar
+
+                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-500/70 transition-colors hover:text-rose-500">
+                  <Flag className="h-3 w-3" />
+                  Reportar
                 </button>
               </div>
 
-              <div>
+              <div className="w-full sm:w-auto">
                 {jaRespondeu ? (
-                  <button onClick={handleProxima} className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 flex items-center gap-2 shadow-md">
-                    Próxima <ChevronRight className="w-4 h-4" />
+                  <button
+                    onClick={handleProxima}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#14D5C2] px-8 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-md hover:brightness-95 sm:w-auto"
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 ) : (
-                  <button onClick={handleConfirmar} disabled={!alternativaSelecionada || isRespondendo} className="bg-[#14D5C2] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-wide hover:brightness-95 disabled:opacity-50 shadow-md">
+                  <button
+                    onClick={handleConfirmar}
+                    disabled={!alternativaSelecionada || isRespondendo}
+                    className="w-full rounded-full bg-[#14D5C2] px-8 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-md hover:brightness-95 disabled:opacity-50 sm:w-auto"
+                  >
                     {isRespondendo ? 'Enviando...' : 'Confirmar'}
                   </button>
                 )}

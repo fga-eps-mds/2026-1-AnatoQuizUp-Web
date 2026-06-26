@@ -30,11 +30,11 @@ export const ResponderLista = () => {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
         <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-gray-50 text-gray-400"><FileText size={32}/></div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-gray-50 text-gray-400"><FileText size={32} /></div>
           <div className="font-bold text-lg mb-2 text-gray-900">Esta lista ainda não tem questões</div>
           <div className="text-sm text-gray-500 max-w-md">O professor publicou a lista, mas ainda não adicionou questões a ela. Volte mais tarde.</div>
-          <button 
-            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6" 
+          <button
+            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6"
             onClick={() => navigate(`/aluno/turmas/${turmaId}`)}
           >
             Voltar para turma
@@ -48,11 +48,11 @@ export const ResponderLista = () => {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
         <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-amber-100 text-amber-700"><Clock size={32}/></div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-amber-100 text-amber-700"><Clock size={32} /></div>
           <div className="font-bold text-lg mb-2 text-gray-900">O prazo desta lista já encerrou</div>
           <div className="text-sm text-gray-500 max-w-md">Esta lista expirou e não pode mais ser respondida. Aguarde a liberação do gabarito.</div>
-          <button 
-            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6" 
+          <button
+            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6"
             onClick={() => navigate(`/aluno/turmas/${turmaId}`)}
           >
             Voltar para turma
@@ -66,11 +66,11 @@ export const ResponderLista = () => {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
         <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-gray-50 text-gray-400"><Lock size={32}/></div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-gray-50 text-gray-400"><Lock size={32} /></div>
           <div className="font-bold text-lg mb-2 text-gray-900">O gabarito ainda não foi liberado</div>
           <div className="text-sm text-gray-500 max-w-md">Você já submeteu as suas respostas. O gabarito ficará disponível assim que o professor responsável libertar o acesso.</div>
-          <button 
-            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6" 
+          <button
+            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer mx-auto mt-6"
             onClick={() => navigate(`/aluno/turmas/${turmaId}`)}
           >
             Voltar para turma
@@ -99,17 +99,17 @@ export const ResponderLista = () => {
             Gabarito liberado
           </div>
         </div>
-        
+
         <div className="p-6 md:p-7 overflow-y-auto flex-1">
           {lista.questoes.map((q, idx) => {
             const acertou = q.respostaMarcada === q.respostaCorreta;
-            
+
             return (
               <div key={q.id} className="bg-white border border-gray-200 rounded-2xl mb-4 overflow-hidden">
                 <div className="pt-4 px-5 pb-3 flex items-center gap-3 border-b border-gray-100">
                   <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-sm shrink-0">{idx + 1}</div>
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-50 text-gray-500">{q.tema}</span>
-                  
+
                   {acertou ? (
                     <span className="ml-auto px-3 py-1 rounded-md text-xs font-extrabold flex items-center gap-1.5 bg-green-100 text-green-800">
                       <CheckCircle size={14} /> Acertou
@@ -123,7 +123,7 @@ export const ResponderLista = () => {
                 </div>
                 <div className="p-5">
                   <div className="text-[14.5px] font-bold text-gray-900 leading-relaxed mb-4">{q.enunciado}</div>
-                  
+
                   {q.urlImagem && (
                     <div className="mx-0 my-4 h-40 bg-gray-50 border border-dashed border-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
                       <img src={q.urlImagem} alt="Imagem da questão" className="max-h-full max-w-full object-contain" />
@@ -132,14 +132,14 @@ export const ResponderLista = () => {
 
                   <div className="flex flex-col gap-2.5 mt-4">
                     {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
-                      
-                      const labelVisual = q.tipo === 'CERTO_ERRADO' 
-                        ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra) 
+
+                      const labelVisual = q.tipo === 'CERTO_ERRADO'
+                        ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra)
                         : letra;
 
                       const isCorreta = letra === q.respostaCorreta;
                       const isMarcada = letra === q.respostaMarcada;
-                      
+
                       let containerClass = "flex items-center gap-3 p-3 rounded-xl border-2 ";
                       let letterClass = "w-8 h-8 rounded-lg flex shrink-0 items-center justify-center font-extrabold text-sm border-2 ";
                       let tagContent = null;
@@ -179,7 +179,7 @@ export const ResponderLista = () => {
           })}
 
           <div className="mt-6 flex justify-center">
-             <button className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate(`/aluno/turmas/${turmaId}`)}>
+            <button className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate(`/aluno/turmas/${turmaId}`)}>
               <ChevronLeft size={16} /> Voltar para turma
             </button>
           </div>
@@ -197,7 +197,7 @@ export const ResponderLista = () => {
     setSalvando(true);
     try {
       await resolucaoListaApi.autosave(lista.id, q.id, alt);
-      
+
       setLista(prev => {
         if (!prev) return prev;
         const novas = [...prev.questoes];
@@ -255,7 +255,7 @@ export const ResponderLista = () => {
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-gray-50 text-gray-500">{q.tema}</span>
             </div>
             <div className="px-6 pt-4 pb-2 text-base font-bold leading-relaxed text-gray-900">{q.enunciado}</div>
-            
+
             {q.urlImagem && (
               <div className="mx-6 my-3 h-40 bg-gray-50 border border-dashed border-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
                 <img src={q.urlImagem} alt="Imagem da questão" className="max-h-full max-w-full object-contain" />
@@ -265,14 +265,14 @@ export const ResponderLista = () => {
             <div className="px-6 pt-2 pb-6 flex flex-col gap-3">
               {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
                 const isSelected = q.respostaMarcada === letra;
-                
-                const labelVisual = q.tipo === 'CERTO_ERRADO' 
-                  ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra) 
+
+                const labelVisual = q.tipo === 'CERTO_ERRADO'
+                  ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra)
                   : letra;
 
                 return (
-                  <button 
-                    key={letra} 
+                  <button
+                    key={letra}
                     type="button"
                     className={`w-full text-left flex items-center gap-3 border-2 rounded-xl p-3 cursor-pointer transition-all ${isSelected ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200 hover:border-teal-500 hover:bg-teal-50'}`}
                     onClick={() => marcarAlternativa(letra)}
@@ -288,28 +288,36 @@ export const ResponderLista = () => {
           </div>
         </div>
 
-        <div className="px-7 py-4 border-t border-gray-200 bg-white flex items-center justify-between shrink-0">
-          <div className="flex gap-2">
-            <button 
-              className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
-              onClick={() => setQuestaoAtual(p => Math.max(0, p - 1))} 
+        <div className="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+            <button
+              type="button"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-gray-200 px-3 py-2 text-sm font-bold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-4"
+              onClick={() => setQuestaoAtual((p) => Math.max(0, p - 1))}
               disabled={questaoAtual === 0}
             >
-              <ChevronLeft size={16} /> Anterior
+              <ChevronLeft size={16} />
+              Anterior
             </button>
-            <button 
-              className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-4 py-2 border-2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
-              onClick={() => setQuestaoAtual(p => Math.min(total - 1, p + 1))} 
+
+            <button
+              type="button"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-gray-200 px-3 py-2 text-sm font-bold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-4"
+              onClick={() => setQuestaoAtual((p) => Math.min(total - 1, p + 1))}
               disabled={questaoAtual === total - 1}
             >
-              Próxima <ChevronRight size={16} />
+              Próxima
+              <ChevronRight size={16} />
             </button>
           </div>
-          <button 
-            className="inline-flex items-center gap-2 font-bold text-sm rounded-lg px-5 py-2.5 bg-teal-500 text-white hover:bg-teal-600 transition-colors cursor-pointer" 
+
+          <button
+            type="button"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 sm:w-auto"
             onClick={() => setShowConfirmModal(true)}
           >
-            <Check size={16} /> Confirmar submissão
+            <Check size={16} />
+            Confirmar submissão
           </button>
         </div>
       </main>
