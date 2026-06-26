@@ -170,15 +170,15 @@ export const Header = () => {
       case "PROFESSOR":
         return [
           homeProfessorItem,
-          {
-            key: "view-as-student",
-            label: isViewingAsStudent
-              ? "Sair da visão de aluno"
-              : "Ver como aluno",
-            icon: Eye,
-            onSelect: handleToggleStudentView,
-            isActive: isViewingAsStudent,
-          },
+          // {
+          //   key: "view-as-student",
+          //   label: isViewingAsStudent
+          //     ? "Sair da visão de aluno"
+          //     : "Ver como aluno",
+          //   icon: Eye,
+          //   onSelect: handleToggleStudentView,
+          //   isActive: isViewingAsStudent,
+          // },
           {
             key: "questoes",
             label: "Questões",
@@ -221,8 +221,8 @@ export const Header = () => {
       default:
         return [
           homeItem,
-          studentDashboardItem,
           studentQuestaoItem,
+          studentDashboardItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
           studentRankingItem,
