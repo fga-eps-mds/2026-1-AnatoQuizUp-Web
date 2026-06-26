@@ -49,6 +49,7 @@ type BackendQuestion = Partial<Omit<Question, 'tema' | 'alternativas'>> & {
   tema?: string | Partial<QuestionTopic>;
   topic?: string;
   tags?: string[] | string;
+  palavrasChave?: string[] | string;
   type?: string;
   difficulty?: string;
   origem?: string;
@@ -198,7 +199,7 @@ const normalizeAlternatives = (
 const normalizeQuestion = (question: BackendQuestion): ProfessorQuestion => ({
   id: question.id,
   topic: normalizeTopic(question.tema, question.topic),
-  tags: normalizeTags(question.tags),
+  tags: normalizeTags(question.palavrasChave ?? question.tags),
   type: mapTypeFromApi(question.type ?? question.tipo),
   difficulty: mapDifficultyFromApi(question.difficulty ?? question.dificuldade),
   origemQuestao: question.origemQuestao ?? 'ELABORADA_POR_PROFESSOR',
@@ -233,6 +234,7 @@ const buildFormData = (values: QuestionFormValues): FormData => {
   formData.append('origemQuestao', values.origemQuestao || '');
   formData.append('taxonomiaBloom', values.taxonomiaBloom || '');
   formData.append('regiaoAnatomica', (values.regiaoAnatomica || '').trim());
+  formData.append('palavrasChave', (values.tags || '').trim());
 
   const correctAlternative = values.alternatives.find((alt) => alt.isCorrect);
   if (correctAlternative) {
