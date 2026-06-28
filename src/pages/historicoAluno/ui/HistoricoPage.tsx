@@ -5,24 +5,36 @@ import { buscarHistoricoQuiz } from '../../../features/historico-quiz/historicoQ
 import { buscarQuantidadeDeQuestoesPorTema } from '../../../features/random-quiz/randomQuizService';
 import type { ItemHistoricoQuiz } from '../../../features/historico-quiz/types';
 
+/**
+ * Pagina de historico de pratica do aluno: lista as respostas, filtra por tema e
+ * agrupa por data+tema+dificuldade em "sessoes" clicaveis que levam aos detalhes.
+ */
 export const HistoricoPage = () => {
   const navigate = useNavigate();
+  // Itens crus do historico e os temas disponiveis para filtro.
   const [historicoBruto, setHistoricoBruto] = useState<ItemHistoricoQuiz[]>([]);
   const [temasFiltro, setTemasFiltro] = useState<{ nome: string }[]>([]);
   const [temaSelecionado, setTemaSelecionado] = useState<string>('Todos');
 
+  // Estado de carga e controle de paginacao.
   const [isLoading, setIsLoading] = useState(true);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalItens, setTotalItens] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const limit = 50;
 
+  // Carrega os temas disponiveis para os botoes de filtro (uma vez).
   useEffect(() => {
     buscarQuantidadeDeQuestoesPorTema()
       .then(res => setTemasFiltro(res))
       .catch(err => console.error('Erro ao carregar filtros', err));
   }, []);
 
+  /**
+   * Busca uma pagina do historico aplicando o filtro de tema.
+   * @param page Pagina solicitada.
+   * @param tema Tema selecionado ('Todos' = sem filtro).
+   */
   const carregarHistorico = async (page: number, tema: string) => {
     try {
       setIsLoading(true);
@@ -46,6 +58,7 @@ export const HistoricoPage = () => {
     }
   };
 
+  // Recarrega a primeira pagina sempre que o tema selecionado muda.
   useEffect(() => {
     let deveAtualizarEstado = true;
 
@@ -76,10 +89,12 @@ export const HistoricoPage = () => {
     };
   }, [temaSelecionado]);
 
+  // Agrupa as respostas em sessoes pela combinacao data + tema + dificuldade.
   const sessoesAgrupadas = useMemo(() => {
     const grupos: Record<string, ItemHistoricoQuiz[]> = {};
 
     historicoBruto.forEach(item => {
+      // A chave composta define o que e considerado uma mesma sessao de estudo.
       const data = new Date(item.criadoEm).toLocaleDateString('pt-BR');
       const tema = item.questao.tema.nome;
       const dificuldade = item.questao.dificuldade;
@@ -117,6 +132,7 @@ export const HistoricoPage = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Barra de filtros por tema (rolavel horizontalmente). */}
           <div className="p-4 border-b border-gray-100 overflow-x-auto custom-scrollbar">
             <div className="flex gap-2 min-w-max">
               <button
@@ -158,6 +174,7 @@ export const HistoricoPage = () => {
                 <p className="text-[#0A1128]/50 text-sm mt-1">Você não tem histórico para este filtro.</p>
               </div>
             ) : (
+              /* Cada sessao agrupada vira um cartao clicavel que abre os detalhes. */
               <div className="flex flex-col gap-3">
                 {sessoesAgrupadas.map((sessao) => (
                   <button
@@ -201,6 +218,7 @@ export const HistoricoPage = () => {
             )}
           </div>
 
+          {/* Controles de paginacao (anterior / pagina atual / proxima). */}
           {!isLoading && sessoesAgrupadas.length > 0 && (
             <div className="p-6 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50">
               <p className="text-sm font-medium text-[#0A1128]/50">

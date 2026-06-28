@@ -5,7 +5,12 @@ interface GraficoTemasProps {
   temas: TemaDesempenho[];
 }
 
+/**
+ * Grafico de barras horizontal com a taxa de acerto por tema da turma.
+ * A cor da barra/badge reflete o status (Tranquilo/Atencao/Critico) de cada tema.
+ */
 export const GraficoTemas = ({ temas }: GraficoTemasProps) => {
+  // Retorna, num unico string, as classes de cor da barra, do texto e do badge.
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Tranquilo': return 'bg-green-500 text-green-700 bg-green-100';
@@ -32,6 +37,7 @@ export const GraficoTemas = ({ temas }: GraficoTemasProps) => {
         </div>
 
         {temas.map((tema) => {
+          // Separa as classes combinadas em cor da barra, do texto e do fundo do badge.
           const colors = getStatusColor(tema.status).split(' ');
           const barColor = colors[0];
           const textColor = colors[1];

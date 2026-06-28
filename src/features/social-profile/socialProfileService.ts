@@ -1,3 +1,5 @@
+// Servico do perfil social. Busca os perfis sociais dos amigos (com cosmeticos e
+// conquistas em destaque) e o perfil social publico de um usuario especifico.
 import { httpClient } from '../../shared/api/httpClient';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
 import type {
@@ -7,6 +9,7 @@ import type {
   RespostaPerfilSocial,
 } from './types';
 
+// GET /amizade/amigos/perfis — lista os perfis sociais dos amigos do usuario.
 export const listarAmigosSociais = async (
   params?: ListarAmigosSociaisParams,
 ): Promise<RespostaAmigosSociais> => {
@@ -21,6 +24,7 @@ export const listarAmigosSociais = async (
   }
 };
 
+// GET /perfis/:usuarioId/social — busca o perfil social publico de um usuario.
 export const buscarPerfilSocial = async (usuarioId: string): Promise<PerfilSocial> => {
   try {
     const { data } = await httpClient.get<RespostaPerfilSocial>(`/perfis/${usuarioId}/social`);

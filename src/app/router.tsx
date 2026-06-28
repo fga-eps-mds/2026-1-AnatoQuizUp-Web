@@ -38,15 +38,22 @@ import { ConquistasPage } from "../pages/aluno/conquistas";
 
 import { NotFoundPage } from '../pages/not-found';
 
+/**
+ * Tabela de rotas da aplicacao. Reune as rotas publicas (login/cadastro/recuperacao)
+ * e, dentro do layout autenticado, as rotas protegidas por papel (aluno/professor/admin)
+ * via ProtectedRoute. Qualquer caminho desconhecido cai na pagina 404.
+ */
 export const AppRouter = () => {
   return (
     <Routes>
+      {/* Rotas publicas: autenticacao e recuperacao de senha. */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
       <Route path="/professor/cadastro" element={<ProfessorRegisterPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-    
+
+      {/* Raiz redireciona para a home publica. */}
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
 
@@ -58,6 +65,7 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
+        {/* Rotas do aluno (papel STUDENT): home, dashboard, perfil, turmas, ranking, etc. */}
         <Route
           path="/aluno/home"
           element={
@@ -176,7 +184,8 @@ export const AppRouter = () => {
           }
         />
 
-        <Route 
+        {/* Fluxo de quiz avulso e historico do aluno. */}
+        <Route
           path="/aluno/quiz/escolha"
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
@@ -212,13 +221,14 @@ export const AppRouter = () => {
           } 
         />
 
-        <Route 
+        {/* Rotas do professor (e admin onde aplicavel): home, ranking, questoes, listas e turmas. */}
+        <Route
           path="/professor/home"
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR']}>
               <HomeProfessorPage />
             </ProtectedRoute>
-          } 
+          }
         />
 
         <Route
@@ -296,6 +306,7 @@ export const AppRouter = () => {
         
       </Route>
 
+      {/* Rota coringa: qualquer caminho nao mapeado exibe a pagina 404. */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

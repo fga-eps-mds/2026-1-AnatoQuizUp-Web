@@ -9,19 +9,23 @@ import type { UsuarioPublico } from '../../../entities/usuarios/model/types';
 
 import { ListagemListas } from '../../resolucaoLista/ui/ListagemListas'; 
 
+// Estados possiveis do carregamento da turma.
 type EstadoDetalhe = 'carregando' | 'sucesso' | 'erro' | 'nao-encontrada';
 
+// Formato cru da turma vindo da API, com variacoes do contador de alunos.
 interface TurmaApi extends Omit<Turma, 'quantidadeAlunos'> {
   quantidadeAlunos?: number;
   _count?: { alunos?: number };
   professorId: string;
 }
 
+// Envelope generico de resposta da API.
 interface RespostaApi<T> {
   mensagem?: string;
   dados: T;
 }
 
+/** Normaliza a turma da API, unificando as variacoes do total de alunos em `quantidadeAlunos`. */
 const normalizarTurma = (turma: TurmaApi): Turma & { professorId: string } => {
   const { _count, quantidadeAlunos, ...resto } = turma;
   return {
@@ -30,14 +34,18 @@ const normalizarTurma = (turma: TurmaApi): Turma & { professorId: string } => {
   };
 };
 
+/** Busca uma turma por id e retorna ja normalizada. */
 const buscarTurma = async (id: string) => {
   const response = await httpClient.get<RespostaApi<TurmaApi>>(`/turmas/${id}`);
   return normalizarTurma(response.data.dados);
 };
 
+/** Indica se o erro do axios corresponde a um 404 (turma nao encontrada). */
 const ehErroNaoEncontrado = (erro: unknown) => {
   return axios.isAxiosError(erro) && erro.response?.status === 404;
 };
+
+// Subcomponentes de estado (carregando / nao encontrada / erro) exibidos antes do conteudo.
 
 const EstadoCarregando = () => (
   <div className="flex flex-1 items-center justify-center min-h-[400px]">
@@ -75,14 +83,20 @@ const EstadoErro = ({ onVoltar }: { onVoltar: () => void }) => (
   </div>
 );
 
+/**
+ * Detalhe de uma turma para o aluno: cabecalho com nome/professor e a listagem de
+ * listas publicadas. Carrega a turma e o professor, tratando estados de erro/404.
+ */
 export const DetalheTurma = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  
+
+  // Turma, professor e estado da tela (sem id na rota ja inicia como nao encontrada).
   const [turma, setTurma] = useState<(Turma & { professorId: string }) | null>(null);
   const [professor, setProfessor] = useState<UsuarioPublico | null>(null);
   const [estado, setEstado] = useState<EstadoDetalhe>(id ? 'carregando' : 'nao-encontrada');
 
+  // Carrega a turma e, em seguida, o professor; a flag evita setState apos unmount.
   useEffect(() => {
     if (!id) return undefined;
     let cancelado = false;
@@ -113,6 +127,7 @@ export const DetalheTurma = () => {
 
   const voltar = () => navigate('/aluno/turmas');
 
+  // Retornos antecipados para cada estado nao-sucesso.
   if (estado === 'carregando') return <EstadoCarregando />;
   if (estado === 'erro') return <EstadoErro onVoltar={voltar} />;
   if (estado === 'nao-encontrada') return <EstadoNaoEncontrada onVoltar={voltar} />;

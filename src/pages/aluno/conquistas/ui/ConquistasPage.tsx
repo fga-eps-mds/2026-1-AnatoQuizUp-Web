@@ -1,3 +1,7 @@
+// Pagina de conquistas (gamificacao) do aluno. Lista o progresso por conquista
+// agrupado em desbloqueadas/em progresso/bloqueadas, destaca o "proximo
+// desbloqueio" mais perto de completar e permite gerenciar quais conquistas
+// ficam em destaque no perfil.
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
@@ -21,19 +25,29 @@ import {
   type ProgressoConquista,
 } from '../../../../features/achievements';
 
+// Filtro/categoria de conquistas exibida na pagina.
 type FiltroConquista = 'DESBLOQUEADAS' | 'EM_PROGRESSO' | 'BLOQUEADAS';
 
+// Quantidade de cards exibidos inicialmente (o resto entra via "Carregar mais").
 const QUANTIDADE_INICIAL = 6;
 
+// Conquista desbloqueada: possui ao menos um tier ja conquistado.
 const possuiTierDesbloqueado = (conquista: ProgressoConquista) =>
   conquista.tiers.some((tier) => tier.desbloqueado);
 
+// Em progresso: ainda ha proximo tier e ja houve algum avanco.
 const estaEmProgresso = (conquista: ProgressoConquista) =>
   conquista.proximoTier !== null && conquista.valorProgresso > 0;
 
+// Bloqueada: nenhum tier desbloqueado ainda.
 const estaBloqueada = (conquista: ProgressoConquista) =>
   !possuiTierDesbloqueado(conquista);
 
+/**
+ * Decide se uma conquista pertence ao filtro selecionado.
+ * @param conquista conquista a testar
+ * @param filtro categoria atual
+ */
 const filtrarConquista = (
   conquista: ProgressoConquista,
   filtro: FiltroConquista,
@@ -43,6 +57,7 @@ const filtrarConquista = (
   return estaBloqueada(conquista);
 };
 
+// Placeholder animado exibido enquanto o resumo (3 cards) ainda esta carregando.
 const ResumoSkeleton = () => (
   <div className="grid gap-3 sm:grid-cols-3">
     {[0, 1, 2].map((item) => (
@@ -58,9 +73,14 @@ const ResumoSkeleton = () => (
   </div>
 );
 
+/**
+ * Componente de pagina das conquistas do aluno. Carrega o progresso, deriva o
+ * resumo e a proxima conquista, e controla os modais de detalhes e de destaques.
+ */
 export const ConquistasPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  // Estado de navegacao opcional: pode pedir para abrir uma conquista ou o modal de destaques.
   const estadoNavegacao = location.state as {
     abrirConquistaId?: string;
     gerenciarDestaques?: boolean;
@@ -79,6 +99,7 @@ export const ConquistasPage = () => {
   );
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
+  // Carrega o progresso de todas as conquistas ao montar e a cada nova tentativa.
   useEffect(() => {
     let ativo = true;
 
@@ -112,6 +133,7 @@ export const ConquistasPage = () => {
     };
   }, [recarregar]);
 
+  // Contagens por categoria, exibidas nos tres cards-resumo (que tambem filtram).
   const resumo = useMemo(() => {
     const desbloqueadas = conquistas.filter(possuiTierDesbloqueado).length;
     const emProgresso = conquistas.filter(estaEmProgresso).length;
@@ -120,6 +142,7 @@ export const ConquistasPage = () => {
     return { desbloqueadas, emProgresso, bloqueadas };
   }, [conquistas]);
 
+  // Conquista mais perto de concluir: maior percentual primeiro (desempate por nome).
   const proximaConquista = useMemo(
     () =>
       conquistas
@@ -131,6 +154,7 @@ export const ConquistasPage = () => {
     [conquistas],
   );
 
+  // Conquistas que passam pelo filtro atual, e o subconjunto realmente visivel.
   const conquistasFiltradas = useMemo(
     () => conquistas.filter((conquista) => filtrarConquista(conquista, filtro)),
     [conquistas, filtro],
@@ -138,6 +162,7 @@ export const ConquistasPage = () => {
 
   const conquistasVisiveis = conquistasFiltradas.slice(0, quantidadeVisivel);
   const podeCarregarMais = quantidadeVisivel < conquistasFiltradas.length;
+  // Conquista cujo modal de detalhes esta aberto (se houver).
   const conquistaSelecionada = useMemo(
     () =>
       conquistas.find((conquista) => conquista.id === conquistaSelecionadaId) ??
@@ -145,11 +170,17 @@ export const ConquistasPage = () => {
     [conquistaSelecionadaId, conquistas],
   );
 
+  // Troca o filtro e reseta a paginacao para a quantidade inicial.
   const selecionarFiltro = (novoFiltro: FiltroConquista) => {
     setFiltro(novoFiltro);
     setQuantidadeVisivel(QUANTIDADE_INICIAL);
   };
 
+  /**
+   * Aplica localmente o novo conjunto de destaques apos salvar no modal,
+   * marcando cada tier como destacado conforme os ids retornados.
+   * @param desbloqueiosDestacados ids dos desbloqueios marcados como destaque
+   */
   const atualizarDestaques = (desbloqueiosDestacados: Set<string>) => {
     setConquistas((atuais) =>
       atuais.map((conquista) => ({
@@ -167,6 +198,7 @@ export const ConquistasPage = () => {
     window.setTimeout(() => setMensagemSucesso(null), 3500);
   };
 
+  // Limpa o estado de navegacao apos consumi-lo, evitando reabrir o modal ao voltar.
   useEffect(() => {
     if (
       !estadoNavegacao?.abrirConquistaId &&
@@ -218,6 +250,7 @@ export const ConquistasPage = () => {
           </div>
         )}
 
+        {/* Resumo: tres cards clicaveis que tambem funcionam como filtros. */}
         {carregando ? (
           <ResumoSkeleton />
         ) : (
@@ -268,6 +301,7 @@ export const ConquistasPage = () => {
 
         {!erro && (
           <div className="flex flex-col gap-5">
+            {/* Destaque do proximo desbloqueio: a conquista mais perto de completar. */}
             <section className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
               <h2 className="text-base font-black text-[#0A1128]">
                 Próximo desbloqueio
@@ -420,6 +454,14 @@ const TONS = {
   rose: 'bg-[#FFE4E6] text-[#E11D48]',
 };
 
+/**
+ * Card-resumo clicavel que mostra a contagem de uma categoria e atua como filtro.
+ * @param valor quantidade de conquistas na categoria
+ * @param titulo rotulo da categoria
+ * @param tom cor do card (teal/amber/rose)
+ * @param ativo indica se este filtro esta selecionado
+ * @param onClick seleciona este filtro
+ */
 const ResumoCard = ({
   icon: Icon,
   valor,

@@ -1,3 +1,6 @@
+// Tela de gerenciamento de turmas do professor. Exibe as turmas em tabela com
+// busca e filtros (ano, semestre, status) e oferece criar, editar, excluir,
+// gerenciar alunos e vincular listas via modais.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
@@ -23,20 +26,28 @@ import { ModalGerenciarAlunos } from './ModalGerenciarAlunos';
 import { ModalTurma } from './ModalTurma';
 import { ModalVincularLista } from './ModalVincularLista';
 
+// Tipo do toast: sucesso ou erro.
 type ToastType = 'success' | 'error';
 
+// Estado do toast atualmente exibido.
 interface ToastState {
   id: number;
   message: string;
   type: ToastType;
 }
 
+// Anos disponiveis no filtro: do proximo ano ate dois anos atras.
 const anosDisponiveis = () => {
   const anoAtual = new Date().getFullYear();
   return [anoAtual + 1, anoAtual, anoAtual - 1, anoAtual - 2];
 };
 
+/**
+ * Componente da tela de turmas. Mantem o estado dos dados, dos filtros e dos
+ * quatro modais (criar/editar, alunos, vincular lista e excluir).
+ */
 export const ListaTurmas = () => {
+  // Dados e estado dos filtros de busca/status/ano/semestre, alem da chave de refresh.
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [busca, setBusca] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
@@ -55,12 +66,15 @@ export const ListaTurmas = () => {
   const [isSavingTurma, setIsSavingTurma] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  // Lista de anos do filtro, calculada uma unica vez.
   const anos = useMemo(() => anosDisponiveis(), []);
 
+  // Dispara um toast (id baseado no tempo reinicia o temporizador de ocultacao).
   const mostrarToast = useCallback((message: string, type: ToastType = 'success') => {
     setToast({ id: Date.now(), message, type });
   }, []);
 
+  // Esconde o toast automaticamente apos alguns segundos.
   useEffect(() => {
     if (!toast) return undefined;
 
@@ -71,6 +85,7 @@ export const ListaTurmas = () => {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  // Busca as turmas sempre que os filtros mudam ou ao pedir atualizacao.
   useEffect(() => {
     const fetchTurmas = async () => {
       try {
@@ -90,45 +105,57 @@ export const ListaTurmas = () => {
     void fetchTurmas();
   }, [anoFiltro, atualizarLista, busca, mostrarToast, semestreFiltro, statusFiltro]);
 
+  // Forca uma nova busca das turmas.
   const atualizarTurmas = () => {
     setAtualizarLista((prev) => prev + 1);
   };
 
+  // Abre o modal de confirmacao de exclusao para a turma escolhida.
   const handleAbrirModalExcluir = (turma: Turma) => {
     setTurmaSelecionada(turma);
     setIsModalExcluirOpen(true);
   };
 
+  // Abre o modal de turma em modo de criacao.
   const handleAbrirModalCriar = () => {
     setModoModalTurma('create');
     setTurmaSelecionada(null);
     setIsModalTurmaOpen(true);
   };
 
+  // Abre o modal de turma em modo de edicao com a turma escolhida.
   const handleAbrirModalEditar = (turma: Turma) => {
     setModoModalTurma('edit');
     setTurmaSelecionada(turma);
     setIsModalTurmaOpen(true);
   };
 
+  // Abre o modal de gerenciamento de alunos da turma.
   const handleAbrirModalAlunos = (turma: Turma) => {
     setTurmaAlunos(turma);
     setIsModalAlunosOpen(true);
   };
 
+  // Abre o modal de vinculo de listas (a presenca da turma controla o isOpen).
   const handleAbrirModalVincularLista = (turma: Turma) => {
     setTurmaParaVincularLista(turma);
   };
 
+  // Fecha o modal de vinculo de listas.
   const handleFecharModalVincularLista = () => {
     setTurmaParaVincularLista(null);
   };
 
+  // Fecha o modal de criar/editar turma.
   const handleFecharModalTurma = () => {
     setIsModalTurmaOpen(false);
     setTurmaSelecionada(null);
   };
 
+  /**
+   * Cria ou atualiza a turma conforme o modo do modal, exibe feedback e recarrega.
+   * @param payload dados da turma vindos do formulario do modal
+   */
   const handleSalvarTurma = async (payload: SalvarTurmaPayload) => {
     setIsSavingTurma(true);
 
@@ -151,6 +178,7 @@ export const ListaTurmas = () => {
     }
   };
 
+  // Confirma a exclusao da turma selecionada, fecha o modal e recarrega a lista.
   const handleConfirmarExclusao = async () => {
     if (!turmaSelecionada) return;
 
@@ -202,6 +230,7 @@ export const ListaTurmas = () => {
         </button>
       </div>
 
+      {/* Barra de filtros: busca por nome + selects de ano, semestre e status. */}
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <div className="flex min-w-64 flex-1 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus-within:border-teal-500 focus-within:ring-1 focus-within:ring-teal-500">
           <Search size={18} className="text-gray-400" />
@@ -266,6 +295,7 @@ export const ListaTurmas = () => {
               <th className="px-6 py-4">Ações</th>
             </tr>
           </thead>
+          {/* Uma linha por turma, com acoes; se vazio, mostra mensagem ao final. */}
           <tbody className="divide-y divide-gray-200">
             {turmas.map((turma) => (
               <tr key={turma.id} className="hover:bg-gray-50/50">
@@ -348,6 +378,7 @@ export const ListaTurmas = () => {
         </table>
       </div>
 
+      {/* Modais sempre montados; controlados pelas respectivas flags isOpen. */}
       <ModalTurma
         key={`${modoModalTurma}-${turmaSelecionada?.id ?? 'nova'}-${isModalTurmaOpen ? 'open' : 'closed'}`}
         isOpen={isModalTurmaOpen}

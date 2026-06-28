@@ -9,6 +9,10 @@ type AchievementHighlightsProps = {
   compact?: boolean;
 };
 
+/**
+ * Vitrine das conquistas em destaque do perfil (ate tres medalhas).
+ * Opcionalmente oferece o atalho "Gerenciar destaques" e um modo compacto.
+ */
 export const AchievementHighlights = ({
   conquistas = [],
   onManage,
@@ -38,6 +42,7 @@ export const AchievementHighlights = ({
       )}
     </div>
 
+    {/* Mostra ate as 3 primeiras conquistas destacadas, ou um aviso de vazio. */}
     {conquistas.length > 0 ? (
       <div className={`mt-4 flex flex-wrap ${compact ? 'gap-3' : 'justify-center gap-7'}`}>
         {conquistas.slice(0, 3).map((conquista) => (

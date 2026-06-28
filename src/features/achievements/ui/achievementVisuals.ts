@@ -1,3 +1,8 @@
+/**
+ * Constantes e helpers visuais compartilhados pelos componentes de conquistas:
+ * ordem dos tiers, icones e rotulos por tipo, estilos (gradientes/badges) por tier
+ * e utilitario para descobrir o tier mais alto ja desbloqueado.
+ */
 import {
   Brain,
   Flame,
@@ -8,8 +13,10 @@ import {
 
 import type { TierConquista, TipoConquista } from '../types';
 
+// Ordem crescente dos tiers, usada para iterar e comparar progresso.
 export const ORDEM_TIERS: TierConquista[] = ['BRONZE', 'PRATA', 'OURO'];
 
+// Icone (lucide) associado a cada tipo de conquista.
 export const ICONE_POR_TIPO: Record<TipoConquista, LucideIcon> = {
   TOTAL_ACERTOS: Footprints,
   TOTAL_ACERTOS_TEMA: Brain,
@@ -17,6 +24,7 @@ export const ICONE_POR_TIPO: Record<TipoConquista, LucideIcon> = {
   PERCENTUAL_ACERTO_TEMA: Percent,
 };
 
+// Rotulo legivel em PT-BR para cada tipo de conquista.
 export const ROTULO_POR_TIPO: Record<TipoConquista, string> = {
   TOTAL_ACERTOS: 'Total de acertos',
   TOTAL_ACERTOS_TEMA: 'Acertos no tema',
@@ -24,6 +32,7 @@ export const ROTULO_POR_TIPO: Record<TipoConquista, string> = {
   PERCENTUAL_ACERTO_TEMA: 'Domínio do tema',
 };
 
+// Conjunto de classes Tailwind por tier: rotulo, badge, gradiente da medalha, aro e brilho.
 export const ESTILO_POR_TIER: Record<
   TierConquista,
   {
@@ -57,9 +66,14 @@ export const ESTILO_POR_TIER: Record<
   },
 };
 
+/**
+ * Retorna o tier mais alto que ja foi desbloqueado, ou null se nenhum foi.
+ * @param tiers Lista de tiers da conquista com seu estado de desbloqueio.
+ */
 export const obterTierMaisAlto = (
   tiers: Array<{ tier: TierConquista; desbloqueado: boolean }>,
 ): TierConquista | null => {
+  // Filtra na ordem oficial e pega o ultimo (mais alto) desbloqueado.
   const desbloqueados = ORDEM_TIERS.filter((tier) =>
     tiers.some((registro) => registro.tier === tier && registro.desbloqueado),
   );

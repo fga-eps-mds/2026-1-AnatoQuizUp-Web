@@ -14,6 +14,10 @@ type ErrorBoundaryState = {
   hasError: boolean;
 };
 
+/**
+ * Limite de erro (error boundary) da aplicacao: captura erros de renderizacao na
+ * arvore filha e, em vez de quebrar a tela, exibe o ErrorFallback com opcao de retry.
+ */
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -22,12 +26,14 @@ export class ErrorBoundary extends Component<
     hasError: false,
   };
 
+  // Marca o estado de erro quando um filho lanca durante a renderizacao.
   static getDerivedStateFromError(): ErrorBoundaryState {
     return {
       hasError: true,
     };
   }
 
+  // Loga o erro capturado (com a stack do React) para diagnostico.
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error(
       'Erro de renderização capturado pelo ErrorBoundary:',
@@ -36,6 +42,7 @@ export class ErrorBoundary extends Component<
     );
   }
 
+  // Limpa o estado de erro para tentar renderizar a arvore novamente.
   private handleRetry = () => {
     this.setState({
       hasError: false,

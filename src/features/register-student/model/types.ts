@@ -1,3 +1,6 @@
+// Tipos do formulario de cadastro de aluno.
+
+// Valores dos campos do formulario (nomes em ingles, como na UI).
 export type RegisterStudentFormValues = {
   fullName: string;
   nickname: string;
@@ -14,6 +17,7 @@ export type RegisterStudentFormValues = {
   period: string;
 };
 
+// Uniao das chaves de campo, usada para indexar erros por campo.
 export type RegisterStudentField =
   | 'fullName'
   | 'nickname'
@@ -29,8 +33,10 @@ export type RegisterStudentField =
   | 'course'
   | 'period';
 
+// Mapa de mensagens de erro por campo (todos opcionais).
 export type RegisterStudentFieldErrors = Partial<Record<RegisterStudentField, string>>;
 
+// Payload enviado a API (campos em PT-BR, com escolaridade enumerada).
 export type RegisterStudentApiPayload = {
   nome: string;
   nickname: string;

@@ -2,10 +2,15 @@ import { ShieldCheck, Users, Search, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 
+/**
+ * Home do administrador: boas-vindas, resumo das responsabilidades (aprovar
+ * professores e monitorar contas) e atalho para o painel de gerenciamento.
+ */
 export const HomeAdminPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Primeiro nome do admin para a saudacao (fallback generico).
   const primeiroNome = user?.name?.split(' ')[0] || 'Administrador';
 
   return (

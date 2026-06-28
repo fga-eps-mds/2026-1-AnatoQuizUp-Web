@@ -1,3 +1,7 @@
+// Header/menu lateral principal da aplicacao. Monta os itens de navegacao de
+// acordo com o papel do usuario (aluno, professor ou admin), exibe o saldo de
+// moedas e o avatar do aluno, e oferece o "ver como aluno" para o professor.
+// Em telas grandes vira sidebar fixa; em telas pequenas, um drawer deslizante.
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
@@ -9,6 +13,7 @@ import { useStudentCoinsStore } from "../../../features/student-coins/model/useS
 import { useEquippedCosmeticsStore } from "../../../features/profile-cosmetics";
 import { AvatarCosmetico } from "../../../shared/ui/profile-identity-card";
 
+// Item de navegacao do menu: rotulo, icone, acao ao clicar e se esta ativo.
 type NavItem = {
   key: string;
   label: string;
@@ -17,16 +22,22 @@ type NavItem = {
   isActive: boolean;
 };
 
+/**
+ * Componente do header/sidebar. Renderiza a navegacao conforme o papel do
+ * usuario logado e o rodape com saldo, perfil e logout.
+ */
 export const Header = () => {
   const { user, logout } = useAuth();
   const saldoMoedas = useStudentCoinsStore((state) => state.saldoMoedas);
   const cosmeticos = useEquippedCosmeticsStore((state) => state.cosmeticos);
   const navigate = useNavigate();
   const location = useLocation();
+  // Estado do drawer mobile, modo "ver como aluno" e ref para detectar clique fora.
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isViewingAsStudent, setIsViewingAsStudent] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
+  // Fecha o drawer mobile ao clicar fora dele.
   useEffect(() => {
     if (!isDrawerOpen) return;
 
@@ -44,21 +55,31 @@ export const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDrawerOpen]);
 
+  // Sem usuario logado, o header nao e exibido.
   if (!user) return null;
 
+  // Faz logout, volta ao login e fecha o drawer.
   const handleLogout = async () => {
     await logout();
     navigate("/login");
     setIsDrawerOpen(false);
   };
 
+  // Alterna o modo de previa "ver como aluno" (apenas professor).
   const handleToggleStudentView = () => {
     setIsViewingAsStudent((prev) => !prev);
   };
 
+  // Rota ativa por correspondencia exata do pathname.
   const isRouteActive = (path: string) => location.pathname === path;
 
+  /**
+   * Monta a lista de itens de navegacao conforme o papel do usuario.
+   * @param role papel do usuario (PROFESSOR, ADMIN/ADMINISTRADOR ou STUDENT)
+   * @returns itens de menu a exibir
+   */
   const buildNavItems = (role: string): NavItem[] => {
+    // Itens reutilizaveis declarados aqui; cada papel monta sua propria selecao abaixo.
     const homeItem: NavItem = {
       key: "home",
       label: "Início",
@@ -166,7 +187,9 @@ export const Header = () => {
       isActive: location.pathname.startsWith("/professor/lista"), // CORRIGIDO: removido o 's' do final para coincidir com a rota real
     };
 
+    // Cada papel define seu conjunto e ordem de itens no menu.
     switch (role) {
+      // Professor: inicio, ver-como-aluno, questoes, listas, turmas e ranking.
       case "PROFESSOR":
         return [
           homeProfessorItem,
@@ -193,6 +216,7 @@ export const Header = () => {
           professorRankingItem,
         ];
 
+      // Admin: apenas inicio e gerenciamento de usuarios.
       case "ADMIN":
       case "ADMINISTRADOR":
         return [
@@ -217,6 +241,7 @@ export const Header = () => {
           },
         ];
 
+      // Aluno (padrao): menu completo de estudo, social e gamificacao.
       case "STUDENT":
       default:
         return [
@@ -233,20 +258,25 @@ export const Header = () => {
     }
   };
 
+  // Itens do menu e flags derivadas do papel (saldo e perfil so para aluno).
   const navItems = buildNavItems(user.role);
   const shouldShowCoins = user.role === "STUDENT";
   const isPerfilAlunoActive = location.pathname.startsWith("/aluno/perfil");
 
+  // Executa a acao do item e fecha o drawer mobile.
   const handleSelect = (item: NavItem) => {
     item.onSelect();
     setIsDrawerOpen(false);
   };
 
+  // Abre o perfil do aluno e fecha o drawer.
   const handlePerfilAluno = () => {
     navigate("/aluno/perfil");
     setIsDrawerOpen(false);
   };
 
+  // Conteudo compartilhado entre a sidebar (desktop) e o drawer (mobile):
+  // logo, lista de navegacao e rodape (saldo, perfil e logout).
   const sidebarContent = (
     <>
       <div className="flex items-center justify-center px-4 py-2.5 border-b border-[#00214d]">
@@ -351,6 +381,7 @@ export const Header = () => {
 
   return (
     <>
+      {/* Barra superior compacta, visivel apenas no mobile (logo + saldo + botao do menu). */}
       <div className="md:hidden sticky top-0 z-40 bg-[#0A1128] h-16 flex items-center justify-between px-4 border-b border-[#00214d]">
         <button onClick={() => navigate("/home")} className="flex cursor-pointer items-center">
           <img src={logo} alt="AnatoQuizUp" className="h-10" />
@@ -375,10 +406,12 @@ export const Header = () => {
         </div>
       </div>
 
+      {/* Sidebar fixa do desktop. */}
       <aside className="hidden md:flex w-64 bg-[#0A1128] text-[#fffffe] flex-col sticky top-0 h-screen shrink-0">
         {sidebarContent}
       </aside>
 
+      {/* Drawer deslizante do mobile, aberto pelo botao do menu. */}
       {isDrawerOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-black/50">
           <div

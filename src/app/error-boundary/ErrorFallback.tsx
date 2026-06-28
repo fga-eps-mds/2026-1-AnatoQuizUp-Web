@@ -7,6 +7,10 @@ type ErrorFallbackProps = {
   onRetry: () => void;
 };
 
+/**
+ * Tela de fallback exibida pelo ErrorBoundary quando ocorre um erro de renderizacao.
+ * Oferece "tentar novamente" (via onRetry) e um atalho para voltar ao inicio.
+ */
 export const ErrorFallback = ({ onRetry }: ErrorFallbackProps) => {
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-white px-6 py-12 text-[#0A1128]">

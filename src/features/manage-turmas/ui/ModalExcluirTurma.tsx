@@ -10,6 +10,10 @@ interface ModalExcluirTurmaProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal de confirmacao de exclusao de turma. Mostra um resumo da turma e avisa que
+ * a acao desvincula todos os alunos antes de o usuario confirmar.
+ */
 export const ModalExcluirTurma: React.FC<ModalExcluirTurmaProps> = ({
   isOpen,
   onClose,
@@ -17,6 +21,7 @@ export const ModalExcluirTurma: React.FC<ModalExcluirTurmaProps> = ({
   turma,
   isLoading
 }) => {
+  // Sem modal aberto ou turma alvo, nada e renderizado.
   if (!isOpen || !turma) return null;
 
   return (

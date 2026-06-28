@@ -1,3 +1,7 @@
+// Pagina do "Treino Infinito" de quiz do aluno. Carrega questoes por tema/
+// dificuldade (vindos da query string), apresenta uma por vez com cronometro
+// pausavel, confirma a resposta exibindo o feedback (acerto/erro, ganho de moedas,
+// "saiba mais" e conquistas desbloqueadas) e busca novas paginas continuamente.
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, ArrowLeft, CheckCircle2, XCircle, PauseCircle, PlayCircle, ChevronRight, Check, Loader2, Flag, Coins } from 'lucide-react';
@@ -11,6 +15,7 @@ import { useAchievementStore } from '../../../features/achievements';
 export const ResponderQuizPage = () => {
   const navigate = useNavigate();
 
+  // Filtros do treino vem da URL (tema e dificuldade escolhidos na tela anterior).
   const [searchParams] = useSearchParams();
   const temaQuery = searchParams.get('tema') || '';
   const dificuldadeQuery = searchParams.get('dificuldade') || '';
@@ -19,24 +24,29 @@ export const ResponderQuizPage = () => {
     (state) => state.adicionarDesbloqueios,
   );
 
+  // Questoes da pagina atual e o feedback da questao respondida (se houver).
   const [questoes, setQuestoes] = useState<QuizQuestion[]>([]);
   const [feedback, setFeedback] = useState<QuestaoQuizFeedback & { respostaCorreta?: string } | null>(null);
   const [isRespondendo, setIsRespondendo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Controle de progresso: pagina/indice na pagina, numero global e placar.
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [indiceAtual, setIndiceAtual] = useState(0);
   const [numeroDaQuestao, setNumeroDaQuestao] = useState(1);
   const [acertos, setAcertos] = useState(0);
   const [questoesRespondidas, setQuestoesRespondidas] = useState(0);
 
+  // Estado da questao atual: selecao, se ja respondeu, cronometro e pausa.
   const [alternativaSelecionada, setAlternativaSelecionada] = useState<string | null>(null);
   const [jaRespondeu, setJaRespondeu] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
+  // Tamanho de cada pagina de questoes buscada do backend.
   const limit = 10;
 
+  // Carrega a primeira pagina de questoes ao montar e quando os filtros mudam.
   useEffect(() => {
     let deveAtualizarEstado = true;
 
@@ -60,6 +70,7 @@ export const ResponderQuizPage = () => {
     return () => { deveAtualizarEstado = false; };
   }, [temaQuery, dificuldadeQuery]);
 
+  // Cronometro: incrementa a cada segundo enquanto nao esta pausado/carregando.
   useEffect(() => {
     let timer: number | undefined;
     if (!isPaused && !isLoading && questoes.length > 0) {
@@ -68,6 +79,7 @@ export const ResponderQuizPage = () => {
     return () => { if (timer) window.clearInterval(timer); };
   }, [isPaused, isLoading, questoes.length]);
 
+  // Formata os segundos acumulados no formato MM:SS.
   const formatarTempo = (totalSegundos: number) => {
     const m = Math.floor(totalSegundos / 60).toString().padStart(2, '0');
     const s = (totalSegundos % 60).toString().padStart(2, '0');
@@ -98,6 +110,7 @@ export const ResponderQuizPage = () => {
     );
   }
 
+  // Questao em exibicao no momento.
   const questaoAtual = questoes[indiceAtual];
 
   if (!questaoAtual) {
@@ -109,17 +122,24 @@ export const ResponderQuizPage = () => {
     );
   }
 
+  // Derivados do feedback: se acertou e se houve ganho de moedas a destacar.
   const acertou = feedback?.correcao ?? false;
   const deveMostrarGanhoMoedas = acertou && (feedback?.moedasConcedidas ?? 0) > 0;
 
+  // Taxa de acerto acumulada no treino (para a barra de progresso).
   const taxaAcerto = questoesRespondidas === 0 ? 0 : (acertos / questoesRespondidas) * 100;
 
+  // Alternativas normalizadas: remove vazias e simplifica a chave ("alternativaA" -> "A").
   const alternativasFormatadas = questaoAtual?.alternativas
     ? Object.entries(questaoAtual.alternativas)
       .filter(([, texto]) => texto !== null && texto !== "")
       .map(([id, texto]) => ({ id: id.replace('alternativa', ''), texto }))
     : [];
 
+  /**
+   * Confirma a resposta selecionada: envia ao backend, guarda o feedback,
+   * atualiza saldo de moedas e conquistas, pausa o cronometro e atualiza o placar.
+   */
   const handleConfirmar = async () => {
     if (!alternativaSelecionada) return;
 
@@ -148,13 +168,20 @@ export const ResponderQuizPage = () => {
     }
   };
 
+  /**
+   * Avanca para a proxima questao. Dentro da pagina, apenas incrementa o indice;
+   * ao chegar ao fim, busca a proxima pagina (ou reinicia da pagina 1 se acabarem),
+   * garantindo o "treino infinito".
+   */
   const handleProxima = async () => {
+    // Reseta o estado da questao para a proxima.
     setAlternativaSelecionada(null);
     setJaRespondeu(false);
     setFeedback(null);
     setIsPaused(false);
     setNumeroDaQuestao(prev => prev + 1);
 
+    // No fim da pagina atual: tenta a proxima pagina; se vazia, volta ao inicio.
     if (indiceAtual >= questoes.length - 1) {
       setIsLoading(true);
       try {
@@ -245,6 +272,7 @@ export const ResponderQuizPage = () => {
           </div>
         </div>
 
+        {/* Estado pausado (antes de responder): oculta a questao para o aluno descansar. */}
         {isPaused && !jaRespondeu ? (
           <div className="bg-white rounded-xl p-16 shadow-sm border border-gray-100 mb-4 flex flex-col items-center justify-center text-center animate-fade-in">
             <PauseCircle className="w-16 h-16 text-[#14D5C2] mb-4 opacity-50" />
@@ -271,11 +299,13 @@ export const ResponderQuizPage = () => {
               </div>
             )}
 
+            {/* Alternativas: o estilo de cada uma muda conforme selecao e feedback (acerto/erro). */}
             <div className="flex flex-col gap-4">
               {alternativasFormatadas.map((alt) => {
                 const isSelecionada = alternativaSelecionada === alt.id;
                 const isCorretaPeloFeedback = feedback?.respostaCorreta === alt.id;
 
+                // Monta as classes de cor conforme o estado (respondido x correto x selecionado).
                 let estilosBase = 'p-4 rounded-xl border-2 flex items-center justify-between font-bold text-sm transition-all cursor-pointer';
                 let iconClass = 'bg-gray-50 text-[#0A1128]/60 border border-gray-200';
 
@@ -340,6 +370,7 @@ export const ResponderQuizPage = () => {
           </div>
         )}
 
+        {/* Bloco "saiba mais": explicacao exibida apos responder, com o ganho de moedas. */}
         {jaRespondeu && feedback?.saibaMais && (
           <div className={`rounded-xl p-6 border animate-fade-in relative overflow-hidden ${acertou ? 'bg-[#E6FCFA] border-[#14D5C2]' : 'bg-rose-50 border-rose-200'}`}>
             <div className="flex items-start justify-between gap-4 mb-2">

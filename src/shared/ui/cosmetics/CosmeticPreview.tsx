@@ -3,6 +3,7 @@ import { ImageOff, UserRound } from 'lucide-react';
 import type { ItemInventario, ItemLoja } from '../../../features/loja';
 import logoAnatoQuiz from '../../assets/image/logo.png';
 
+// Codigo do icone premium (logo dourada) e gradiente de ouro reutilizado em varios cosmeticos.
 export const CODIGO_LOGO_PREMIUM = 'icone-anatoquiz-dourado';
 export const GRADIENTE_OURO = 'linear-gradient(135deg, #FCD34D 0%, #D4AF37 100%)';
 
@@ -11,6 +12,7 @@ type CosmeticPreviewProps = {
   grande?: boolean;
 };
 
+/** Mockup de um mini-perfil usado para pre-visualizar planos de fundo em tamanho grande. */
 const MockupPerfil = ({ valor }: { valor: string | null }) => (
   <div className="w-56 overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
     <div className="h-20" style={{ background: valor ?? '#0A1128' }} />
@@ -29,9 +31,14 @@ const MockupPerfil = ({ valor }: { valor: string | null }) => (
   </div>
 );
 
+/**
+ * Pre-visualizacao de um item cosmetico, com aparencia especifica por tipo
+ * (plano de fundo, titulo, moldura, icone de perfil) e um fallback de imagem.
+ */
 export const CosmeticPreview = ({ item, grande = false }: CosmeticPreviewProps) => {
   const dimensao = grande ? 'h-36 w-36' : 'h-24 w-24';
 
+  // Plano de fundo: mockup de perfil no modo grande, ou apenas o swatch de cor.
   if (item.tipo === 'PLANO_FUNDO') {
     if (grande) return <MockupPerfil valor={item.valor} />;
     return (
@@ -43,6 +50,7 @@ export const CosmeticPreview = ({ item, grande = false }: CosmeticPreviewProps) 
     );
   }
 
+  // Titulo: cartao com o texto do titulo em destaque.
   if (item.tipo === 'TITULO') {
     return (
       <div
@@ -53,6 +61,7 @@ export const CosmeticPreview = ({ item, grande = false }: CosmeticPreviewProps) 
     );
   }
 
+  // Moldura: anel colorido em volta de um avatar generico.
   if (item.tipo === 'MOLDURA') {
     return (
       <div
@@ -67,6 +76,7 @@ export const CosmeticPreview = ({ item, grande = false }: CosmeticPreviewProps) 
     );
   }
 
+  // Icone de perfil: a logo premium tem render proprio; demais usam imagem ou fallback.
   if (item.tipo === 'ICONE_PERFIL') {
     if (item.codigo === CODIGO_LOGO_PREMIUM) {
       return (
@@ -98,6 +108,7 @@ export const CosmeticPreview = ({ item, grande = false }: CosmeticPreviewProps) 
     );
   }
 
+  // Demais tipos (ex.: avatar): usa a imagem do item, ou um placeholder quando ausente.
   const src = item.previewImagemUrl ?? item.imagemUrl;
   if (!src) {
     return (

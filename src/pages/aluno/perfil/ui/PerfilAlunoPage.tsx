@@ -18,12 +18,14 @@ import { httpClient } from '../../../../shared/api/httpClient';
 import { ProfileIdentityCard } from '../../../../shared/ui/profile-identity-card';
 import type { DashboardAlunoResponse } from '../../../dashboardAluno/types';
 
+// Estatisticas resumidas exibidas nos cartoes do topo do perfil.
 type StatsPerfil = {
   respondidas: number;
   taxa: number;
   amigos: number;
 };
 
+// Props do cartao de estatistica reutilizavel (icone, valor, rotulo, tom de cor).
 type CardStatProps = {
   icon: ReactNode;
   valor: number | string;
@@ -39,6 +41,7 @@ const statToneClass = {
   blue: 'bg-blue-50 text-blue-700',
 } satisfies Record<CardStatProps['tone'], string>;
 
+/** Formata numeros no padrao PT-BR; strings sao retornadas como estao. */
 const formatarValor = (valor: number | string) =>
   typeof valor === 'number' ? valor.toLocaleString('pt-BR') : valor;
 
@@ -49,7 +52,12 @@ const CARD_STAT_INTERATIVO_CLASS =
   'w-full cursor-pointer text-left transition-colors hover:bg-gray-50 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#71edc8] focus-visible:ring-offset-2';
 
+/**
+ * Cartao de estatistica do perfil: icone colorido, valor (com esqueleto enquanto
+ * carrega) e rotulo. Vira botao clicavel quando recebe onClick.
+ */
 export const CardStat = ({ icon, valor, rotulo, carregando, tone, onClick }: CardStatProps) => {
+  // Conteudo compartilhado entre as versoes clicavel e estatica.
   const conteudo = (
     <>
       <div
@@ -90,6 +98,11 @@ export const CardStat = ({ icon, valor, rotulo, carregando, tone, onClick }: Car
   return <div className={CARD_STAT_BASE_CLASS}>{conteudo}</div>;
 };
 
+/**
+ * Pagina "Meu Perfil" do aluno: cartao de identidade com cosmeticos, cartoes de
+ * estatisticas (respondidas/taxa/amigos), conquistas em destaque e itens em uso.
+ * Carrega tudo em paralelo e sincroniza os cosmeticos equipados na store ao montar.
+ */
 export const PerfilAlunoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -111,7 +124,7 @@ export const PerfilAlunoPage = () => {
     let ativo = true;
 
     const carregarStats = async () => {
-      // MODIFICAÇÃO: httpClient.get adicionado ao array do Promise.allSettled
+      // Busca dashboard, amigos, inventario e destaques em paralelo, tolerando falhas individuais.
       const [dashboard, amigos, inventario, destaques] = await Promise.allSettled([
         httpClient.get<Pick<DashboardAlunoResponse, 'totalRespondidas' | 'taxaAcerto'>>(
           '/dashboardAluno',
@@ -155,11 +168,13 @@ export const PerfilAlunoPage = () => {
     return null;
   }
 
+  // Dados derivados para o cabecalho do cartao de identidade.
   const nickname = user.nickname?.trim();
   const cursoLabel =
     [user.course, user.institution].filter(Boolean).join(' · ') || 'Curso não informado';
   const saldoFormatado = saldoMoedas.toLocaleString('pt-BR');
 
+  // Foto efetiva (avatar ou icone) e flag indicando se ha algum cosmetico equipado.
   const fotoPerfil = cosmeticos.AVATAR ?? cosmeticos.ICONE_PERFIL;
   const temItensEmUso = Boolean(
     fotoPerfil ?? cosmeticos.MOLDURA ?? cosmeticos.TITULO ?? cosmeticos.PLANO_FUNDO,
@@ -220,6 +235,7 @@ export const PerfilAlunoPage = () => {
           onManage={() => navigate('/aluno/conquistas', { state: { gerenciarDestaques: true } })}
         />
 
+        {/* Vitrine dos cosmeticos equipados; so aparece quando ha algum item em uso. */}
         {temItensEmUso && (
           <section aria-label="Itens em uso">
             <div className="mb-3 flex items-center justify-between">

@@ -1,10 +1,12 @@
 import type { SelectHTMLAttributes } from 'react';
 
+// Opcao de um Select: rotulo exibido e valor enviado.
 export type SelectOption = {
   label: string;
   value: string;
 };
 
+// Props do Select: atributos nativos + rotulo, opcoes, placeholder e erro.
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   options: SelectOption[];
@@ -12,10 +14,15 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   error?: string;
 };
 
+// Classe base do <select>, com variacoes de foco e estado desabilitado.
 const baseSelectClassName =
   'h-10 w-full cursor-pointer rounded-[7px] border px-3.5 text-sm text-[#0A1128] outline-none transition-colors ' +
   'focus:border-[#14D5C2] bg-white disabled:cursor-not-allowed disabled:border-[#BBD7D3] disabled:bg-[#F3F6FA] disabled:text-[#0A1128]/55';
 
+/**
+ * Campo de selecao reutilizavel com rotulo, placeholder, lista de opcoes e mensagem
+ * de erro opcional. Repassa os demais atributos nativos diretamente ao <select>.
+ */
 export const Select = ({
   label,
   options,
@@ -24,6 +31,7 @@ export const Select = ({
   id,
   ...props
 }: SelectProps) => {
+  // Garante um id para associar o <label> ao <select> (cai para name ou label).
   const inputId = id ?? props.name ?? label;
 
   return (

@@ -7,6 +7,11 @@ type AchievementProgressProps = {
   carregando?: boolean;
 };
 
+/**
+ * Barra de progresso de uma conquista, com rotulo "valor / objetivo" e percentual.
+ * Aceita um percentual ja calculado ou o deriva de valor/objetivo; suporta estados
+ * compacto, concluido e carregando.
+ */
 export const AchievementProgress = ({
   valor,
   objetivo,
@@ -15,6 +20,7 @@ export const AchievementProgress = ({
   compacto = false,
   carregando = false,
 }: AchievementProgressProps) => {
+  // Estado de carregamento: esqueleto animado no lugar da barra.
   if (carregando) {
     return (
       <div className="flex w-full items-center gap-3" aria-label="Carregando progresso">
@@ -24,6 +30,7 @@ export const AchievementProgress = ({
     );
   }
 
+  // Percentual exibido: 100 se concluido, senao o informado ou o calculado, limitado a 0–100.
   const progresso = concluido
     ? 100
     : Math.max(

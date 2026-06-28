@@ -5,6 +5,7 @@ import { BookOpen, ChevronRight, Inbox } from 'lucide-react';
 import { listarTurmas } from '../../../entities/turmas/api/turmaApi';
 import type { Turma } from '../../../entities/turmas/model/types';
 
+// Estados da listagem de turmas do aluno.
 type Estado = 'carregando' | 'vazio' | 'sucesso' | 'erro';
 
 interface TurmaCardProps {
@@ -12,6 +13,7 @@ interface TurmaCardProps {
   onClick: () => void;
 }
 
+/** Cartao clicavel de uma turma (nome e ano.semestre) que leva ao detalhe. */
 const TurmaCard = ({ turma, onClick }: TurmaCardProps) => (
   <button
     type="button"
@@ -34,6 +36,7 @@ const TurmaCard = ({ turma, onClick }: TurmaCardProps) => (
   </button>
 );
 
+// Subcomponentes de estado (carregando / erro / vazio) exibidos antes da grade.
 const EstadoCarregando = () => (
   <div
     role="status"
@@ -71,11 +74,16 @@ const EstadoVazio = () => (
   </div>
 );
 
+/**
+ * Listagem das turmas em que o aluno esta matriculado, em grade de cartoes.
+ * Trata os estados de carregamento, erro e vazio (sem turmas vinculadas).
+ */
 export const MinhasTurmas = () => {
   const navigate = useNavigate();
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [estado, setEstado] = useState<Estado>('carregando');
 
+  // Carrega as turmas ao montar; a flag evita setState apos desmontagem.
   useEffect(() => {
     let cancelado = false;
 
