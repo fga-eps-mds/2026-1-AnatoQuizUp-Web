@@ -1,5 +1,9 @@
+// Tipos do dominio do historico de quiz do aluno.
+
+// Quantas vezes cada alternativa foi escolhida (letra -> contagem).
 export type DistribuicaoAlternativas = Record<string, number>;
 
+// Detalhe da questao tal como aparece no historico (com gabarito e explicacao).
 export type HistoricoQuestaoDetalhe = {
   tema: {
     id: string;
@@ -13,6 +17,7 @@ export type HistoricoQuestaoDetalhe = {
   alternativas: Record<string, string> | null;
 };
 
+// Um registro de resposta no historico (questao + resposta marcada + metadados).
 export type ItemHistoricoQuiz = {
   id: string;
   criadoEm: string;
@@ -23,6 +28,7 @@ export type ItemHistoricoQuiz = {
   questao: HistoricoQuestaoDetalhe;
 };
 
+// Resposta paginada do historico de quiz.
 export type HistoricoQuizResponse = {
   dados: ItemHistoricoQuiz[];
   metadados: {

@@ -4,6 +4,10 @@ import { useAuth } from '../../../app/providers/AuthProvider';
 import { buscarEquipados } from '../cosmeticsService';
 import { useEquippedCosmeticsStore } from '../model/useEquippedCosmeticsStore';
 
+/**
+ * Componente "bootstrap" sem UI: ao logar como aluno, carrega os cosmeticos equipados
+ * para a store global; para outros papeis, limpa o estado. Renderiza null.
+ */
 export const CosmeticsBootstrap = () => {
   const { user } = useAuth();
   const setCosmeticos = useEquippedCosmeticsStore((state) => state.setCosmeticos);
@@ -11,6 +15,7 @@ export const CosmeticsBootstrap = () => {
   const setError = useEquippedCosmeticsStore((state) => state.setError);
   const reset = useEquippedCosmeticsStore((state) => state.reset);
 
+  // Carrega os cosmeticos do aluno; demais papeis nao tem cosmeticos (reset).
   useEffect(() => {
     if (user?.role !== 'STUDENT') {
       reset();
