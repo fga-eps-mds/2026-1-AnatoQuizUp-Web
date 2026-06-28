@@ -1,3 +1,6 @@
+// Pagina de detalhes de uma turma (visao do professor). Reune tres abas:
+// alunos matriculados, listas publicadas e o dashboard de desempenho. Tambem
+// permite editar a turma e gerenciar o vinculo/gabarito das listas.
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -35,14 +38,21 @@ import { AbaAlunos } from '../../../features/manage-turmas/ui/AbaAlunos';
 import { ModalVincularLista } from '../../../features/manage-turmas/ui/ModalVincularLista';
 import { ModalTurma } from '../../../features/manage-turmas/ui/ModalTurma'; // <--- IMPORTAÇÃO DO MODAL AQUI
 
+// Tipo do toast: notificacao de sucesso ou de erro.
 type ToastType = 'success' | 'error';
 
+// Estado do toast atualmente exibido (id serve para reiniciar a animacao/timer).
 interface ToastState {
   id: number;
   message: string;
   type: ToastType;
 }
 
+/**
+ * Formata o prazo de uma lista para pt-BR (data + hora). "Sem prazo" quando
+ * nulo; devolve o valor original se nao for uma data valida.
+ * @param prazo prazo em ISO ou nulo
+ */
 const formatarPrazo = (prazo: string | null) => {
   if (!prazo) return 'Sem prazo';
 
@@ -58,9 +68,14 @@ const formatarPrazo = (prazo: string | null) => {
   });
 };
 
+/**
+ * Componente de pagina dos detalhes da turma. Le o id da rota, carrega turma e
+ * dashboard, e coordena as abas, os modais (editar turma / vincular lista) e os toasts.
+ */
 export const TurmaDetalhesPage = () => {
   const { id } = useParams<{ id: string }>();
-  
+
+  // Aba ativa e os dados carregados (dashboard, turma e vinculos de listas).
   const [activeTab, setActiveTab] = useState<'alunos' | 'listas' | 'dashboard'>('dashboard');
   const [dashboardData, setDashboardData] = useState<DashboardMacro | null>(null);
   const [turma, setTurma] = useState<Turma | null>(null);
@@ -76,10 +91,12 @@ export const TurmaDetalhesPage = () => {
   const [isModalTurmaOpen, setIsModalTurmaOpen] = useState(false);
   const [isSavingTurma, setIsSavingTurma] = useState(false);
 
+  // Dispara um toast com mensagem e tipo; o id baseado no tempo reinicia o timer.
   const mostrarToast = useCallback((message: string, type: ToastType = 'success') => {
     setToast({ id: Date.now(), message, type });
   }, []);
 
+  // Esconde o toast automaticamente apos alguns segundos.
   useEffect(() => {
     if (!toast) return undefined;
 
@@ -90,6 +107,7 @@ export const TurmaDetalhesPage = () => {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  // Carrega turma e dashboard em paralelo quando o id da rota muda.
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
@@ -112,6 +130,7 @@ export const TurmaDetalhesPage = () => {
     fetchData();
   }, [id]);
 
+  // Busca as listas publicadas na turma (usado na aba "Listas" e apos mudancas).
   const carregarVinculosListas = useCallback(async () => {
     if (!id) return;
 
@@ -128,6 +147,7 @@ export const TurmaDetalhesPage = () => {
     }
   }, [id]);
 
+  // So carrega as listas quando a aba "Listas" e aberta (carregamento sob demanda).
   useEffect(() => {
     if (activeTab !== 'listas') return undefined;
 
@@ -138,10 +158,16 @@ export const TurmaDetalhesPage = () => {
     return () => window.clearTimeout(timeoutId);
   }, [activeTab, carregarVinculosListas]);
 
+  // Recarrega as listas apos vincular/desvincular pelo modal.
   const handleAtualizarListas = () => {
     void carregarVinculosListas();
   };
 
+  /**
+   * Alterna a liberacao do gabarito de uma lista para a turma e atualiza a linha
+   * correspondente na tabela, exibindo um toast com o resultado.
+   * @param vinculo vinculo lista-turma cujo gabarito sera alternado
+   */
   const handleAlternarGabarito = async (vinculo: VinculoListaTurma) => {
     if (!id) return;
 
@@ -172,11 +198,16 @@ export const TurmaDetalhesPage = () => {
     setIsModalTurmaOpen(true);
   };
 
+  // Fecha o modal de edicao, exceto enquanto um salvamento esta em andamento.
   const handleFecharModalTurma = () => {
     if (isSavingTurma) return;
     setIsModalTurmaOpen(false);
   };
 
+  /**
+   * Persiste a edicao da turma e reflete os novos dados na tela em tempo real.
+   * @param payload campos editados da turma
+   */
   const handleSalvarTurma = async (payload: SalvarTurmaPayload) => {
     if (!id) return;
     setIsSavingTurma(true);
@@ -194,6 +225,7 @@ export const TurmaDetalhesPage = () => {
     }
   };
 
+  // Bloco reutilizado no dashboard com o desempenho agregado por lista da turma.
   const renderCardDesempenhoListas = () => (
     <div className="lg:col-span-4">
       <div className="h-full rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -206,6 +238,7 @@ export const TurmaDetalhesPage = () => {
     </div>
   );
 
+  // Estados iniciais: carregando ou turma inexistente.
   if (isLoading) {
     return <div className="flex h-64 items-center justify-center text-gray-500">Carregando detalhes da turma...</div>;
   }
@@ -279,8 +312,9 @@ export const TurmaDetalhesPage = () => {
           </button>
         </div>
 
+        {/* Navegacao entre as abas Alunos / Listas / Dashboard. */}
         <div className="mt-6 flex border-t border-gray-100 px-6">
-          <button 
+          <button
             onClick={() => setActiveTab('alunos')}
             className={`cursor-pointer flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-bold transition-colors ${activeTab === 'alunos' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
           >
@@ -301,6 +335,7 @@ export const TurmaDetalhesPage = () => {
         </div>
       </div>
 
+      {/* Aba Dashboard: cards-resumo + grafico/tabelas; mostra EmptyState sem respostas. */}
       {activeTab === 'dashboard' && dashboardData && (
         <>
           <CardsResumo dados={dashboardData} />
@@ -331,8 +366,10 @@ export const TurmaDetalhesPage = () => {
         </>
       )}
 
+      {/* Aba Alunos: delega a feature de gerenciamento de matriculados. */}
       {activeTab === 'alunos' && <AbaAlunos turmaId={id!} />}
 
+      {/* Aba Listas: tabela de listas publicadas com prazo e controle de gabarito. */}
       {activeTab === 'listas' && (
         <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -446,6 +483,7 @@ export const TurmaDetalhesPage = () => {
         </section>
       )}
 
+      {/* Modais montados sempre; controlados pelas flags isOpen correspondentes. */}
       <ModalTurma
         key={`edit-${turma.id}-${isModalTurmaOpen ? 'open' : 'closed'}`}
         isOpen={isModalTurmaOpen}

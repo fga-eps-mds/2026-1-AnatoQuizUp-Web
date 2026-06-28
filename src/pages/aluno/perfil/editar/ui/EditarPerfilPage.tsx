@@ -6,6 +6,10 @@ import {
   InformacoesPessoaisForm,
 } from '../../../../../features/editar-conta';
 
+/**
+ * Pagina de edicao de perfil do aluno: reune os formularios de dados pessoais e de
+ * troca de senha, com um atalho de volta para "Meu Perfil".
+ */
 export const EditarPerfilPage = () => (
   <div className="min-h-screen bg-gray-50 p-6">
     <div className="mx-auto flex max-w-5xl flex-col gap-6">

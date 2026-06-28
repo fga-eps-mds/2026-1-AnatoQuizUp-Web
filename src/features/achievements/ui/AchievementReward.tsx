@@ -9,12 +9,17 @@ type AchievementRewardProps = {
   carregando?: boolean;
 };
 
+/**
+ * Exibe as recompensas de uma conquista: moedas (ATP) e/ou item exclusivo.
+ * Adapta o grid conforme haja uma ou duas recompensas e trata estados vazio/carregando.
+ */
 export const AchievementReward = ({
   moedas = 0,
   item = null,
   compacto = false,
   carregando = false,
 }: AchievementRewardProps) => {
+  // Estado de carregamento: dois blocos de esqueleto.
   if (carregando) {
     return (
       <div className="grid min-h-16 grid-cols-2 gap-2" aria-label="Carregando recompensas">
@@ -24,6 +29,7 @@ export const AchievementReward = ({
     );
   }
 
+  // Sem moedas e sem item: mostra aviso de ausencia de recompensa.
   if (moedas <= 0 && !item) {
     return (
       <div className="flex min-h-12 items-center gap-2 rounded-lg border border-dashed border-[#CBD5E1] px-3 text-xs font-semibold text-[#64748B]">
@@ -33,6 +39,7 @@ export const AchievementReward = ({
     );
   }
 
+  // Prefere a imagem de preview do item; cai para a imagem padrao.
   const imagemItem = item?.previewImagemUrl ?? item?.imagemUrl;
 
   return (

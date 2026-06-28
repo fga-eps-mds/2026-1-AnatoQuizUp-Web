@@ -13,6 +13,7 @@ type RankingBoardProps = {
   mensagemVazio: string;
 };
 
+/** Esqueleto de carregamento: quatro linhas pulsantes no lugar do ranking. */
 const Esqueleto = () => (
   <div className="flex flex-col gap-3">
     {[0, 1, 2, 3].map((indice) => (
@@ -24,6 +25,11 @@ const Esqueleto = () => (
   </div>
 );
 
+/**
+ * Quadro de ranking reutilizavel: trata carregamento/erro/vazio e, no sucesso,
+ * renderiza o podio (top 3), as demais posicoes e uma linha fixa do usuario atual
+ * quando ele esta fora da faixa visivel.
+ */
 export const RankingBoard = ({
   linhas,
   rotuloMetrica,
@@ -32,6 +38,7 @@ export const RankingBoard = ({
   erro,
   mensagemVazio,
 }: RankingBoardProps) => {
+  // Estados nao-sucesso resolvidos por retorno antecipado.
   if (carregando) {
     return <Esqueleto />;
   }
@@ -53,6 +60,7 @@ export const RankingBoard = ({
     );
   }
 
+  // Posicoes fora do podio e flag indicando se o usuario atual nao esta na lista exibida.
   const restantes = linhas.filter((linha) => linha.posicao > 3);
   const usuarioForaDaLista =
     usuarioAtual && !linhas.some((linha) => linha.id === usuarioAtual.id);
@@ -69,6 +77,7 @@ export const RankingBoard = ({
         </div>
       )}
 
+      {/* Linha fixa do usuario atual quando ele nao aparece entre as posicoes listadas. */}
       {usuarioForaDaLista && (
         <div className="sticky bottom-4 mt-2">
           <div className="rounded-2xl border border-[#00A88F]/30 bg-white/95 p-1 shadow-lg backdrop-blur">

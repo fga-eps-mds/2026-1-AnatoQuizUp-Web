@@ -1,5 +1,9 @@
+// Opcoes academicas fixas usadas nos selects de cadastro/edicao de perfil.
+
+// Valor neutro oferecido quando o campo nao se aplica ao usuario.
 export const NAO_SE_APLICA = 'Não se aplica';
 
+// Instituicoes de ensino disponiveis.
 export const INSTITUICOES = [
   NAO_SE_APLICA,
   'Universidade de Brasilia',
@@ -8,6 +12,7 @@ export const INSTITUICOES = [
   'Instituto Federal de Brasilia',
 ];
 
+// Cursos disponiveis para selecao.
 export const CURSOS = [
   NAO_SE_APLICA,
   'Medicina',
@@ -17,6 +22,7 @@ export const CURSOS = [
   'Educacao Fisica',
 ];
 
+// Periodos/semestres do 1o ao 12o.
 export const PERIODOS = [
   NAO_SE_APLICA,
   '1o Periodo',

@@ -12,6 +12,10 @@ interface ModalListaProps {
   onSubmit: (nome: string) => void | Promise<void>;
 }
 
+/**
+ * Modal simples de criacao/edicao de lista: um unico campo (nome) que serve aos
+ * dois modos, variando titulo e rotulo do botao conforme criar ou editar.
+ */
 export const ModalLista = ({
   isOpen,
   mode,
@@ -20,14 +24,17 @@ export const ModalLista = ({
   onClose,
   onSubmit,
 }: ModalListaProps) => {
+  // Nome controlado (semeado no modo edicao) e validacao de campo obrigatorio.
   const [nome, setNome] = useState(mode === 'edit' ? lista?.nome ?? '' : '');
   const isFormValido = useMemo(() => nome.trim().length > 0, [nome]);
 
   if (!isOpen) return null;
 
+  // Titulo e rotulo do botao dependem do modo.
   const titulo = mode === 'create' ? 'Nova lista' : 'Editar lista';
   const textoBotao = mode === 'create' ? 'Criar lista' : 'Salvar alterações';
 
+  /** Valida e envia o nome (sem espacos nas pontas) ao handler do componente pai. */
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isFormValido || isLoading) return;

@@ -1,5 +1,9 @@
+// Tipos de dominio da resolucao de listas pelo aluno (resumo, questao e detalhe).
+
+// Estados possiveis de uma lista do ponto de vista do aluno.
 export type StatusResolucao = 'PENDENTE' | 'RESPONDIDA' | 'EXPIRADA' | 'EM_ANDAMENTO' | 'SUBMETIDA';
 
+// Resumo de uma lista exibido na listagem do aluno.
 export interface ResumoListaAluno {
   listaTurmaId: string;
   nome: string;
@@ -10,6 +14,8 @@ export interface ResumoListaAluno {
   gabaritoLiberado: boolean;
 }
 
+// Questao como vista pelo aluno ao resolver a lista (com resposta marcada e,
+// se o gabarito estiver liberado, a correta e o "saiba mais").
 export interface QuestaoAluno {
   id: string;
   enunciado: string;
@@ -29,6 +35,7 @@ export interface QuestaoAluno {
   tipo: 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO';
 }
 
+// Detalhe completo de uma lista do aluno, com suas questoes.
 export interface DetalhesListaAluno {
   id: string;
   nome: string;

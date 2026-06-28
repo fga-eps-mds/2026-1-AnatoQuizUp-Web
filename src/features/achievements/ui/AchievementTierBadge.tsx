@@ -9,11 +9,16 @@ type AchievementTierBadgeProps = {
   atual?: boolean;
 };
 
+/**
+ * Selo (pill) que identifica o tier de uma conquista, com variacoes para
+ * estado bloqueado (cadeado) e tier atual (marcador "Atual").
+ */
 export const AchievementTierBadge = ({
   tier,
   bloqueado = false,
   atual = false,
 }: AchievementTierBadgeProps) => {
+  // Estilo (cores/rotulo) correspondente ao tier.
   const estilo = ESTILO_POR_TIER[tier];
 
   return (

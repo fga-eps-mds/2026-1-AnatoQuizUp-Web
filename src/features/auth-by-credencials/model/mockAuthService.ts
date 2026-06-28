@@ -1,10 +1,13 @@
+// Servico de autenticacao falso (mock) usado em desenvolvimento/testes sem backend.
 import type { User } from '../../../entities/user/model/types';
 import type { LoginResponse } from './authService';
 
+// E-mails de teste que disparam comportamentos especificos no mock.
 const STUDENT_EMAIL = 'aluno@unb.br';
 const PROFESSOR_EMAIL = 'professor@unb.br';
 const DISABLED_EMAIL = 'desativado@unb.br';
 
+// Usuario aluno fixo retornado pelo mock.
 const STUDENT_USER: User = {
   id: '123e4567-e89b-12d3-a456-426614174000',
   name: 'Joao Jose',
@@ -18,6 +21,7 @@ const STUDENT_USER: User = {
   period: 3,
 };
 
+// Usuario professor fixo retornado pelo mock.
 const PROFESSOR_USER: User = {
   id: '123e4567-e89b-12d3-a456-426614174001',
   name: 'Professor UnB',
@@ -41,8 +45,10 @@ const PROFESSOR_TOKENS: LoginResponse = {
   refreshToken: 'mock-professor-refresh-token',
 };
 
+// Usuario "logado" atual no mock; mutavel para simular edicoes de perfil.
 let authenticatedMockUser: User = STUDENT_USER;
 
+/** Atualiza nome/nickname do usuario mock (simula edicao de dados pessoais). */
 export const atualizarUsuarioAutenticadoMock = (
   dados: Partial<Pick<User, 'name' | 'nickname'>>,
 ) => {
@@ -52,6 +58,7 @@ export const atualizarUsuarioAutenticadoMock = (
   };
 };
 
+/** Le o access token do localStorage com protecao contra ambientes sem storage. */
 const getStoredAccessToken = (): string | null => {
   try {
     return globalThis.localStorage?.getItem('access_token') ?? null;
@@ -60,6 +67,10 @@ const getStoredAccessToken = (): string | null => {
   }
 };
 
+/**
+ * Login simulado: ignora a senha e decide o resultado pelo e-mail de teste informado
+ * (aluno, professor, conta desativada ou credenciais invalidas).
+ */
 export const loginWithMockCredencials = async (
   email: string,
   password: string,
@@ -85,6 +96,7 @@ export const loginWithMockCredencials = async (
   throw new Error('Email ou senha invalidos');
 };
 
+/** Retorna o usuario mock correspondente ao token salvo (professor/aluno). */
 export const getAuthenticatedUserMock = async (): Promise<User> => {
   const storedAccessToken = getStoredAccessToken();
 

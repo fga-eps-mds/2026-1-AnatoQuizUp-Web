@@ -12,6 +12,7 @@ interface ModalTurmaProps {
   onSubmit: (payload: SalvarTurmaPayload) => void | Promise<void>;
 }
 
+// Valores padrao usados ao criar uma turma nova (ano corrente, 1o semestre, ativa).
 const valoresIniciais = {
   codigo: '',
   nome: '',
@@ -21,6 +22,7 @@ const valoresIniciais = {
   status: 'ATIVA' as StatusTurma,
 };
 
+/** Define os valores iniciais do formulario: dados da turma no modo edicao, padroes no modo criacao. */
 const obterValoresIniciais = (mode: 'create' | 'edit', turma: Turma | null) => {
   if (mode === 'edit' && turma) {
     return {
@@ -36,6 +38,10 @@ const obterValoresIniciais = (mode: 'create' | 'edit', turma: Turma | null) => {
   return valoresIniciais;
 };
 
+/**
+ * Modal de criacao/edicao de turma. O mesmo formulario serve aos dois modos,
+ * variando apenas os valores iniciais, o titulo e o rotulo do botao de envio.
+ */
 export const ModalTurma = ({
   isOpen,
   mode,
@@ -44,6 +50,7 @@ export const ModalTurma = ({
   onClose,
   onSubmit,
 }: ModalTurmaProps) => {
+  // Estado controlado dos campos, semeado conforme o modo (criar/editar).
   const estadoInicial = obterValoresIniciais(mode, turma);
   const [codigo, setCodigo] = useState(estadoInicial.codigo);
   const [nome, setNome] = useState(estadoInicial.nome);
@@ -52,6 +59,7 @@ export const ModalTurma = ({
   const [descricao, setDescricao] = useState(estadoInicial.descricao);
   const [status, setStatus] = useState<StatusTurma>(estadoInicial.status);
 
+  // Valida todos os campos obrigatorios; controla a habilitacao do botao de envio.
   const anoNumerico = Number(ano);
   const isFormValido = useMemo(() => (
     codigo.trim().length > 0 &&
@@ -64,9 +72,11 @@ export const ModalTurma = ({
 
   if (!isOpen) return null;
 
+  // Titulo e rotulo do botao mudam conforme criacao ou edicao.
   const titulo = mode === 'create' ? 'Nova turma' : 'Editar turma';
   const textoBotao = mode === 'create' ? 'Criar turma' : 'Salvar alteracoes';
 
+  /** Valida e normaliza (trim) os campos antes de delegar a persistencia ao pai. */
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isFormValido || isLoading) return;

@@ -1,6 +1,7 @@
 import { RegisterProfessorForm } from '../../../features/register-professor';
 import mascotImg from '../../../shared/assets/image/logo.png';
 
+// Classes Tailwind extraidas para constantes por causa do tamanho (layout responsivo com clip-path).
 const pageClassName = 'relative min-h-screen w-full overflow-x-hidden bg-[#F7F7F7]';
 const backgroundShapeClassName =
   'absolute inset-y-0 left-0 hidden w-[57vw] bg-[#00214d] md:block ' +
@@ -21,6 +22,10 @@ const formSectionClassName =
   'flex w-full justify-center md:h-[calc(100vh-4rem)] md:w-[50%] md:items-center ' +
   'md:justify-end lg:w-[49%] [@media(min-width:768px)_and_(max-height:760px)]:h-[calc(100vh-2.5rem)]';
 
+/**
+ * Pagina de cadastro de professor: layout em duas colunas (marca a esquerda,
+ * formulario a direita) sobre um fundo diagonal, hospedando o RegisterProfessorForm.
+ */
 export const ProfessorRegisterPage = () => {
   return (
     <main className={pageClassName}>

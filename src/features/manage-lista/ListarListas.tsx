@@ -1,3 +1,6 @@
+// Tela de gerenciamento de listas de questoes do professor. Lista as listas em
+// uma tabela com busca e filtro por status, e oferece criar, editar, excluir,
+// baixar PDF e gerenciar as questoes de cada lista atraves de modais.
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
@@ -22,20 +25,28 @@ import { ModalExcluirLista } from './ModalExcluirLista';
 import { ModalGerenciarQuestoesLista } from './ModalGerenciarQuestoesLista';
 import { ModalLista } from './ModalLista';
 
+// Tipo da notificacao (toast): sucesso ou erro.
 type TipoToast = 'success' | 'error';
 
+// Estado do toast exibido; o id evita que um timeout antigo apague um toast novo.
 interface ToastState {
   id: number;
   message: string;
   type: TipoToast;
 }
 
+// Rotulos amigaveis (pt-BR) para cada status de lista.
 const statusLabel: Record<StatusLista, string> = {
   RASCUNHO: 'Rascunho',
   PUBLICADA: 'Publicada',
 };
 
+/**
+ * Componente da tela de listas. Centraliza o estado dos dados, dos filtros e dos
+ * quatro modais (criar/editar, gerenciar questoes e excluir).
+ */
 export const ListarListas = () => {
+  // Dados, filtros de busca/status e flags de carregamento/refresh.
   const [listas, setListas] = useState<ListaQuestao[]>([]);
   const [busca, setBusca] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
@@ -51,6 +62,11 @@ export const ListarListas = () => {
   const [isSavingLista, setIsSavingLista] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  /**
+   * Exibe um toast e o remove automaticamente apos 4s (sem apagar um toast mais novo).
+   * @param message texto a exibir
+   * @param type estilo do toast (sucesso/erro)
+   */
   const mostrarToast = useCallback((message: string, type: TipoToast = 'success') => {
     const id = Date.now();
     setToast({ id, message, type });
@@ -60,10 +76,12 @@ export const ListarListas = () => {
     }, 4000);
   }, []);
 
+  // Incrementa a chave de refresh para forcar uma nova busca das listas.
   const solicitarAtualizacao = useCallback(() => {
     setRefreshKey((current) => current + 1);
   }, []);
 
+  // Busca as listas aplicando os filtros atuais de busca e status.
   const carregarListas = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -80,6 +98,7 @@ export const ListarListas = () => {
     }
   }, [busca, mostrarToast, statusFiltro]);
 
+  // Recarrega ao mudar filtros (carregarListas muda) ou ao pedir refresh.
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void carregarListas();
@@ -88,24 +107,31 @@ export const ListarListas = () => {
     return () => window.clearTimeout(timeoutId);
   }, [carregarListas, refreshKey]);
 
+  // Abre o modal em modo de criacao (sem lista selecionada).
   const handleAbrirCriacao = () => {
     setModoModalLista('create');
     setListaSelecionada(null);
     setIsModalListaOpen(true);
   };
 
+  // Abre o modal em modo de edicao com a lista escolhida.
   const handleAbrirEdicao = (lista: ListaQuestao) => {
     setModoModalLista('edit');
     setListaSelecionada(lista);
     setIsModalListaOpen(true);
   };
 
+  // Fecha o modal de criar/editar, exceto enquanto salva.
   const handleFecharModalLista = () => {
     if (isSavingLista) return;
     setIsModalListaOpen(false);
     setListaSelecionada(null);
   };
 
+  /**
+   * Cria ou atualiza uma lista conforme o modo do modal e recarrega a tabela.
+   * @param nome nome informado para a lista
+   */
   const handleSalvarLista = async (nome: string) => {
     setIsSavingLista(true);
     try {
@@ -128,6 +154,10 @@ export const ListarListas = () => {
     }
   };
 
+  /**
+   * Exclui uma lista, fecha o modal de confirmacao e recarrega a tabela.
+   * @param id id da lista a excluir
+   */
   const handleExcluir = async (id: string) => {
     setIsDeleting(true);
     try {
@@ -143,14 +173,21 @@ export const ListarListas = () => {
     }
   };
 
+  /**
+   * Baixa o PDF da lista: pede o conteudo em base64 ao backend, monta uma URL
+   * de dados e dispara o download via um link temporario.
+   * @param listaId id da lista
+   * @param nomeLista nome usado no arquivo gerado
+   */
   const handleBaixarPdf = async (listaId: string, nomeLista: string) => {
     try {
-      mostrarToast('Gerando PDF...', 'success'); 
+      mostrarToast('Gerando PDF...', 'success');
 
       const base64Data = await baixarPdfLista(listaId);
-      
+
+      // Converte o base64 em URL de dados e simula o clique num link de download.
       const pdfUrl = `data:application/pdf;base64,${base64Data}`;
-      
+
       const link = document.createElement('a');
       link.href = pdfUrl;
       link.download = `${nomeLista.replace(/\s+/g, '_')}.pdf`;
@@ -202,6 +239,7 @@ export const ListarListas = () => {
         </div>
       </div>
 
+      {/* Barra de filtros: busca textual + filtro por status da lista. */}
       <div className="flex flex-col sm:flex-row gap-3 items-center mb-6">
         <label className="flex-1 w-full relative flex items-center gap-2 border border-gray-200 bg-white rounded-xl px-4 py-2.5">
           <Search size={17} className="text-gray-400" />
@@ -240,6 +278,7 @@ export const ListarListas = () => {
                 <th className="px-3 py-[10px] text-left text-[10.5px] font-extrabold uppercase tracking-[0.6px] text-gray-400">Ações</th>
               </tr>
             </thead>
+            {/* Corpo da tabela: estados de carregando, vazio ou as linhas das listas. */}
             <tbody className="bg-white">
               {isLoading ? (
                 <tr>
@@ -275,6 +314,7 @@ export const ListarListas = () => {
                       </button>
                     </td>
 
+                    {/* Coluna de turmas: mostra ate 2 nomes e agrega o excedente em "+N". */}
                     <td className="px-3 py-[13px]">
                       {lista.turmas.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">

@@ -16,16 +16,23 @@ import { AchievementMedal } from './AchievementMedal';
 import { AchievementReward } from './AchievementReward';
 import { AchievementTierBadge } from './AchievementTierBadge';
 
+// Chave de localStorage que guarda a preferencia de som do usuario.
 const CHAVE_SOM = 'achievement_sound_enabled';
 
+// Paleta usada nas particulas de confete da animacao de desbloqueio.
 const CORES_CONFETE = ['#14B8A6', '#F59E0B', '#F43F5E', '#6366F1', '#22C55E'];
 
+/**
+ * Toca um pequeno arpejo (do-mi-sol) via Web Audio API ao desbloquear a conquista.
+ * Falha silenciosamente quando a API de audio nao esta disponivel.
+ */
 const tocarSomConquista = () => {
   try {
     const AudioContextClass = window.AudioContext;
     const contexto = new AudioContextClass();
     const inicio = contexto.currentTime;
 
+    // Gera tres notas em sequencia, cada uma com envelope rapido de ataque/decaimento.
     [523.25, 659.25, 783.99].forEach((frequencia, indice) => {
       const oscilador = contexto.createOscillator();
       const ganho = contexto.createGain();
@@ -49,16 +56,24 @@ const tocarSomConquista = () => {
   }
 };
 
+/**
+ * Modal de celebracao exibido quando o aluno desbloqueia uma conquista.
+ * Consome a fila de desbloqueios da store, atualiza o saldo de moedas, toca o som
+ * (se habilitado) e oferece confetes alem de atalhos para ver a conquista ou seguir.
+ */
 export const AchievementUnlockModal = () => {
   const navigate = useNavigate();
+  // Conquista atual da fila e controles da store de conquistas/moedas.
   const conquista = useAchievementStore((state) => state.conquistaAtual);
   const quantidadeNaFila = useAchievementStore((state) => state.filaDesbloqueios.length);
   const avancarFila = useAchievementStore((state) => state.avancarFila);
   const setSaldoMoedas = useStudentCoinsStore((state) => state.setSaldoMoedas);
+  // Preferencia de som, inicializada a partir do localStorage.
   const [somAtivo, setSomAtivo] = useState(
     () => localStorage.getItem(CHAVE_SOM) !== 'false',
   );
 
+  // Pre-calcula posicoes/atrasos/cores das particulas de confete (uma unica vez).
   const confetes = useMemo(
     () =>
       Array.from({ length: 22 }, (_, indice) => ({
@@ -72,6 +87,7 @@ export const AchievementUnlockModal = () => {
     [],
   );
 
+  // Ao surgir uma conquista: sincroniza o saldo de moedas e toca o som, se ativo.
   useEffect(() => {
     if (!conquista) return;
 
@@ -82,6 +98,7 @@ export const AchievementUnlockModal = () => {
     }
   }, [conquista, setSaldoMoedas, somAtivo]);
 
+  // Bloqueia o scroll do body enquanto o modal estiver visivel.
   useEffect(() => {
     if (!conquista) return;
 
@@ -93,14 +110,17 @@ export const AchievementUnlockModal = () => {
     };
   }, [conquista]);
 
+  // Sem conquista na fila, nada e exibido.
   if (!conquista) return null;
 
+  /** Liga/desliga o som e persiste a preferencia no localStorage. */
   const alternarSom = () => {
     const novoValor = !somAtivo;
     setSomAtivo(novoValor);
     localStorage.setItem(CHAVE_SOM, String(novoValor));
   };
 
+  /** Avanca a fila e navega ate a tela de conquistas, abrindo a recem-desbloqueada. */
   const verConquista = () => {
     const conquistaId = conquista.conquistaId;
     avancarFila();
@@ -114,6 +134,7 @@ export const AchievementUnlockModal = () => {
       className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0A1128]/65 p-4 backdrop-blur-[3px]"
       role="presentation"
     >
+      {/* Camada de confete puramente decorativa, sem captura de cliques. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {confetes.map((confete) => (
           <span
@@ -191,6 +212,7 @@ export const AchievementUnlockModal = () => {
             </div>
           </div>
 
+          {/* Moedas e item exclusivo concedidos pelo desbloqueio. */}
           <div className="mt-5">
             <p className="mb-2 text-center text-xs font-black uppercase text-[#64748B]">
               Recompensas recebidas

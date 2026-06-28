@@ -2,6 +2,7 @@ import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, XCircle, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import type { ItemHistoricoQuiz } from '../../../features/historico-quiz/types';
 
+// Agregacao por questao dentro de uma sessao: tentativas, acertos e distribuicao de respostas.
 type QuestaoAgrupadaLocal = {
   questaoId: string;
   questao: ItemHistoricoQuiz['questao'];
@@ -11,10 +12,16 @@ type QuestaoAgrupadaLocal = {
   ultimoHorario: string;
 };
 
+/**
+ * Pagina de revisao de uma sessao do historico: recebe a sessao via state da rota,
+ * agrupa as respostas por questao e mostra, para cada uma, taxa de acerto, alternativas
+ * (destacando correta e as escolhidas) e a explicacao do professor.
+ */
 export const HistoricoDetalhesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // A sessao chega pelo state da navegacao (a partir da listagem do historico).
   const sessao = location.state?.sessao as {
     id: string;
     data: string;
@@ -23,10 +30,12 @@ export const HistoricoDetalhesPage = () => {
     itens: ItemHistoricoQuiz[];
   };
 
+  // Sem sessao no state (ex.: acesso direto/refresh), volta para a listagem.
   if (!sessao) {
     return <Navigate to="/aluno/historico" replace />;
   }
 
+  // Agrupa as respostas por questao, somando tentativas/acertos e contando cada letra escolhida.
   const questoesAgrupadas = Object.values(
     sessao.itens.reduce((acc, item) => {
       if (!acc[item.questaoId]) {
@@ -54,6 +63,7 @@ export const HistoricoDetalhesPage = () => {
     }, {} as Record<string, QuestaoAgrupadaLocal>),
   );
 
+  // Totais da sessao exibidos no cabecalho (tentativas, acertos e taxa).
   const totalRespostasSessao = sessao.itens.length;
   const totalAcertosSessao = questoesAgrupadas.reduce((sum, q) => sum + q.acertosLocais, 0);
   const taxaSessao = totalRespostasSessao > 0 ? Math.round((totalAcertosSessao / totalRespostasSessao) * 100) : 0;
@@ -91,10 +101,12 @@ export const HistoricoDetalhesPage = () => {
           </div>
         </div>
 
+        {/* Um cartao por questao revisada, com taxa individual e detalhamento das alternativas. */}
         <div className="flex flex-col gap-6">
           {questoesAgrupadas.map((itemLocal, index) => {
             const taxaQuestao = Math.round((itemLocal.acertosLocais / itemLocal.tentativasLocais) * 100);
 
+            // Mantem apenas as alternativas preenchidas (ignora vazias/nulas).
             const alternativas = itemLocal.questao.alternativas
               ? Object.entries(itemLocal.questao.alternativas).filter(([, val]) => val !== null && val !== '')
               : [];
@@ -131,11 +143,13 @@ export const HistoricoDetalhesPage = () => {
                   </div>
 
                   {alternativas.map(([key, texto]) => {
+                    // Estado de cada alternativa: se e a correta e quantas vezes foi escolhida nesta sessao.
                     const letra = key.replace('alternativa', '');
                     const isCorreta = letra === itemLocal.questao.respostaCorreta;
                     const vezesEscolhidaLocal = itemLocal.distribuicaoLocal[letra] || 0;
                     const foiEscolhidaNaSessao = vezesEscolhidaLocal > 0;
 
+                    // Estilo do cartao: verde para a correta, vermelho se escolhida e errada, neutro caso contrario.
                     let cardStyle = 'border-gray-100 bg-white text-[#0A1128]/70';
                     if (isCorreta) {
                       cardStyle = 'border-[#14D5C2] bg-white text-[#0A1128]';

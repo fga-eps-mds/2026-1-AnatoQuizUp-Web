@@ -30,6 +30,10 @@ import type {
   TaxonomiaBloom,
 } from '../../../features/manage-questions/model/types';
 
+// Pagina do banco de questoes (professor/admin): lista, filtra, cria, edita e exclui
+// questoes. O formulario de criacao/edicao e um modal em 3 passos (Stepper).
+
+// Origens possiveis de uma questao (valor enviado a API + rotulo exibido no select).
 const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
   { valor: 'ELABORADA_POR_PROFESSOR', rotulo: 'Elaborada por professor' },
   { valor: 'LIVRO', rotulo: 'Livro' },
@@ -37,6 +41,7 @@ const ORIGENS_QUESTAO: { valor: OrigemQuestao; rotulo: string }[] = [
   { valor: 'GERADA_POR_IA', rotulo: 'Gerada por IA' },
 ];
 
+// Niveis cognitivos da taxonomia de Bloom (classificacao da questao).
 const TAXONOMIAS_BLOOM: { valor: TaxonomiaBloom; rotulo: string }[] = [
   { valor: 'LEMBRAR', rotulo: 'Lembrar' },
   { valor: 'COMPREENDER', rotulo: 'Compreender' },
@@ -46,20 +51,24 @@ const TAXONOMIAS_BLOOM: { valor: TaxonomiaBloom; rotulo: string }[] = [
   { valor: 'CRIAR', rotulo: 'Criar' },
 ];
 
+// Opcoes fixas dos selects do formulario.
 const TOPICS =['Tórax', 'Abdome', 'Cabeça e pescoço', 'Membros superiores', 'Membros inferiores', 'Imagem'];
 const TYPES: QuestionType[] = ['Múltipla escolha', 'Verdadeiro/Falso'];
 const DIFFICULTIES: QuestionDifficulty[] = ['Fácil', 'Médio', 'Difícil'];
+// Alternativas A-E em branco (estado inicial da multipla escolha).
 const EMPTY_ALTERNATIVES: QuestionAlternative[] = ['A', 'B', 'C', 'D', 'E'].map((label) => ({
   id: label.toLowerCase(),
   label,
   text: '',
   isCorrect: false,
 }));
+// Alternativas fixas do tipo verdadeiro/falso.
 const TRUE_FALSE_ALTERNATIVES: QuestionAlternative[] = [
   { id: 'true', label: 'V', text: 'Verdadeiro', isCorrect: false },
   { id: 'false', label: 'F', text: 'Falso', isCorrect: true },
 ];
 
+// Converte a dificuldade exibida (PT-BR) para o codigo aceito pela API; "all" => sem filtro.
 const mapDifficultyToApi = (difficulty: QuestionDifficulty | 'all'): ApiQuestionDifficulty | undefined => {
   if (difficulty === 'Fácil') return 'FACIL';
   if (difficulty === 'Médio') return 'MEDIA';
@@ -67,6 +76,7 @@ const mapDifficultyToApi = (difficulty: QuestionDifficulty | 'all'): ApiQuestion
   return undefined;
 };
 
+// Estado inicial do formulario (nova questao).
 const emptyFormValues: QuestionFormValues = {
   topic: 'Tórax',
   tags: '',
@@ -81,6 +91,7 @@ const emptyFormValues: QuestionFormValues = {
   image: null,
 };
 
+// Iniciais do nome para o avatar (1 nome => 2 letras; varios => primeira e ultima).
 const getInitials = (name?: string | null) => {
   if (!name) return 'U';
 
@@ -90,17 +101,21 @@ const getInitials = (name?: string | null) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
+// Cores do badge de dificuldade (chave = dificuldade).
 const difficultyStyles: Record<QuestionDifficulty, string> = {
   Fácil: 'bg-[#e1f5ee] text-[#0b6b5a]',
   Médio: 'bg-[#f7ecd8] text-[#633806]',
   Difícil: 'bg-[#fef0f0] text-[#a32d2d]',
 };
 
+// Cores do badge de tema (fallback aplicado na tabela quando o tema nao esta mapeado).
 const topicStyles: Record<string, string> = {
   Tórax: 'bg-[#e1f5ee] text-[#0b6b5a]',
   Imagem: 'bg-[#eef1f8] text-[#993556]',
 };
 
+// Converte uma questao existente nos valores do formulario (modo edicao).
+// Em verdadeiro/falso, remonta as alternativas fixas preservando qual e a correta.
 const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues => ({
   topic: question.topic,
   tags: question.tags.join(', '),
@@ -120,6 +135,8 @@ const questionToFormValues = (question: ProfessorQuestion): QuestionFormValues =
     : question.alternatives,
 });
 
+// Valida um passo do formulario: 1) identificacao, 2) enunciado/explicacao,
+// 3) alternativas (quantidade exata por tipo + um gabarito marcado).
 const isStepValid = (values: QuestionFormValues, step: number) => {
   if (step === 1) {
     return Boolean(
@@ -143,10 +160,12 @@ const isStepValid = (values: QuestionFormValues, step: number) => {
   return filledAlternatives.length === requiredAlternatives && filledAlternatives.some((alternative) => alternative.isCorrect);
 };
 
+// Formulario valido = todos os tres passos validos.
 const isFormValid = (values: QuestionFormValues) => (
   isStepValid(values, 1) && isStepValid(values, 2) && isStepValid(values, 3)
 );
 
+// Cabecalho da pagina com titulo e o badge de papel/avatar do usuario logado.
 const PageHeader = () => {
   const { user } = useAuth();
 
@@ -173,6 +192,7 @@ const PageHeader = () => {
   );
 };
 
+// Cartao-resumo com a contagem de questoes e o botao "Nova Questão".
 const QuestionsSummary = ({
   total,
   onCreate,
@@ -199,6 +219,7 @@ const QuestionsSummary = ({
   </section>
 );
 
+// Barra de filtros: busca textual + selects de tema, dificuldade e nivel cognitivo.
 const QuestionsFilters = ({
   resultCount,
   searchTerm,
@@ -268,12 +289,14 @@ const QuestionsFilters = ({
   </section>
 );
 
+// Badge generico (pilula colorida) usado para tema e dificuldade na tabela.
 const Badge = ({ children, className }: { children: string; className: string }) => (
   <span className={`inline-flex w-fit items-center rounded px-2 py-1 text-[10px] font-bold ${className}`}>
     {children}
   </span>
 );
 
+// Tabela de questoes com acoes de editar/excluir por linha.
 const QuestionsTable = ({
   items,
   onEdit,
@@ -341,6 +364,7 @@ const QuestionsTable = ({
   </section>
 );
 
+// Estado vazio exibido quando o professor ainda nao tem questoes cadastradas.
 const EmptyQuestionsState = ({ onCreate }: { onCreate: () => void }) => (
   <section className="flex min-h-[338px] w-full items-center justify-center rounded-xl border border-[#e0e5ef] bg-white px-6 py-10 text-center">
     <div className="flex max-w-[300px] flex-col items-center">
@@ -365,6 +389,7 @@ const EmptyQuestionsState = ({ onCreate }: { onCreate: () => void }) => (
   </section>
 );
 
+// Rotulo de campo do formulario, com asterisco opcional para campos obrigatorios.
 const FieldLabel = ({ children, required = false }: { children: string; required?: boolean }) => (
   <span className="mb-1 flex text-xs font-bold text-[#334155]">
     {children}
@@ -372,10 +397,12 @@ const FieldLabel = ({ children, required = false }: { children: string; required
   </span>
 );
 
+// Mensagem de erro padrao para campos obrigatorios nao preenchidos.
 const RequiredError = ({ children = 'Campo Obrigatório' }: { children?: string }) => (
   <span className="mt-1 block text-[10px] font-bold text-[#e14b4b]">{children}</span>
 );
 
+// Indicador visual dos 3 passos do modal, destacando concluido/atual/inativo.
 const Stepper = ({ currentStep }: { currentStep: number }) => {
   const steps = [
     ['Identificação', 'Tema e tipo'],
@@ -432,6 +459,8 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
   );
 };
 
+// Modal de criacao/edicao em 3 passos. Recebe os valores e o passo atual do pai
+// (componente controlado) e expoe callbacks de navegacao/salvar/fechar.
 const QuestionModal = ({
   values,
   step,
@@ -453,13 +482,16 @@ const QuestionModal = ({
   onBack: () => void;
   onSubmit: () => void;
 }) => {
+  // Atualiza um unico campo do formulario preservando os demais.
   const updateValue = <K extends keyof QuestionFormValues>(key: K, value: QuestionFormValues[K]) => {
     onChange({ ...values, [key]: value });
   };
+  // Controla quais campos ja foram "tocados" para so mostrar erro apos interacao.
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const markFieldTouched = (field: string) => {
     setTouchedFields((currentFields) => ({ ...currentFields, [field]: true }));
   };
+  // Flags de erro: so aparecem depois que o campo foi tocado e segue invalido.
   const showTopicError = touchedFields.topic && !values.topic;
   const showTypeError = touchedFields.type && !values.type;
   const showDifficultyError = touchedFields.difficulty && !values.difficulty;
@@ -469,6 +501,7 @@ const QuestionModal = ({
   const hasCorrectAlternative = values.alternatives.some((alternative) => alternative.isCorrect);
   const showAlternativesError = touchedFields.alternatives && (!hasEnoughAlternatives || !hasCorrectAlternative);
 
+  // Edita o texto de uma alternativa especifica.
   const updateAlternative = (id: string, text: string) => {
     markFieldTouched('alternatives');
     onChange({
@@ -479,6 +512,7 @@ const QuestionModal = ({
     });
   };
 
+  // Define o gabarito: marca a alternativa escolhida como correta e desmarca as demais.
   const markCorrect = (id: string) => {
     markFieldTouched('alternatives');
     onChange({
@@ -490,6 +524,7 @@ const QuestionModal = ({
     });
   };
 
+  // Remove uma alternativa e renumera os rotulos (A, B, C...) das restantes.
   const removeAlternative = (id: string) => {
     markFieldTouched('alternatives');
     const alternatives = values.alternatives
@@ -498,6 +533,7 @@ const QuestionModal = ({
     onChange({ ...values, alternatives });
   };
 
+  // Adiciona uma nova alternativa em branco com o proximo rotulo da sequencia.
   const addAlternative = () => {
     markFieldTouched('alternatives');
     const label = String.fromCharCode(65 + values.alternatives.length);
@@ -507,6 +543,7 @@ const QuestionModal = ({
     });
   };
 
+  // Ao trocar o tipo da questao, redefine o conjunto de alternativas adequado.
   const handleTypeChange = (type: QuestionType) => {
     updateValue('type', type);
     onChange({
@@ -550,7 +587,9 @@ const QuestionModal = ({
 
         <Stepper currentStep={step} />
 
+        {/* Corpo do modal: renderiza apenas o passo atual */}
         <div className="overflow-y-auto">
+          {/* Passo 1: identificacao (tema, tags, tipo, dificuldade, origem, Bloom, regiao) */}
           {step === 1 ? (
             <>
               <section className="mx-5 mt-3 flex items-center gap-2.5 rounded-lg border border-[#00c8aa] bg-gradient-to-r from-[#f2f4f8] to-[rgba(0,235,199,0.12)] px-[15px] py-[11px] shadow-[0_8px_20px_rgba(0,200,170,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(0,200,170,0.14)]">
@@ -570,7 +609,9 @@ const QuestionModal = ({
                   Gerar com IA
                 </button>
               </section>
+              {/* Grade de campos da identificacao da questao */}
               <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
+                {/* Tema */}
                 <label>
                   <FieldLabel required>Tema</FieldLabel>
                   <select
@@ -587,6 +628,7 @@ const QuestionModal = ({
                   </select>
                   {showTopicError ? <RequiredError /> : null}
                 </label>
+                {/* Tags / palavras-chave (separadas por virgula) */}
                 <label>
                   <FieldLabel required>Tags / palavras-chave</FieldLabel>
                   <input
@@ -597,6 +639,7 @@ const QuestionModal = ({
                   />
                   <span className="mt-1 block text-[10px] text-[#8a9ab8]">Separe por vírgula. Facilitam a busca no banco.</span>
                 </label>
+                {/* Tipo (troca o conjunto de alternativas) */}
                 <label>
                   <FieldLabel required>Tipo</FieldLabel>
                   <select
@@ -613,6 +656,7 @@ const QuestionModal = ({
                   </select>
                   {showTypeError ? <RequiredError /> : null}
                 </label>
+                {/* Dificuldade */}
                 <label>
                   <FieldLabel required>Dificuldade</FieldLabel>
                   <select
@@ -629,6 +673,7 @@ const QuestionModal = ({
                   </select>
                   {showDifficultyError ? <RequiredError /> : null}
                 </label>
+                {/* Origem da questao */}
                 <label>
                   <FieldLabel required>Origem</FieldLabel>
                   <select
@@ -645,6 +690,7 @@ const QuestionModal = ({
                     ))}
                   </select>
                 </label>
+                {/* Nivel cognitivo (taxonomia de Bloom) */}
                 <label>
                   <FieldLabel required>Nível cognitivo (Bloom)</FieldLabel>
                   <select
@@ -675,6 +721,7 @@ const QuestionModal = ({
             </>
           ) : null}
 
+          {/* Passo 2: enunciado, imagem opcional e explicacao */}
           {step === 2 ? (
             <div className="space-y-4 px-5 py-5">
               <label className="block">
@@ -707,6 +754,7 @@ const QuestionModal = ({
                     accept="image/png, image/jpeg, image/svg+xml"
                     className="hidden"
                     onChange={(event) => {
+                      // Valida o tamanho (max 5MB) antes de aceitar a imagem.
                       const file = event.target.files?.[0];
                       if (file) {
                         if (file.size > 5 * 1024 * 1024) {
@@ -728,6 +776,7 @@ const QuestionModal = ({
                     </label>
                   ) : (
                     <div className="relative flex h-[120px] w-full items-center justify-center overflow-hidden rounded-md border border-[#e2e8f0] bg-white p-2">
+                      {/* Imagem nova (File) usa objectURL; ja existente usa a URL do backend */}
                       <img
                         src={values.image instanceof File ? URL.createObjectURL(values.image) : values.image}
                         alt="Preview da imagem"
@@ -759,6 +808,7 @@ const QuestionModal = ({
             </div>
           ) : null}
 
+          {/* Passo 3: alternativas e selecao do gabarito */}
           {step === 3 ? (
             <div className="space-y-4 px-5 py-5">
               <div>
@@ -867,6 +917,7 @@ const QuestionModal = ({
           ) : null}
         </div>
 
+        {/* Rodape: navegacao entre passos e botao de salvar no ultimo passo */}
         <footer className="flex items-center justify-between border-t border-[#e8eaf2] px-5 py-4">
           <span className="text-[11px] font-bold text-[#8a9ab8]">
             {step < 3 ? `Passo ${step} de 3` : 'Passo 3 de 3 — Tudo pronto!'}
@@ -916,6 +967,7 @@ const QuestionModal = ({
   );
 };
 
+// Modal de confirmacao de exclusao, exibindo o enunciado da questao alvo.
 const DeleteConfirmationModal = ({
   question,
   isDeleting,
@@ -952,24 +1004,33 @@ const DeleteConfirmationModal = ({
   </div>
 );
 
+// Pagina principal: orquestra estado, carregamento, filtros e os modais.
+// openCreateModal (vindo da rota /criar-questao) abre o modal ja no modo criacao.
 export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: boolean }) => {
   const navigate = useNavigate();
+  // Lista de questoes carregada do backend.
   const [questions, setQuestions] = useState<ProfessorQuestion[]>([]);
+  // Estado dos filtros (busca + selects).
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'all'>('all');
   const [selectedBloom, setSelectedBloom] = useState<TaxonomiaBloom | 'all'>('all');
+  // Flags de carregamento/acao e mensagens de feedback.
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  // Estado do modal de questao (passo atual, valores e questao em edicao).
   const [modalStep, setModalStep] = useState(1);
   const [formValues, setFormValues] = useState<QuestionFormValues>(emptyFormValues);
   const [editingQuestion, setEditingQuestion] = useState<ProfessorQuestion | null>(null);
+  // Questao marcada para exclusao (controla o modal de confirmacao).
   const [questionToDelete, setQuestionToDelete] = useState<ProfessorQuestion | null>(null);
+  // Modal aberto quando a rota pede criacao ou ha uma questao em edicao.
   const isQuestionModalOpen = openCreateModal || editingQuestion !== null;
 
+  // Abre o modal em modo criacao (navega para a rota dedicada).
   const openCreateQuestion = () => {
     setFormValues(emptyFormValues);
     setEditingQuestion(null);
@@ -977,6 +1038,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     navigate('/professor/criar-questao');
   };
 
+  // Fecha o modal, limpa o formulario e volta para a listagem.
   const closeQuestionModal = () => {
     setFormValues(emptyFormValues);
     setEditingQuestion(null);
@@ -984,13 +1046,16 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     navigate('/professor/questoes');
   };
 
+  // Abre o modal em modo edicao, pre-preenchendo o formulario com a questao.
   const openEditQuestion = (question: ProfessorQuestion) => {
     setEditingQuestion(question);
     setFormValues(questionToFormValues(question));
     setModalStep(1);
   };
 
+  // Carrega as questoes ao montar e sempre que um filtro muda (com debounce na busca).
   useEffect(() => {
+    // Flag para descartar atualizacoes apos o componente desmontar.
     let isMounted = true;
     const shouldUseSearchEndpoint =
       searchTerm.trim() ||
@@ -1022,16 +1087,19 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       }
     };
 
+    // Debounce de 300ms apenas para a busca textual; filtros aplicam de imediato.
     const timeoutId = globalThis.setTimeout(() => {
       void loadQuestions();
     }, searchTerm.trim() ? 300 : 0);
 
+    // Cleanup: cancela o timer e marca como desmontado.
     return () => {
       isMounted = false;
       globalThis.clearTimeout(timeoutId);
     };
   }, [searchTerm, selectedDifficulty, selectedTopic, selectedBloom]);
 
+  // Opcoes do select de tema: derivadas das questoes carregadas (fallback nos temas fixos).
   const topicOptions = useMemo(() => {
     const questionTopics = Array.from(
       new Set(questions.map((question) => question.topic).filter(Boolean)),
@@ -1040,6 +1108,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     return questionTopics.length > 0 ? questionTopics : TOPICS;
   }, [questions]);
 
+  // Filtragem local adicional (alem da do backend) por busca/tema/dificuldade.
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase('pt-BR');
 
@@ -1057,6 +1126,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     });
   }, [questions, searchTerm, selectedDifficulty, selectedTopic]);
 
+  // Salva a questao (cria ou atualiza) e reflete o resultado na lista local.
   const handleSubmitQuestion = async () => {
     if (!isFormValid(formValues)) return;
 
@@ -1068,6 +1138,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
         ? await updateQuestion(editingQuestion.id, formValues)
         : await createQuestion(formValues);
 
+      // Edicao substitui a questao na lista; criacao a insere no topo.
       setQuestions((currentQuestions) => {
         if (!editingQuestion) return [savedQuestion, ...currentQuestions];
         return currentQuestions.map((question) => question.id === editingQuestion.id ? savedQuestion : question);
@@ -1082,6 +1153,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     }
   };
 
+  // Exclui a questao selecionada e a remove da lista local.
   const handleDeleteQuestion = async () => {
     if (!questionToDelete) return;
 
@@ -1106,6 +1178,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
     <div className="flex min-h-screen w-full flex-col bg-[#f3f6fb]">
       <PageHeader />
       <main className="flex w-full flex-1 flex-col gap-4 overflow-auto px-5 py-4">
+        {/* Feedback de sucesso (toast) e de erro (alert) */}
         {toastMessage ? (
           <div role="status" className="rounded-lg border border-[#b7ead6] bg-[#effaf5] px-4 py-3 text-sm font-bold text-[#0b6b5a]">
             {toastMessage}
@@ -1117,6 +1190,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
           </div>
         ) : null}
         <QuestionsSummary total={questions.length} onCreate={openCreateQuestion} />
+        {/* Tres estados: carregando, com questoes (filtros + tabela) ou vazio */}
         {isLoading ? (
           <section className="flex min-h-[338px] items-center justify-center rounded-xl border border-[#e0e5ef] bg-white text-sm font-bold text-[#4a5578]">
             Carregando questões...
@@ -1146,6 +1220,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
         )}
       </main>
 
+      {/* Modal de criacao/edicao, montado apenas quando aberto */}
       {isQuestionModalOpen ? (
         <QuestionModal
           values={formValues}
@@ -1160,6 +1235,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
         />
       ) : null}
 
+      {/* Modal de confirmacao de exclusao */}
       {questionToDelete ? (
         <DeleteConfirmationModal
           question={questionToDelete}

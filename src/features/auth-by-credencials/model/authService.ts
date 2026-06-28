@@ -1,14 +1,20 @@
+// Servico de autenticacao por credenciais. Cuida do login, da busca do usuario
+// autenticado e do logout, alem de mapear o usuario do formato do backend (PT-BR,
+// papel/status) para o tipo User do dominio (EN). Em modo mock, delega ao
+// mockAuthService. Traduz erros HTTP (401/403/sem-resposta) em mensagens claras.
 import axios from 'axios';
 import type { User } from '../../../entities/user/model/types';
 import { httpClient } from '../../../shared/api/httpClient';
 import { USE_MOCKS } from '../../../shared/config/env';
 import { getAuthenticatedUserMock, loginWithMockCredencials } from './mockAuthService';
 
+// Tokens retornados ao front apos um login bem-sucedido.
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
 }
 
+// Formato cru da resposta de login do backend (tokens dentro de "dados").
 interface BackendLoginResponse {
   dados: {
     accessToken: string;
@@ -16,9 +22,11 @@ interface BackendLoginResponse {
   };
 }
 
+// Papeis e status como nomeados pelo backend (PT-BR).
 type BackendPapel = 'ALUNO' | 'PROFESSOR' | 'ADMIN' | 'ADMINISTRADOR';
 type BackendStatus = 'ATIVO' | 'INATIVO' | 'PENDENTE' | 'RECUSADO';
 
+// Formato cru do usuario autenticado retornado pelo backend.
 interface BackendUsuarioAutenticado {
   id: string;
   nome: string;
@@ -32,22 +40,26 @@ interface BackendUsuarioAutenticado {
   visivel?: boolean;
 }
 
+// Formato cru da resposta de "usuario atual" (usuario aninhado em "dados").
 interface BackendMeResponse {
   dados: {
     usuario: BackendUsuarioAutenticado;
   };
 }
 
+// Traduz o papel do backend (PT-BR) para o role do dominio; admin/administrador viram ADMIN.
 const mapPapelToRole = (papel: BackendPapel): User['role'] => {
   if (papel === 'ALUNO') return 'STUDENT';
   if (papel === 'PROFESSOR') return 'PROFESSOR';
   return 'ADMIN';
 };
 
+// Traduz o status do backend para o status do dominio (apenas ATIVO e considerado ativo).
 const mapStatusToUserStatus = (status: BackendStatus): User['status'] => (
   status === 'ATIVO' ? 'ACTIVE' : 'INACTIVE'
 );
 
+// Converte o periodo (string) em numero, ou null quando ausente/invalido.
 const mapPeriodo = (periodo?: string | null): number | null => {
   if (!periodo) return null;
 
@@ -55,6 +67,11 @@ const mapPeriodo = (periodo?: string | null): number | null => {
   return Number.isNaN(parsedPeriodo) ? null : parsedPeriodo;
 };
 
+/**
+ * Mapeia o usuario cru do backend para o tipo User do dominio, normalizando
+ * nomes de campos, papel, status, periodo e defaults (ex.: visivel = true).
+ * @param usuario usuario cru retornado pela API
+ */
 const mapUsuarioAutenticado = (usuario: BackendUsuarioAutenticado): User => ({
   id: usuario.id,
   name: usuario.nome,
@@ -69,6 +86,12 @@ const mapUsuarioAutenticado = (usuario: BackendUsuarioAutenticado): User => ({
   visivel: usuario.visivel ?? true,
 });
 
+/**
+ * Extrai a mensagem de erro de uma resposta do backend, tentando os varios
+ * formatos possiveis (erro.mensagem / mensagem / message).
+ * @param err erro capturado
+ * @returns mensagem do backend ou null
+ */
 const extractErrorMessage = (err: unknown): string | null => {
   if (!axios.isAxiosError(err) || !err.response) return null;
 
@@ -81,6 +104,13 @@ const extractErrorMessage = (err: unknown): string | null => {
   return responseData.erro?.mensagem ?? responseData.mensagem ?? responseData.message ?? null;
 };
 
+/**
+ * Realiza o login com email e senha e devolve os tokens. Em modo mock, delega ao
+ * mock. Mapeia 401 (credenciais) e 403 (conta desativada) em mensagens proprias.
+ * @param email email do usuario
+ * @param password senha
+ * @throws Error com mensagem amigavel em qualquer falha
+ */
 export const loginWithCredencials = async (
   email: string,
   password: string,
@@ -120,6 +150,11 @@ export const loginWithCredencials = async (
   }
 };
 
+/**
+ * Busca o usuario autenticado (rota "usuario-atual") e o mapeia para o dominio.
+ * 401/403 viram "sessao expirada". Em modo mock, delega ao mock.
+ * @throws Error com mensagem amigavel em caso de falha
+ */
 export const getAuthenticatedUser = async (): Promise<User> => {
   if (USE_MOCKS) {
     return getAuthenticatedUserMock();
@@ -146,6 +181,10 @@ export const getAuthenticatedUser = async (): Promise<User> => {
   }
 };
 
+/**
+ * Encerra a sessao no backend invalidando o refresh token. No-op em modo mock.
+ * @param refreshToken token de refresh a invalidar
+ */
 export const logoutSession = async (refreshToken: string): Promise<void> => {
   if (USE_MOCKS) {
     return;

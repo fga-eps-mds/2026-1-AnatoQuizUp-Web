@@ -5,12 +5,14 @@ import { buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi'
 import type { DesempenhoAluno } from '../../../entities/dashboardTurma/model/types';
 import type { UsuarioResumo } from '../../../entities/usuarios/model/types';
 
+// Une as estatisticas de desempenho do aluno com seus dados de usuario (ou null se nao resolvido).
 type AlunoComDesempenho = DesempenhoAluno & { usuario: UsuarioResumo | null };
 
 interface Props {
   turmaId: string;
 }
 
+// Paleta de cores dos avatares; a cor e escolhida de forma deterministica pelo id do aluno.
 const AVATAR_COLORS = [
   'bg-teal-500',
   'bg-blue-500',
@@ -22,11 +24,13 @@ const AVATAR_COLORS = [
   'bg-cyan-500',
 ];
 
+/** Escolhe deterministicamente uma cor de avatar a partir do id (soma dos code points). */
 function avatarColor(id: string): string {
   const hash = id.split('').reduce((acc, c) => acc + (c.codePointAt(0) ?? 0), 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
+/** Deriva as iniciais (1 a 2 letras) do nome para exibir no avatar. */
 function initials(nome: string): string {
   const parts = nome.trim().split(' ').filter(Boolean);
   if (parts.length === 0) return '?';
@@ -34,6 +38,10 @@ function initials(nome: string): string {
   return (parts[0][0] + parts.at(-1)![0]).toUpperCase();
 }
 
+/**
+ * Formata a data da ultima atividade de forma relativa ("Hoje"/"Ontem" com hora)
+ * ou como data curta em PT-BR para dias anteriores.
+ */
 function formatarData(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -41,6 +49,7 @@ function formatarData(iso: string | null): string {
   const ontem = new Date(hoje);
   ontem.setDate(hoje.getDate() - 1);
 
+  // Compara apenas dia/mes/ano, ignorando o horario.
   const mesmodia = (a: Date, b: Date) =>
     a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 
@@ -52,29 +61,38 @@ function formatarData(iso: string | null): string {
   return d.toLocaleDateString('pt-BR');
 }
 
+/** Cor da barra de progresso conforme a taxa de acerto (verde/ambar/vermelho). */
 function barColor(taxa: number): string {
   if (taxa >= 70) return 'bg-green-500';
   if (taxa >= 40) return 'bg-amber-500';
   return 'bg-red-500';
 }
 
+/** Cor do texto da taxa de acerto, alinhada a mesma faixa da barra. */
 function textColor(taxa: number): string {
   if (taxa >= 70) return 'text-green-600';
   if (taxa >= 40) return 'text-amber-600';
   return 'text-red-600';
 }
 
+/**
+ * Tabela de desempenho individual dos alunos da turma (dashboard do professor).
+ * Cada linha abre um modal com estatisticas gerais e desempenho por tema.
+ */
 export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
+  // Alunos com desempenho, estado de carga e aluno selecionado para o modal.
   const [alunos, setAlunos] = useState<AlunoComDesempenho[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<AlunoComDesempenho | null>(null);
 
+  // Busca o desempenho individual e cruza com os dados de usuario por id.
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const individual = await buscarDesempenhoIndividual(turmaId);
         const ids = individual.alunos.map((a) => a.alunoId);
+        // Resolve os usuarios em lote e indexa por id para o merge seguinte.
         const usuarios = ids.length > 0 ? await buscarUsuariosPorIds(ids) : [];
         const porId = new Map(usuarios.map((u) => [u.id, u]));
 
@@ -117,6 +135,7 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
         <span className="text-xs text-gray-400">clique em um aluno para ver histórico detalhado</span>
       </div>
 
+      {/* Tabela: avatar/nome, total respondidas, barra de taxa de acerto e ultima atividade. */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -179,6 +198,7 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
         </table>
       </div>
 
+      {/* Modal de detalhe do aluno selecionado: resumo e desempenho por tema. */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
@@ -204,6 +224,7 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
               </button>
             </div>
 
+            {/* Cards de resumo: questoes, acertos e taxa geral. */}
             <div className="mb-5 grid grid-cols-3 gap-3">
               <div className="rounded-lg bg-gray-50 p-3 text-center">
                 <p className="text-lg font-bold text-gray-900">{selected.totalRespondidas}</p>

@@ -9,18 +9,24 @@ import type { SlotsCosmeticos } from '../../../../features/profile-cosmetics';
 import { buscarPerfilSocial, type PerfilSocial } from '../../../../features/social-profile';
 import { ProfileIdentityCard } from '../../../../shared/ui/profile-identity-card';
 
+// O id da amizade pode chegar pelo state da navegacao (habilita "desfazer amizade").
 type EstadoNavegacao = {
   amizadeId?: string;
 } | null;
 
 const MENSAGEM_ERRO_PERFIL = 'Não foi possível carregar este perfil.';
 
+/**
+ * Pagina do perfil social de um amigo: cartao de identidade com cosmeticos e
+ * conquistas em destaque. Se veio com o id da amizade, permite desfaze-la.
+ */
 export const AmigoPerfilPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state } = useLocation();
   const amizadeId = (state as EstadoNavegacao)?.amizadeId ?? null;
 
+  // Perfil, cosmeticos equipados e estados de carga/erro (geral e da acao de desfazer).
   const [perfil, setPerfil] = useState<PerfilSocial | null>(null);
   const [cosmeticos, setCosmeticos] = useState<SlotsCosmeticos>({});
   const [carregando, setCarregando] = useState(Boolean(id));
@@ -28,6 +34,7 @@ export const AmigoPerfilPage = () => {
   const [desfazendo, setDesfazendo] = useState(false);
   const [erroDesfazer, setErroDesfazer] = useState<string | null>(null);
 
+  // Carrega o perfil social sempre que o id muda; a flag evita setState apos unmount.
   useEffect(() => {
     if (!id) {
       return;
@@ -63,6 +70,7 @@ export const AmigoPerfilPage = () => {
     };
   }, [id]);
 
+  /** Desfaz a amizade e volta para a lista; mantem mensagem de erro em caso de falha. */
   const handleDesfazerAmizade = async () => {
     if (!amizadeId) {
       return;
@@ -119,6 +127,7 @@ export const AmigoPerfilPage = () => {
           </div>
         )}
 
+        {/* Conteudo do perfil quando carregado com sucesso. */}
         {!carregando && perfil && (
           <>
             <ProfileIdentityCard

@@ -4,10 +4,17 @@ import { useNavigate } from "react-router-dom";
 import type { DashboardAlunoResponse, TemaDashboard } from "./types";
 import { httpClient } from "../../shared/api/httpClient";
 
+// Paleta ciclica usada nas fatias do grafico de distribuicao por tema.
 const COLORS = ["#14b8a6", "#f59e0b", "#f43f5e", "#3b82f6", "#8b5cf6"];
 
+/**
+ * Dashboard de evolucao do aluno: metricas gerais, distribuicao e desempenho por
+ * tema (grafico de pizza via conic-gradient) e historico de desempenho nas listas.
+ * Trata estados de carregamento e vazio (sem questoes respondidas).
+ */
 export const DashboardAlunoPage = () => {
   const navigate = useNavigate();
+  // Dados do dashboard e estado de carga.
   const [data, setData] = useState<DashboardAlunoResponse | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -65,6 +72,7 @@ export const DashboardAlunoPage = () => {
     );
   }
 
+  // Monta as paradas do conic-gradient: cada tema ocupa um arco proporcional ao seu volume.
   const gradientStops = data.porTema
     .reduce<{ stops: string[]; acumulado: number }>(
       (resultado, tema, index) => {
@@ -82,6 +90,7 @@ export const DashboardAlunoPage = () => {
     )
     .stops.join(", ");
 
+  /** Classes de cor (texto+fundo) do selo de status do tema (tranquilo/atencao/critico). */
   const getStatusColor = (status: string) => {
     const s = status.toLowerCase();
     if (s === "tranquilo") return "text-emerald-600 bg-emerald-100";
@@ -89,6 +98,7 @@ export const DashboardAlunoPage = () => {
     return "text-red-600 bg-red-100";
   };
 
+  /** Cor da barra de desempenho do tema, alinhada ao mesmo status. */
   const getBarColor = (status: string) => {
     const s = status.toLowerCase();
     if (s === "tranquilo") return "bg-emerald-500";
@@ -96,6 +106,7 @@ export const DashboardAlunoPage = () => {
     return "bg-red-500";
   };
 
+  /** Rotulo e classes do selo de status de uma lista (submetida/em andamento/nao respondeu). */
   const getStatusListaStyle = (status: string) => {
     switch (status) {
       case "SUBMETIDA":
@@ -224,7 +235,7 @@ export const DashboardAlunoPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.porLista.map((lista) => {
-              // UTILIZAMOS A VARIÁVEL ESTÁTICA AQUI!
+              // Compara o prazo com o instante fixado na montagem para marcar listas expiradas.
               const expirado = lista.prazo && new Date(lista.prazo).getTime() < agora;
               const style = getStatusListaStyle(lista.status);
               

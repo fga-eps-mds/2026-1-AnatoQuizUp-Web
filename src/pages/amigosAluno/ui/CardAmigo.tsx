@@ -15,8 +15,13 @@ export type CardAmigoProps = {
   onDesfazer: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
+// Plano de fundo padrao do painel lateral quando o amigo nao tem um equipado.
 const FUNDO_PADRAO = 'linear-gradient(135deg, #e8f9f4 0%, #c5f5e7 100%)';
 
+/**
+ * Cartao de um amigo na lista de amizades: avatar com cosmeticos, nome/nickname,
+ * curso, conquistas em destaque e acoes (ver perfil / desfazer amizade).
+ */
 export const CardAmigo = ({
   amizade,
   cosmeticos,
@@ -29,6 +34,7 @@ export const CardAmigo = ({
   const fundo = cosmeticos.PLANO_FUNDO;
   const titulo = cosmeticos.TITULO;
 
+  // Linha de curso/semestre montada a partir dos campos disponiveis.
   const cursoLabel = [
     amigo.curso,
     amigo.semestre && `${amigo.semestre}° semestre`,
@@ -41,6 +47,7 @@ export const CardAmigo = ({
       onClick={onVerPerfil}
       tabIndex={0}
       onKeyDown={(event) => {
+        // Acessibilidade: Enter/Espaco no proprio cartao tambem abrem o perfil.
         if (
           event.target === event.currentTarget &&
           (event.key === 'Enter' || event.key === ' ')
@@ -91,6 +98,7 @@ export const CardAmigo = ({
             </p>
           )}
 
+          {/* Conquistas em destaque inline (apenas no mobile). */}
           {conquistasDestacadas.length > 0 && (
             <div className="mt-3 flex gap-2 sm:hidden" aria-label="Conquistas em destaque">
               {conquistasDestacadas.slice(0, 3).map((conquista) => (
@@ -134,6 +142,7 @@ export const CardAmigo = ({
         </div>
       </div>
 
+      {/* Overlay (desktop) com as conquistas em destaque, revelado no hover/foco do cartao. */}
       {conquistasDestacadas.length > 0 && (
         <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 hidden translate-y-2 rounded-xl border border-[#E2E8F0] bg-white/95 p-3 opacity-0 shadow-xl backdrop-blur transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:block">
           <p className="mb-2 text-[10px] font-black uppercase text-[#64748B]">

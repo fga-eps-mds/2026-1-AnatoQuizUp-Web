@@ -11,6 +11,11 @@ type ProfileHomeProps = {
   children?: ReactNode;
 };
 
+/**
+ * Tela inicial da marca AnatoQuizUp, reutilizada pelas homes por papel. Mostra um
+ * cartao de boas-vindas quando autenticado (com avatar, nome e acoes) ou um convite
+ * para entrar quando o usuario e visitante.
+ */
 export const ProfileHome = ({
   isAuthenticated,
   profileLabel,
@@ -20,6 +25,7 @@ export const ProfileHome = ({
   onLogin,
   children,
 }: ProfileHomeProps) => {
+  // Inicial do nome usada no avatar (fallback "U" de usuario).
   const initial = name?.charAt(0).toUpperCase() || 'U';
 
   return (
@@ -34,6 +40,7 @@ export const ProfileHome = ({
           </p>
         </div>
 
+        {/* Autenticado: cartao de perfil; visitante: convite para entrar. */}
         {isAuthenticated ? (
           <div className="w-full bg-[#0A1128] p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#71edc8] to-[#00E5FF]"></div>
