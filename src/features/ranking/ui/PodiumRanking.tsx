@@ -8,6 +8,7 @@ type PodiumRankingProps = {
   rotuloMetrica: string;
 };
 
+// Configuracao visual de cada degrau do podio (altura, cor do anel/medalha e rotulo).
 type DegrauConfig = {
   altura: string;
   anel: string;
@@ -15,6 +16,7 @@ type DegrauConfig = {
   rotulo: string;
 };
 
+// 1o lugar e o mais alto e dourado; 2o prata; 3o bronze.
 const CONFIG_DEGRAU: Record<1 | 2 | 3, DegrauConfig> = {
   1: {
     altura: 'h-28',
@@ -36,6 +38,7 @@ const CONFIG_DEGRAU: Record<1 | 2 | 3, DegrauConfig> = {
   },
 };
 
+/** Um degrau do podio: avatar, nome (com selo "Você") e o bloco com posicao e acertos. */
 const Degrau = ({
   linha,
   rotuloMetrica,
@@ -88,7 +91,12 @@ const Degrau = ({
   );
 };
 
+/**
+ * Podio do ranking (top 3): 2o a esquerda, 1o ao centro (mais alto) e 3o a direita.
+ * Sem ao menos o 1o colocado, nada e renderizado.
+ */
 export const PodiumRanking = ({ linhas, rotuloMetrica }: PodiumRankingProps) => {
+  // Localiza as tres primeiras posicoes.
   const primeiro = linhas.find((linha) => linha.posicao === 1);
   const segundo = linhas.find((linha) => linha.posicao === 2);
   const terceiro = linhas.find((linha) => linha.posicao === 3);
@@ -99,6 +107,7 @@ export const PodiumRanking = ({ linhas, rotuloMetrica }: PodiumRankingProps) => 
 
   return (
     <div className="rounded-2xl border border-[#0A1128]/10 bg-gradient-to-b from-[#71edc8]/15 to-white p-5 shadow-sm">
+      {/* Ordem visual dos degraus: 2o, 1o (centro) e 3o. */}
       <div className="mx-auto grid max-w-md grid-cols-3 items-end gap-2 sm:gap-4">
         <div className="flex items-end">{segundo && <Degrau linha={segundo} rotuloMetrica={rotuloMetrica} />}</div>
         <div className="flex items-end">{<Degrau linha={primeiro} rotuloMetrica={rotuloMetrica} />}</div>

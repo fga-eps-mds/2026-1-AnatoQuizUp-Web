@@ -1,3 +1,7 @@
+// Servico de amizades. Reune todas as chamadas a API de amizade: buscar colegas,
+// enviar/aceitar/recusar convites, listar convites e amigos, desfazer amizade,
+// alterar a visibilidade do perfil e buscar o perfil publico de um usuario.
+// Toda chamada uniformiza os erros via extractErrorMessage para mensagens amigaveis.
 import { httpClient } from '../../shared/api/httpClient';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
 import type {
@@ -12,13 +16,16 @@ import type {
   ResumoAmizade,
 } from './types';
 
+// Prefixo base de todas as rotas de amizade.
 const AMIZADE_ENDPOINT = '/amizade';
 
+// Envelope da resposta do perfil publico (mensagem + dados).
 type RespostaPerfilPublico = {
   mensagem: string;
   dados: PerfilPublico;
 };
 
+// GET /amizade/busca — busca colegas por nome ou nickname (paginado).
 export const buscarColegas = async (
   params?: BuscarColegasParams,
 ): Promise<RespostaPaginada<ResumoAmigo>> => {
@@ -34,6 +41,7 @@ export const buscarColegas = async (
   }
 };
 
+// POST /amizade — envia uma solicitacao de amizade para o usuario informado.
 export const enviarSolicitacao = async (
   id: string,
 ): Promise<EnviarSolicitacaoResponse> => {
@@ -49,6 +57,7 @@ export const enviarSolicitacao = async (
   }
 };
 
+// GET /amizade/convites/recebidos — lista os convites pendentes recebidos.
 export const listarConvitesRecebidos = async (
   params?: ListarConvitesParams,
 ): Promise<RespostaPaginada<ResumoAmizade>> => {
@@ -64,6 +73,7 @@ export const listarConvitesRecebidos = async (
   }
 };
 
+// GET /amizade/convites/enviados — lista os convites pendentes enviados.
 export const listarConvitesEnviados = async (
   params?: ListarConvitesParams,
 ): Promise<RespostaPaginada<ResumoAmizade>> => {
@@ -79,6 +89,7 @@ export const listarConvitesEnviados = async (
   }
 };
 
+// PATCH /amizade/aceitar — aceita um convite de amizade pelo id.
 export const aceitarConvite = async (id: string): Promise<MensagemResponse> => {
   try {
     const { data } = await httpClient.patch<MensagemResponse>(
@@ -92,6 +103,7 @@ export const aceitarConvite = async (id: string): Promise<MensagemResponse> => {
   }
 };
 
+// PATCH /amizade/recusar — recusa um convite de amizade pelo id.
 export const recusarConvite = async (id: string): Promise<MensagemResponse> => {
   try {
     const { data } = await httpClient.patch<MensagemResponse>(
@@ -105,6 +117,7 @@ export const recusarConvite = async (id: string): Promise<MensagemResponse> => {
   }
 };
 
+// GET /amizade — lista as amizades confirmadas (paginado).
 export const listarAmigos = async (
   params?: ListarAmigosParams,
 ): Promise<RespostaPaginada<ResumoAmizade>> => {
@@ -120,6 +133,7 @@ export const listarAmigos = async (
   }
 };
 
+// DELETE /amizade — desfaz uma amizade (id no corpo da requisicao).
 export const desfazerAmizade = async (id: string): Promise<MensagemResponse> => {
   try {
     const { data } = await httpClient.delete<MensagemResponse>(
@@ -133,6 +147,7 @@ export const desfazerAmizade = async (id: string): Promise<MensagemResponse> => 
   }
 };
 
+// PATCH /amizade/visibilidade — define se o perfil aparece para outros alunos.
 export const alterarVisibilidade = async (
   visivel: boolean,
 ): Promise<MensagemResponse> => {
@@ -148,6 +163,7 @@ export const alterarVisibilidade = async (
   }
 };
 
+// GET /usuarios/:id/perfil — busca o perfil publico de um usuario especifico.
 export const buscarPerfilPublico = async (id: string): Promise<PerfilPublico> => {
   try {
     const { data } = await httpClient.get<RespostaPerfilPublico>(

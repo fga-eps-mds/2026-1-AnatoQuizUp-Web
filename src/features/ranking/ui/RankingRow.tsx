@@ -6,6 +6,7 @@ type RankingRowProps = {
   rotuloMetrica: string;
 };
 
+/** Classe de cor do badge de posicao: ouro/prata/bronze para o top 3, neutro depois. */
 const corPosicao = (posicao: number): string => {
   if (posicao === 1) return 'bg-[#F59E0B] text-white';
   if (posicao === 2) return 'bg-[#94A3B8] text-white';
@@ -13,6 +14,10 @@ const corPosicao = (posicao: number): string => {
   return 'bg-[#0A1128]/5 text-[#0A1128]/70';
 };
 
+/**
+ * Linha do ranking (fora do podio): posicao, avatar, nome/nickname, total de acertos
+ * e taxa. Destaca visualmente a linha do proprio usuario com o selo "Você".
+ */
 export const RankingRow = ({ linha, rotuloMetrica }: RankingRowProps) => {
   const destaque = linha.destaque;
 
