@@ -1,3 +1,6 @@
+// Formulario de cadastro de professor em duas etapas (acesso e dados academicos).
+// Exige email institucional UnB e SIAPE; o cadastro fica pendente de aprovacao
+// do administrador antes de liberar o acesso. A instituicao e fixa (UnB).
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Clock3, LockKeyhole } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -12,6 +15,7 @@ import {
   type RegisterProfessorFormValues,
 } from '../model/types';
 
+// Valores iniciais; a instituicao ja vem fixada na UnB (campo bloqueado).
 const INITIAL_VALUES: RegisterProfessorFormValues = {
   fullName: '',
   email: '',
@@ -23,11 +27,13 @@ const INITIAL_VALUES: RegisterProfessorFormValues = {
   course: '',
 };
 
+// Campos de cada etapa: 1 = acesso (nome/email/senha), 2 = vinculo academico.
 const STEP_FIELDS: Record<number, RegisterProfessorField[]> = {
   1: ['fullName', 'email', 'password', 'confirmPassword'],
   2: ['institution', 'siape', 'department', 'course'],
 };
 
+// Constantes de rota, rotulos e regex de validacao reutilizados no formulario.
 const PROFESSOR_LOGIN_ROUTE = '/professor/login';
 const SUBMIT_LABEL = 'Completar cadastro';
 const GENERIC_REGISTER_ERROR = 'Não foi possível concluir o cadastro. Tente novamente.';
@@ -35,10 +41,13 @@ const EMAIL_UNB_REGEX = /^[^\s@]+@(?:[a-z0-9-]+\.)*unb\.br$/i;
 const SIAPE_REGEX = /^\d{7}$/;
 const FULL_NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
 
+// Assinatura de um validador: recebe todos os valores e devolve a msg de erro (ou undefined).
 type FieldValidator = (values: RegisterProfessorFormValues) => string | undefined;
 
+// Validador generico de "campo obrigatorio" (apenas confere se nao esta vazio).
 const requiredText = (value: string, message: string) => (value.trim() ? undefined : message);
 
+// Tabela de validadores por campo; centraliza todas as regras do formulario.
 const FIELD_VALIDATORS: Record<RegisterProfessorField, FieldValidator> = {
   fullName: (values) => {
     const fullName = values.fullName.trim();
@@ -71,11 +80,23 @@ const FIELD_VALIDATORS: Record<RegisterProfessorField, FieldValidator> = {
   course: (values) => requiredText(values.course, 'Curso é obrigatório.'),
 };
 
+/**
+ * Valida um unico campo aplicando o validador correspondente.
+ * @param values valores atuais do formulario
+ * @param field campo a validar
+ * @returns mensagem de erro ou undefined se valido
+ */
 const validateField = (
   values: RegisterProfessorFormValues,
   field: RegisterProfessorField,
 ): string | undefined => FIELD_VALIDATORS[field](values);
 
+/**
+ * Valida varios campos e devolve um mapa apenas com os que falharam.
+ * @param values valores atuais do formulario
+ * @param fields campos a validar
+ * @returns mapa campo -> mensagem de erro
+ */
 const validateFields = (
   values: RegisterProfessorFormValues,
   fields: RegisterProfessorField[],
@@ -86,12 +107,17 @@ const validateFields = (
     return fieldErrors;
   }, {});
 
+// Marca os campos informados como "tocados" (para exibir seus erros).
 const touchedFieldsFrom = (fields: RegisterProfessorField[]) =>
   fields.reduce<Partial<Record<RegisterProfessorField, boolean>>>((touched, field) => {
     touched[field] = true;
     return touched;
   }, {});
 
+/**
+ * Mescla erros anteriores com os novos apenas para os campos indicados:
+ * adiciona os que falharam e remove os que foram corrigidos.
+ */
 const mergeFieldErrors = (
   previous: RegisterProfessorFieldErrors,
   fields: RegisterProfessorField[],
@@ -110,9 +136,11 @@ const mergeFieldErrors = (
   return updated;
 };
 
+// Descobre a etapa (1 ou 2) de um campo, para reabrir o passo do primeiro erro.
 const getStepByField = (field: RegisterProfessorField): number =>
   STEP_FIELDS[1].includes(field) ? 1 : 2;
 
+// Configuracao declarativa de cada campo de texto (rotulo, tipo, normalizacao...).
 type TextFieldConfig = {
   label: string;
   name: RegisterProfessorField;
@@ -135,6 +163,7 @@ const STEP_TWO_TEXT_FIELDS: TextFieldConfig[] = [
   { label: 'Curso', name: 'course' },
 ];
 
+// Remove tudo que nao for digito (usado para normalizar o campo SIAPE).
 function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
 }
@@ -153,6 +182,10 @@ const inputClassName = (hasError: boolean) =>
     hasError ? 'border-red-400' : 'border-[#14D5C2]',
   ].join(' ');
 
+/**
+ * Campo de texto controlado do formulario de professor, com rotulo, normalizacao
+ * opcional do valor e exibicao de erro.
+ */
 const ProfessorTextField = ({
   label,
   name,
@@ -190,6 +223,10 @@ type LockedInstitutionFieldProps = {
   error?: string;
 };
 
+/**
+ * Campo de instituicao somente leitura (sempre UnB), com cadeado indicando que
+ * o valor nao pode ser alterado pelo professor.
+ */
 const LockedInstitutionField = ({ value, error }: LockedInstitutionFieldProps) => (
   <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-1.5">
@@ -224,6 +261,7 @@ type StepperProps = {
   step: number;
 };
 
+// Barra de progresso de tres marcadores (a 3a etapa representa o sucesso/aprovacao).
 const ProfessorStepper = ({ step }: StepperProps) => (
   <div className="mb-6 flex w-full items-center [@media(max-height:760px)]:mb-4">
     {[1, 2, 3].map((marker, index) => (
@@ -248,6 +286,10 @@ const ProfessorStepper = ({ step }: StepperProps) => (
   </div>
 );
 
+/**
+ * Componente principal do cadastro de professor. Controla as duas etapas, a
+ * validacao por campo e o envio (que pode falhar com erros vindos do backend).
+ */
 export const RegisterProfessorForm = () => {
   const [values, setValues] = useState<RegisterProfessorFormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<RegisterProfessorFieldErrors>({});
@@ -259,6 +301,7 @@ export const RegisterProfessorForm = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // Erros recalculados da etapa atual; habilitam ou nao o botao de avancar/enviar.
   const currentStepErrors = useMemo(
     () => validateFields(values, STEP_FIELDS[step]),
     [step, values],
@@ -267,6 +310,7 @@ export const RegisterProfessorForm = () => {
   const isCurrentStepValid =
     Object.keys(currentStepErrors).length === 0 && !hasVisibleStepError && !isLoading;
 
+  // Revalida um campo e atualiza/remove sua mensagem de erro no estado.
   const updateFieldError = (
     field: RegisterProfessorField,
     nextValues: RegisterProfessorFormValues,
@@ -283,11 +327,13 @@ export const RegisterProfessorForm = () => {
     });
   };
 
+  // Ao perder o foco, marca o campo como tocado e ja o valida.
   const markTouchedAndValidate = (field: RegisterProfessorField) => {
     setTouchedFields((previous) => ({ ...previous, [field]: true }));
     updateFieldError(field, values);
   };
 
+  // Atualiza o valor digitado; ao mudar a senha, revalida tambem a confirmacao.
   const handleTextChange = (field: RegisterProfessorField, value: string) => {
     const nextValues = { ...values, [field]: value };
     setValues(nextValues);
@@ -299,6 +345,7 @@ export const RegisterProfessorForm = () => {
     }
   };
 
+  // Valida a etapa atual e, sem erros, avanca para a proxima.
   const goToNextStep = () => {
     const stepFields = STEP_FIELDS[step];
     const stepErrors = validateFields(values, stepFields);
@@ -312,11 +359,16 @@ export const RegisterProfessorForm = () => {
     setStep((current) => Math.min(current + 1, 2));
   };
 
+  // Volta uma etapa e limpa o erro geral.
   const goToPreviousStep = () => {
     setFormError('');
     setStep((current) => Math.max(current - 1, 1));
   };
 
+  /**
+   * Valida todos os campos e envia o cadastro. Se houver erro (local ou do
+   * backend), reabre a etapa do primeiro campo com problema.
+   */
   const handleSubmit = async () => {
     const allFields = [...STEP_FIELDS[1], ...STEP_FIELDS[2]];
     const validationErrors = validateFields(values, allFields);
@@ -361,6 +413,7 @@ export const RegisterProfessorForm = () => {
     }
   };
 
+  // Helper para renderizar um campo de texto a partir de sua configuracao declarativa.
   const renderTextField = (config: TextFieldConfig) => (
     <ProfessorTextField
       key={config.name}
@@ -372,6 +425,7 @@ export const RegisterProfessorForm = () => {
     />
   );
 
+  // Tela de sucesso: avisa que o cadastro ficou pendente de aprovacao do admin.
   if (isSuccess) {
     return (
       <section className="w-full max-w-[470px]">
@@ -419,6 +473,7 @@ export const RegisterProfessorForm = () => {
         noValidate
         className="flex flex-col gap-4 [@media(max-height:760px)]:gap-3"
       >
+        {/* Etapa 1: dados de acesso. Etapa 2: instituicao (fixa) + dados academicos. */}
         {step === 1 ? <>{STEP_ONE_TEXT_FIELDS.map(renderTextField)}</> : null}
 
         {step === 2 ? (

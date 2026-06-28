@@ -4,11 +4,13 @@ import { Button } from '../../../shared/ui/button/Button';
 import { resetPassword } from '../model/recoverPasswordService';
 import { FeedbackMessage } from './FeedbackMessage';
 
+// Erros de validacao por campo do formulario de redefinicao de senha.
 type FieldErrors = {
   password?: string;
   confirmPassword?: string;
 };
 
+// Props do subcomponente com os dois campos de senha e seus handlers.
 type PasswordFieldsProps = {
   confirmPassword: string;
   fieldErrors: FieldErrors;
@@ -21,6 +23,7 @@ type PasswordFieldsProps = {
 const INPUT_BASE_CLASS =
   'h-10 w-full rounded-[7px] border bg-white px-3.5 text-sm text-[#0A1128] outline-none transition-colors placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] ';
 
+/** Valida nova senha e confirmacao (obrigatoriedade, tamanho minimo e igualdade). */
 const validate = (password: string, confirmPassword: string): FieldErrors => {
   const errors: FieldErrors = {};
 
@@ -39,6 +42,7 @@ const validate = (password: string, confirmPassword: string): FieldErrors => {
   return errors;
 };
 
+/** Classe da dica abaixo do campo de senha, em vermelho quando ha erro. */
 const getPasswordHintClass = (hasError: boolean) => {
   if (hasError) {
     return 'text-xs font-medium text-red-500';
@@ -47,6 +51,7 @@ const getPasswordHintClass = (hasError: boolean) => {
   return 'text-xs font-medium text-[#0A1128]/45';
 };
 
+/** Extrai a mensagem de erro, assumindo link expirado/invalido como fallback. */
 const getErrorMessage = (err: unknown) => {
   if (err instanceof Error) {
     return err.message;
@@ -55,6 +60,7 @@ const getErrorMessage = (err: unknown) => {
   return 'Link expirado ou invalido.';
 };
 
+/** Subcomponente com os campos de nova senha + confirmacao e o botao de envio. */
 const PasswordFields = ({
   confirmPassword,
   fieldErrors,
@@ -111,9 +117,15 @@ const PasswordFields = ({
   );
 };
 
+/**
+ * Formulario de redefinicao de senha acessado via link com token na query string.
+ * Sem token valido, ja exibe erro; com sucesso, mostra feedback e atalho para o login.
+ */
 export const ResetPasswordForm = () => {
   const [searchParams] = useSearchParams();
+  // Token do link de redefinicao (na query string).
   const token = searchParams.get('token')?.trim() ?? '';
+  // Campos de senha, erros por campo e mensagens de erro/sucesso gerais.
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -121,6 +133,7 @@ export const ResetPasswordForm = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Valida token e campos e chama o service de redefinicao de senha. */
   const handleSubmit = async () => {
     setFormError('');
     setSuccessMessage('');
@@ -149,6 +162,7 @@ export const ResetPasswordForm = () => {
     }
   };
 
+  // Deriva a mensagem de feedback e seus destino/rotulo conforme sucesso ou erro.
   const feedback = successMessage || formError;
   const feedbackVariant = successMessage ? 'success' : 'error';
   const feedbackLink = successMessage ? '/login' : '/esqueci-senha';

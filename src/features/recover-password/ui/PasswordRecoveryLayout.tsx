@@ -5,6 +5,10 @@ type PasswordRecoveryLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * Layout compartilhado das telas de recuperacao de senha: marca a esquerda sobre o
+ * fundo diagonal e o conteudo (formulario) a direita, recebido via children.
+ */
 export const PasswordRecoveryLayout = ({ children }: PasswordRecoveryLayoutProps) => (
   <main className="relative min-h-screen w-full overflow-x-hidden bg-[#F7F7F7]">
     <div className="absolute inset-y-0 left-0 hidden w-[57vw] bg-[#00214d] [clip-path:polygon(0_0,40%_0,100%_100%,0_100%)] md:block [@media(min-width:768px)_and_(max-width:1100px)]:w-[50vw] [@media(min-width:768px)_and_(max-height:760px)]:w-[52vw] [@media(min-width:768px)_and_(max-width:1100px)]:[clip-path:polygon(0_0,34%_0,100%_100%,0_100%)]" />
