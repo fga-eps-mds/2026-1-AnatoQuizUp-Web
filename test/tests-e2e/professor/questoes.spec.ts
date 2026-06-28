@@ -64,4 +64,17 @@ test.describe('Fluxos de Questão do Professor', () => {
     const mensagemSucesso = page.getByText(/Questão atualizada com sucesso!/i);
     await expect(mensagemSucesso).toBeVisible();
   });
+
+  test('Deve realizar login com sucesso e buscar questão', async ({ page }) => {
+    await page.goto('/professor/home');
+    await expect(page.getByRole('button', { name: 'Questões' })).toBeVisible();
+    await page.getByRole('button', { name: 'Questões' }).click();
+
+    await page.getByRole('textbox', { name: 'Buscar questão' }).click();
+    await page.getByRole('textbox', { name: 'Buscar questão' }).fill('prim');
+
+    expect(page.getByRole('cell').filter({
+       hasText: 'Qual célula óssea é primariamente responsável pela reabsorção da matriz óssea?'
+    })).toBeVisible();
+  });
 });
