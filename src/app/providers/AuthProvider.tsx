@@ -7,18 +7,27 @@ import {
 } from '../../features/auth-by-credencials/model/authService.ts';
 import type { User, AuthState } from '../../entities/user/model/types.ts';
 
+// Contexto de autenticacao consumido por toda a aplicacao via useAuth.
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+/**
+ * Provedor de autenticacao: mantem o usuario logado, restaura a sessao a partir do
+ * token salvo e expoe login/logout/recarregar via contexto. Os tokens ficam no
+ * localStorage; o usuario e buscado no backend.
+ */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
+    // Comeca carregando apenas se ha um token salvo a restaurar.
     const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('access_token')));
 
+    // Limpa tokens e usuario do estado local (sessao encerrada).
     const clearSession = useCallback(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
     }, []);
 
+    // Revoga o refresh token no backend (se houver) e sempre encerra a sessao local.
     const logout = useCallback(async () => {
         const refreshToken = localStorage.getItem('refresh_token');
 
@@ -33,11 +42,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [clearSession]);
 
+    // Busca o usuario autenticado no backend e o coloca no estado.
     const loadAuthenticatedUser = useCallback(async () => {
         const userData = await getAuthenticatedUser();
         setUser(userData);
     }, []);
 
+    // Na montagem, tenta restaurar a sessao a partir do access token salvo.
     useEffect(() => {
         const accessToken = localStorage.getItem('access_token');
 
@@ -72,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
     }, [clearSession]);
 
+    // Salva os tokens recebidos no login e carrega o usuario; em falha, limpa a sessao.
     const login = useCallback(async (accessToken: string, refreshToken: string) => {
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('refresh_token', refreshToken);
@@ -98,6 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+/** Hook de acesso ao contexto de auth; lanca erro se usado fora do AuthProvider. */
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
