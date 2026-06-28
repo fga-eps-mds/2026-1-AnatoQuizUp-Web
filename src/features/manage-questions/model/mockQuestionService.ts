@@ -1,3 +1,8 @@
+// Implementacao mock (em memoria) do servico de questoes, usada como fallback/
+// desenvolvimento quando o backend nao esta disponivel. Mantem um array local de
+// questoes e reproduz as operacoes da API real: listar, filtrar, paginar, criar,
+// atualizar e remover (soft delete), alem de mapear entre o formato do formulario
+// e o formato do dominio. Tudo e assincrono para imitar a assinatura da API real.
 import type {
   ApiSuccessResponse,
   ListQuestionsResponse,
@@ -12,8 +17,10 @@ import type {
   UpdateQuestionPayload,
 } from './types';
 
+// Id ficticio de professor usado como autor de todas as questoes mock.
 const MOCK_PROFESSOR_ID = 'cmozsfilw00034h52pm1r4ibs';
 
+// Temas pre-definidos reutilizados pelas questoes de exemplo.
 const CARDIOVASCULAR_TOPIC: QuestionTopic = {
   id: 'cmozy4dxz00004h3xbjzw5vdv',
   nome: 'Sistema Cardiovascular',
@@ -24,8 +31,10 @@ const IMAGE_TOPIC: QuestionTopic = {
   nome: 'Imagem',
 };
 
+// Contador para gerar ids sequenciais de novas questoes criadas no mock.
 let mockSequence = 3;
 
+// "Banco de dados" em memoria: a lista mutavel de questoes de exemplo.
 let questionsMock: Question[] = [
   {
     id: 'cmp00lkko00014hlq1ra3432j',
@@ -78,12 +87,22 @@ let questionsMock: Question[] = [
   },
 ];
 
+/**
+ * Clona uma questao em profundidade (tema e alternativas), evitando que quem
+ * recebe o objeto mutacione o estado interno do mock por referencia.
+ * @param question questao a clonar
+ */
 const cloneQuestion = (question: Question): Question => ({
   ...question,
   tema: { ...question.tema },
   alternativas: question.alternativas ? { ...question.alternativas } : null,
 });
 
+/**
+ * Resolve um tema a partir do nome: reaproveita o tema de uma questao existente
+ * (comparacao case-insensitive pt-BR) ou cria um tema mock com id derivado do nome.
+ * @param nome nome do tema
+ */
 const getTopicFromName = (nome: string): QuestionTopic => {
   const existingQuestion = questionsMock.find(
     (question) => question.tema.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'),
@@ -97,6 +116,10 @@ const getTopicFromName = (nome: string): QuestionTopic => {
   };
 };
 
+/**
+ * Formata uma data ISO para o padrao pt-BR (em UTC). Se invalida, devolve o original.
+ * @param date data em formato ISO
+ */
 const formatQuestionDate = (date: string): string => {
   const parsedDate = new Date(date);
   if (Number.isNaN(parsedDate.getTime())) return date;
@@ -104,10 +127,12 @@ const formatQuestionDate = (date: string): string => {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(parsedDate);
 };
 
+// Converte o tipo interno (enum) para o rotulo exibido na UI do professor.
 const mapTypeToProfessorQuestion = (type: Question['tipo']): ProfessorQuestion['type'] => (
   type === 'MULTIPLA_ESCOLHA' ? 'Múltipla escolha' : 'Verdadeiro/Falso'
 );
 
+// Converte a dificuldade interna (enum) para o rotulo exibido na UI.
 const mapDifficultyToProfessorQuestion = (
   difficulty: Question['dificuldade'],
 ): ProfessorQuestion['difficulty'] => {
@@ -116,22 +141,34 @@ const mapDifficultyToProfessorQuestion = (
   return 'Médio';
 };
 
+// Caminho inverso: rotulo da UI -> tipo interno (enum) da API.
 const mapTypeToApi = (type: QuestionFormValues['type']): Question['tipo'] => (
   type === 'Múltipla escolha' ? 'MULTIPLA_ESCOLHA' : 'CERTO_ERRADO'
 );
 
+// Rotulo de dificuldade da UI -> enum interno da API.
 const mapDifficultyToApi = (difficulty: QuestionFormValues['difficulty']): Question['dificuldade'] => {
   if (difficulty === 'Fácil') return 'FACIL';
   if (difficulty === 'Difícil') return 'DIFICIL';
   return 'MEDIA';
 };
 
+/**
+ * Mapeia o rotulo de alternativa do formulario para a chave da API. Em questoes
+ * Verdadeiro/Falso, V vira C e F vira E (convencao do backend).
+ * @param label rotulo da alternativa no formulario
+ */
 const mapAlternativeLabelToApi = (label: string): QuestionAlternativeKey => {
   if (label === 'V') return 'C';
   if (label === 'F') return 'E';
   return label as QuestionAlternativeKey;
 };
 
+/**
+ * Converte o objeto de alternativas da API (chave -> texto) na lista de
+ * alternativas usada pelo formulario, marcando qual e a correta.
+ * @param question questao de origem
+ */
 const mapApiAlternativesToFormAlternatives = (
   question: Question,
 ): QuestionAlternative[] => (
@@ -143,6 +180,10 @@ const mapApiAlternativesToFormAlternatives = (
   }))
 );
 
+/**
+ * Converte uma questao do dominio para o formato consumido pela tela do professor.
+ * @param question questao do dominio
+ */
 const mapQuestionToProfessorQuestion = (question: Question): ProfessorQuestion => ({
   id: question.id,
   topic: question.tema.nome,
@@ -158,6 +199,12 @@ const mapQuestionToProfessorQuestion = (question: Question): ProfessorQuestion =
   createdAt: formatQuestionDate(question.criadoEm),
 });
 
+/**
+ * Constroi uma questao do dominio a partir dos valores do formulario, ja
+ * resolvendo tema, tipo, dificuldade, alternativa correta e timestamps.
+ * @param values valores preenchidos no formulario
+ * @param id id a atribuir a questao
+ */
 const mapValuesToQuestion = (values: QuestionFormValues, id: string): Question => {
   const now = new Date().toISOString();
   const correctAlternative = values.alternatives.find((alternative) => alternative.isCorrect);
@@ -190,10 +237,19 @@ const mapValuesToQuestion = (values: QuestionFormValues, id: string): Question =
   };
 };
 
+/**
+ * Normaliza o termo de busca aceitando os varios nomes de parametro (q/busca/termo).
+ * @param params parametros de busca
+ */
 const getSearchTerm = (params?: SearchQuestionsParams): string => (
   params?.q ?? params?.busca ?? params?.termo ?? ''
 ).trim().toLocaleLowerCase('pt-BR');
 
+/**
+ * Filtra as questoes aplicando status, tema, tipo, dificuldade e termo de busca.
+ * Por padrao retorna apenas questoes ATIVO. O termo busca em varios campos juntos.
+ * @param params filtros opcionais
+ */
 const filterQuestions = (params?: SearchQuestionsParams): Question[] => {
   const searchTerm = getSearchTerm(params);
 
@@ -223,6 +279,12 @@ const filterQuestions = (params?: SearchQuestionsParams): Question[] => {
   });
 };
 
+/**
+ * Pagina uma lista de questoes e devolve dados + metadados (page/limit/total).
+ * Defaults: pagina 1 e limite 10; clona cada questao retornada.
+ * @param questions lista ja filtrada
+ * @param params pagina e limite desejados
+ */
 const paginateQuestions = (
   questions: Question[],
   params?: Pick<QuestionListParams, 'page' | 'limit'>,
@@ -243,10 +305,16 @@ const paginateQuestions = (
   };
 };
 
+// Indice da questao no array mock, ou -1 se nao existir.
 const findQuestionIndexById = (id: string): number => (
   questionsMock.findIndex((question) => question.id === id)
 );
 
+/**
+ * Busca uma questao por id e lanca erro se nao encontrar.
+ * @param id id da questao
+ * @throws Error quando a questao nao existe
+ */
 const findQuestionById = (id: string): Question => {
   const question = questionsMock.find((item) => item.id === id);
 
@@ -257,10 +325,15 @@ const findQuestionById = (id: string): Question => {
   return question;
 };
 
+// Lista todas as questoes ativas ja no formato da UI do professor.
 export const listProfessorQuestionsMock = async (): Promise<ProfessorQuestion[]> => (
   filterQuestions().map(mapQuestionToProfessorQuestion)
 );
 
+/**
+ * Cria uma nova questao a partir do formulario, inserindo-a no inicio da lista.
+ * @param values valores do formulario
+ */
 export const createQuestionMock = async (
   values: QuestionFormValues,
 ): Promise<ProfessorQuestion> => {
@@ -270,6 +343,12 @@ export const createQuestionMock = async (
   return mapQuestionToProfessorQuestion(question);
 };
 
+/**
+ * Atualiza uma questao existente preservando sua data de criacao original.
+ * @param id id da questao
+ * @param values novos valores do formulario
+ * @throws Error se a questao nao existir
+ */
 export const updateQuestionMock = async (
   id: string,
   values: QuestionFormValues,
@@ -290,14 +369,21 @@ export const updateQuestionMock = async (
   return mapQuestionToProfessorQuestion(updatedQuestion);
 };
 
+// Remove (soft delete) uma questao; delega ao removerQuestaoMock e ignora o retorno.
 export const deleteQuestionMock = async (id: string): Promise<void> => {
   await removerQuestaoMock(id);
 };
 
+// Lista questoes filtradas e paginadas (formato da API real).
 export const listarQuestoesMock = async (
   params?: QuestionListParams,
 ): Promise<ListQuestionsResponse> => paginateQuestions(filterQuestions(params), params);
 
+/**
+ * Retorna a primeira questao que casa com os filtros informados.
+ * @param params filtros de busca
+ * @throws Error se nenhuma questao casar
+ */
 export const buscarQuestaoPorFiltroMock = async (
   params?: SearchQuestionsParams,
 ): Promise<ApiSuccessResponse<Question>> => {
@@ -313,6 +399,7 @@ export const buscarQuestaoPorFiltroMock = async (
   };
 };
 
+// Busca uma questao por id (clonada) no formato de resposta da API.
 export const buscarQuestaoPorIdMock = async (
   id: string,
 ): Promise<ApiSuccessResponse<Question>> => ({
@@ -320,6 +407,13 @@ export const buscarQuestaoPorIdMock = async (
   dados: cloneQuestion(findQuestionById(id)),
 });
 
+/**
+ * Atualiza parcialmente uma questao (payload com campos opcionais), mantendo os
+ * valores atuais para os campos nao informados.
+ * @param id id da questao
+ * @param payload campos a sobrescrever
+ * @throws Error se a questao nao existir
+ */
 export const atualizarQuestaoMock = async (
   id: string,
   payload: UpdateQuestionPayload,
@@ -359,6 +453,12 @@ export const atualizarQuestaoMock = async (
   };
 };
 
+/**
+ * Remove uma questao por soft delete: marca status INATIVO e preenche excluidoEm,
+ * sem apaga-la fisicamente do array.
+ * @param id id da questao
+ * @throws Error se a questao nao existir
+ */
 export const removerQuestaoMock = async (
   id: string,
 ): Promise<ApiSuccessResponse<Question>> => {

@@ -7,24 +7,30 @@ import {
   atualizarDadosPessoais,
 } from '../model/editarContaService';
 
+// Erros de validacao por campo do formulario de dados pessoais.
 type FieldErrors = {
   nome?: string;
   apelido?: string;
 };
 
+// Regras de formato: nome aceita apenas letras/espacos; apelido comeca com letra (minusculas/numeros/_).
 const FORMATO_NOME = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
 const FORMATO_NICKNAME = /^[a-z][a-z0-9_]*$/;
+// Classe base dos inputs, reutilizada em todos os campos do formulario.
 const INPUT_BASE_CLASS =
   'h-11 w-full rounded-lg border bg-white px-3.5 text-sm font-semibold text-[#0A1128] outline-none transition-colors placeholder:text-gray-400 focus:border-[#14b8a6] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500';
 
+/** Monta a classe do input, destacando a borda quando ha erro. */
 const campoClass = (hasError: boolean) => (
   `${INPUT_BASE_CLASS} ${hasError ? 'border-red-400' : 'border-gray-200'}`
 );
 
+/** Extrai a mensagem de um erro desconhecido, com texto de fallback. */
 const mensagemErro = (err: unknown, fallback: string) => (
   err instanceof Error ? err.message : fallback
 );
 
+/** Valida nome e apelido, retornando um mapa de erros por campo (vazio = valido). */
 const validar = (nome: string, apelido: string): FieldErrors => {
   const errors: FieldErrors = {};
   const nomeNormalizado = nome.trim();
@@ -47,10 +53,16 @@ const validar = (nome: string, apelido: string): FieldErrors => {
   return errors;
 };
 
+/**
+ * Formulario de edicao de nome e apelido do usuario (o e-mail e somente leitura).
+ * Valida no cliente, persiste via service e recarrega o usuario autenticado ao salvar.
+ */
 export const InformacoesPessoaisForm = () => {
   const { user, recarregarUsuario } = useAuth();
+  // Campos editaveis inicializados com os dados atuais do usuario.
   const [nome, setNome] = useState(user?.name ?? '');
   const [apelido, setApelido] = useState(user?.nickname ?? '');
+  // Erros por campo, erro/sucesso geral e estado de envio.
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -60,6 +72,7 @@ export const InformacoesPessoaisForm = () => {
     return null;
   }
 
+  /** Valida, envia a atualizacao e trata o erro especifico de apelido em uso. */
   const handleSubmit = async () => {
     setFormError('');
     setSuccessMessage('');
@@ -150,6 +163,7 @@ export const InformacoesPessoaisForm = () => {
           )}
         </div>
 
+        {/* E-mail exibido apenas para leitura; alteracao depende da administracao. */}
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="email" className="text-sm font-bold text-[#00214d]">
