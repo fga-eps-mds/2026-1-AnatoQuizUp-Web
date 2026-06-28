@@ -56,11 +56,11 @@ export const CardAmigo = ({
           onVerPerfil();
         }
       }}
-      className="group relative flex min-h-[160px] cursor-pointer overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]"
+      className="group relative z-0 flex min-h-[160px] cursor-pointer overflow-visible rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]"
     >
       {/* Painel lateral colorido com o fundo do amigo */}
       <div
-        className="flex w-24 shrink-0 items-center justify-center sm:w-28"
+        className="flex w-24 shrink-0 items-center justify-center rounded-l-2xl sm:w-28"
         style={{ background: fundo?.valor ?? FUNDO_PADRAO }}
       >
         <AvatarCosmetico
@@ -144,10 +144,11 @@ export const CardAmigo = ({
 
       {/* Overlay (desktop) com as conquistas em destaque, revelado no hover/foco do cartao. */}
       {conquistasDestacadas.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 hidden translate-y-2 rounded-xl border border-[#E2E8F0] bg-white/95 p-3 opacity-0 shadow-xl backdrop-blur transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:block">
+        <div className="pointer-events-none absolute inset-x-3 bottom-full z-30 mb-2 hidden translate-y-2 rounded-xl border border-[#E2E8F0] bg-white/95 p-3 opacity-0 shadow-xl backdrop-blur transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:block">
           <p className="mb-2 text-[10px] font-black uppercase text-[#64748B]">
             Conquistas em destaque
           </p>
+
           <div className="flex gap-3">
             {conquistasDestacadas.slice(0, 3).map((conquista) => (
               <div
@@ -161,6 +162,7 @@ export const CardAmigo = ({
                   tamanho="sm"
                   nome={conquista.nome}
                 />
+
                 <span className="line-clamp-2 text-[10px] font-black leading-3 text-[#0A1128]">
                   {conquista.nome}
                 </span>

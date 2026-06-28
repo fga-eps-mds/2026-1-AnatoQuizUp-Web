@@ -97,18 +97,18 @@ describe('Header', () => {
     expect(screen.queryByText('125')).not.toBeInTheDocument();
   });
 
-  it('toggles professor student-view navigation state', async () => {
-    const testUser = userEvent.setup();
+  // it('toggles professor student-view navigation state', async () => {
+  //   const testUser = userEvent.setup();
 
-    renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
+  //   renderHeader({ user: makeUser('PROFESSOR'), isAuthenticated: true });
 
-    await testUser.click(screen.getByRole('button', { name: /Ver como aluno/i }));
+  //   await testUser.click(screen.getByRole('button', { name: /Ver como aluno/i }));
 
-    expect(screen.getByRole('button', { name: /Sair da visão de aluno/i })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-  });
+  //   expect(screen.getByRole('button', { name: /Sair da visão de aluno/i })).toHaveAttribute(
+  //     'aria-current',
+  //     'page',
+  //   );
+  // });
 
   it('navigates professors to the question bank', async () => {
     const testUser = userEvent.setup();

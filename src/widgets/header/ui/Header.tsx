@@ -4,7 +4,7 @@
 // Em telas grandes vira sidebar fixa; em telas pequenas, um drawer deslizante.
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
+import { Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -34,7 +34,7 @@ export const Header = () => {
   const location = useLocation();
   // Estado do drawer mobile, modo "ver como aluno" e ref para detectar clique fora.
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isViewingAsStudent, setIsViewingAsStudent] = useState(false);
+  // const [isViewingAsStudent, setIsViewingAsStudent] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
   // Fecha o drawer mobile ao clicar fora dele.
@@ -66,9 +66,9 @@ export const Header = () => {
   };
 
   // Alterna o modo de previa "ver como aluno" (apenas professor).
-  const handleToggleStudentView = () => {
-    setIsViewingAsStudent((prev) => !prev);
-  };
+  // const handleToggleStudentView = () => {
+  //   setIsViewingAsStudent((prev) => !prev);
+  // };
 
   // Rota ativa por correspondencia exata do pathname.
   const isRouteActive = (path: string) => location.pathname === path;
@@ -193,15 +193,15 @@ export const Header = () => {
       case "PROFESSOR":
         return [
           homeProfessorItem,
-          {
-            key: "view-as-student",
-            label: isViewingAsStudent
-              ? "Sair da visão de aluno"
-              : "Ver como aluno",
-            icon: Eye,
-            onSelect: handleToggleStudentView,
-            isActive: isViewingAsStudent,
-          },
+          // {
+          //   key: "view-as-student",
+          //   label: isViewingAsStudent
+          //     ? "Sair da visão de aluno"
+          //     : "Ver como aluno",
+          //   icon: Eye,
+          //   onSelect: handleToggleStudentView,
+          //   isActive: isViewingAsStudent,
+          // },
           {
             key: "questoes",
             label: "Questões",
@@ -246,8 +246,8 @@ export const Header = () => {
       default:
         return [
           homeItem,
-          studentDashboardItem,
           studentQuestaoItem,
+          studentDashboardItem,
           minhasTurmasAlunoItem,
           studentAmigosItem,
           studentRankingItem,

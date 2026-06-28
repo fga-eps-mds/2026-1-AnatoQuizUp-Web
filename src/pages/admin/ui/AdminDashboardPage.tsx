@@ -140,9 +140,8 @@ export const AdminDashboardPage = () => {
 
         {/* Banner de feedback (sucesso/erro) das acoes de moderacao. */}
         {notificacao && (
-          <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 text-sm font-bold animate-fade-in ${
-            notificacao.erro ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-[#E6FCFA] border-[#14D5C2] text-[#0E9384]'
-          }`}>
+          <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 text-sm font-bold animate-fade-in ${notificacao.erro ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-[#E6FCFA] border-[#14D5C2] text-[#0E9384]'
+            }`}>
             {notificacao.erro ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
             <span>{notificacao.texto}</span>
             <button className="ml-auto text-xs underline" onClick={() => setNotificacao(null)}>Fechar</button>
@@ -169,12 +168,55 @@ export const AdminDashboardPage = () => {
 
         {/* Barra de filtros: abas por status + busca textual. */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
-            <button onClick={() => setAbaAtual('ALL')} className={`px-4 py-2 rounded-md text-xs font-black transition-all ${abaAtual === 'ALL' ? 'bg-white text-[#0A1128] shadow-sm' : 'text-[#0A1128]/60'}`}>Todos</button>
-            <button onClick={() => setAbaAtual('PENDING')} className={`px-4 py-2 rounded-md text-xs font-black transition-all ${abaAtual === 'PENDING' ? 'bg-white text-amber-500 shadow-sm' : 'text-[#0A1128]/60'}`}>Pendentes ({totalPendentes})</button>
-            <button onClick={() => setAbaAtual('ACTIVE')} className={`px-4 py-2 rounded-md text-xs font-black transition-all ${abaAtual === 'ACTIVE' ? 'bg-white text-[#14D5C2] shadow-sm' : 'text-[#0A1128]/60'}`}>Ativos</button>
-            <button onClick={() => setAbaAtual('INACTIVE')} className={`px-4 py-2 rounded-md text-xs font-black transition-all ${abaAtual === 'INACTIVE' ? 'bg-white text-rose-500 shadow-sm' : 'text-[#0A1128]/60'}`}>Inativos</button>
-          </div>
+          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-0 sm:rounded-lg sm:bg-gray-100 sm:p-1">
+  <button
+    type="button"
+    onClick={() => setAbaAtual('ALL')}
+    className={`rounded-md px-4 py-2 text-xs font-black transition-all ${
+      abaAtual === 'ALL'
+        ? 'bg-white text-[#0A1128] shadow-sm'
+        : 'bg-gray-100 text-[#0A1128]/60 sm:bg-transparent'
+    }`}
+  >
+    Todos
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setAbaAtual('PENDING')}
+    className={`rounded-md px-4 py-2 text-xs font-black transition-all ${
+      abaAtual === 'PENDING'
+        ? 'bg-white text-amber-500 shadow-sm'
+        : 'bg-gray-100 text-[#0A1128]/60 sm:bg-transparent'
+    }`}
+  >
+    Pendentes ({totalPendentes})
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setAbaAtual('ACTIVE')}
+    className={`rounded-md px-4 py-2 text-xs font-black transition-all ${
+      abaAtual === 'ACTIVE'
+        ? 'bg-white text-[#14D5C2] shadow-sm'
+        : 'bg-gray-100 text-[#0A1128]/60 sm:bg-transparent'
+    }`}
+  >
+    Ativos
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setAbaAtual('INACTIVE')}
+    className={`rounded-md px-4 py-2 text-xs font-black transition-all ${
+      abaAtual === 'INACTIVE'
+        ? 'bg-white text-rose-500 shadow-sm'
+        : 'bg-gray-100 text-[#0A1128]/60 sm:bg-transparent'
+    }`}
+  >
+    Inativos
+  </button>
+</div>
 
           <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -200,8 +242,8 @@ export const AdminDashboardPage = () => {
               <p className="text-sm font-black text-[#0A1128]">Nenhum usuário encontrado</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto overscroll-x-contain">
+<table className="min-w-[760px] w-full border-collapse text-left md:min-w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-black text-[#0A1128]/50 uppercase tracking-wider">
                     <th className="p-4 pl-6">Nome</th>
@@ -231,11 +273,10 @@ export const AdminDashboardPage = () => {
                         </td>
 
                         <td className="p-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${
-                            statusReal === 'ACTIVE' ? 'bg-[#E6FCFA] text-[#14D5C2] border-[#14D5C2]/20' :
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${statusReal === 'ACTIVE' ? 'bg-[#E6FCFA] text-[#14D5C2] border-[#14D5C2]/20' :
                               statusReal === 'PENDING' ? 'bg-amber-50 text-amber-500 border-amber-200' :
                                 'bg-rose-50 text-rose-500 border-rose-200'
-                          }`}>
+                            }`}>
                             {statusReal === 'ACTIVE' ? 'Ativo' : statusReal === 'PENDING' ? 'Pendente' : 'Inativo'}
                           </span>
                         </td>
