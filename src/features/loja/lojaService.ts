@@ -1,3 +1,6 @@
+// Servico da loja de cosmeticos. Expoe as chamadas para listar o catalogo,
+// consultar o inventario (paginado e completo) e comprar itens. Erros sao
+// uniformizados via extractErrorMessage para exibir mensagens amigaveis.
 import { httpClient } from '../../shared/api/httpClient';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
 import type {
@@ -10,8 +13,10 @@ import type {
 } from './types';
 import { normalizarInventarioPlano } from './types';
 
+// Prefixo base das rotas da loja.
 const LOJA_ENDPOINT = '/loja';
 
+// GET /loja/catalogo — lista os itens a venda (paginado/filtrado).
 export const listarCatalogo = async (
   params?: ListarCatalogoParams,
 ): Promise<RespostaPaginada<ItemLoja>> => {
@@ -26,6 +31,7 @@ export const listarCatalogo = async (
   }
 };
 
+// GET /loja/meu-inventario — lista o inventario do aluno (paginado).
 export const listarInventario = async (params?: {
   page?: number;
   limit?: number;
@@ -42,6 +48,7 @@ export const listarInventario = async (params?: {
   }
 };
 
+// GET /inventario/meuInventario — inventario completo, achatado para lista plana.
 export const buscarInventarioCompleto = async (): Promise<InventarioItem[]> => {
   try {
     const { data } = await httpClient.get<RespostaInventarioCompleto>('/inventario/meuInventario');
@@ -52,6 +59,7 @@ export const buscarInventarioCompleto = async (): Promise<InventarioItem[]> => {
   }
 };
 
+// POST /loja/comprar — compra um item; a resposta traz o item e o novo saldo.
 export const comprarItem = async (itemLojaId: string): Promise<CompraItemResponse> => {
   try {
     const { data } = await httpClient.post<CompraItemResponse>(`${LOJA_ENDPOINT}/comprar`, {

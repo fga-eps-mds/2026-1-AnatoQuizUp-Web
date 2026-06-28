@@ -9,7 +9,12 @@ interface ModalExcluirListaProps {
   isLoading?: boolean;
 }
 
+/**
+ * Modal de confirmacao de exclusao de lista. Resume a lista (questoes e turmas
+ * vinculadas) e avisa que a remocao e permanente antes de confirmar.
+ */
 export const ModalExcluirLista = ({ isOpen, lista, onClose, onConfirm, isLoading }: ModalExcluirListaProps) => {
+  // Sem modal aberto ou lista alvo, nada e renderizado.
   if (!isOpen || !lista) return null;
 
   return (

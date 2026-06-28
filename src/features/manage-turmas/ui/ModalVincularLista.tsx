@@ -1,3 +1,6 @@
+// Modal usado pelo professor para gerenciar quais listas de questoes estao
+// publicadas em uma turma. Permite vincular novas listas, ajustar prazo e
+// liberacao de gabarito de cada vinculo, e desvincular listas existentes.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CalendarClock,
@@ -22,8 +25,10 @@ import type {
 } from '../../../entities/lista/model/types';
 import type { Turma } from '../../../entities/turmas/model/types';
 
+// Tipo da notificacao devolvida ao componente pai (sucesso ou erro).
 type TipoFeedback = 'success' | 'error';
 
+// Propriedades do modal: controle de abertura, turma alvo e callbacks de saida.
 interface ModalVincularListaProps {
   isOpen: boolean;
   turma: Turma | null;
@@ -32,16 +37,23 @@ interface ModalVincularListaProps {
   onFeedback: (message: string, type: TipoFeedback) => void;
 }
 
+// Estado editavel (rascunho) de um vinculo: prazo e se o gabarito esta liberado.
 interface RascunhoVinculo {
   prazo: string;
   gabaritoLiberado: boolean;
 }
 
+// Rascunho padrao para uma lista ainda nao configurada (sem prazo, gabarito fechado).
 const criarRascunhoVazio = (): RascunhoVinculo => ({
   prazo: '',
   gabaritoLiberado: false,
 });
 
+/**
+ * Converte uma data ISO vinda da API para o formato aceito por um input
+ * `datetime-local` (AAAA-MM-DDTHH:MM). Retorna string vazia se invalida.
+ * @param data data em formato ISO ou nula
+ */
 const isoParaInputDataHora = (data?: string | null) => {
   if (!data) return '';
 
@@ -51,6 +63,11 @@ const isoParaInputDataHora = (data?: string | null) => {
   return dataConvertida.toISOString().slice(0, 16);
 };
 
+/**
+ * Caminho inverso de {@link isoParaInputDataHora}: converte o valor do input
+ * `datetime-local` de volta para ISO, ou `null` quando vazio/invalido.
+ * @param data valor do input datetime-local
+ */
 const inputDataHoraParaApi = (data: string) => {
   if (!data) return null;
 
@@ -60,6 +77,11 @@ const inputDataHoraParaApi = (data: string) => {
   return dataConvertida.toISOString();
 };
 
+/**
+ * Formata o prazo para exibicao em pt-BR (data e hora). Mostra "Sem prazo"
+ * quando nao ha data e devolve o valor original se nao for uma data valida.
+ * @param prazo prazo em ISO ou nulo
+ */
 const formatarPrazo = (prazo: string | null) => {
   if (!prazo) return 'Sem prazo';
 
@@ -90,6 +112,8 @@ export const ModalVincularLista = ({
   const [isLoading, setIsLoading] = useState(false);
   const [idEmOperacao, setIdEmOperacao] = useState<string | null>(null);
 
+  // Carrega as listas do professor e os vinculos da turma; preenche os rascunhos
+  // com os valores atuais de cada vinculo (prazo e gabarito).
   const carregarDados = useCallback(async () => {
     if (!turma) return;
 
@@ -121,6 +145,7 @@ export const ModalVincularLista = ({
     }
   }, [onFeedback, turma]);
 
+  // Recarrega os dados sempre que o modal e aberto (timeout 0 adia para apos o paint).
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -131,11 +156,13 @@ export const ModalVincularLista = ({
     return () => window.clearTimeout(timeoutId);
   }, [carregarDados, isOpen]);
 
+  // Conjunto de ids ja vinculados, usado para excluir essas listas das disponiveis.
   const idsListasVinculadas = useMemo(
     () => new Set(vinculos.map((vinculo) => vinculo.listaQuestaoId)),
     [vinculos],
   );
 
+  // Listas que ainda podem ser vinculadas: remove as ja vinculadas e aplica a busca por nome.
   const listasDisponiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
 
@@ -147,10 +174,13 @@ export const ModalVincularLista = ({
     });
   }, [busca, idsListasVinculadas, listas]);
 
+  // Sem turma ou com modal fechado, nao renderiza nada.
   if (!isOpen || !turma) return null;
 
+  // Rascunho de uma lista ainda nao vinculada (cria um vazio se nao existir).
   const obterRascunhoNovo = (listaId: string) => rascunhosNovos[listaId] ?? criarRascunhoVazio();
 
+  // Aplica um patch parcial ao rascunho de uma lista disponivel (a vincular).
   const atualizarRascunhoNovo = (listaId: string, patch: Partial<RascunhoVinculo>) => {
     setRascunhosNovos((atual) => ({
       ...atual,
@@ -162,6 +192,7 @@ export const ModalVincularLista = ({
     }));
   };
 
+  // Aplica um patch parcial ao rascunho de um vinculo ja existente.
   const atualizarRascunhoVinculo = (listaId: string, patch: Partial<RascunhoVinculo>) => {
     setRascunhosVinculos((atual) => ({
       ...atual,
@@ -173,6 +204,11 @@ export const ModalVincularLista = ({
     }));
   };
 
+  /**
+   * Vincula uma lista a turma usando o rascunho atual (prazo + gabarito).
+   * Em sucesso, move a lista para os vinculados e limpa seu rascunho de "novo".
+   * @param lista lista que sera vinculada
+   */
   const handleVincularLista = async (lista: ListaQuestao) => {
     const rascunho = obterRascunhoNovo(lista.id);
 
@@ -206,6 +242,10 @@ export const ModalVincularLista = ({
     }
   };
 
+  /**
+   * Salva as alteracoes de prazo/gabarito de um vinculo ja publicado.
+   * @param vinculo vinculo lista-turma a atualizar
+   */
   const handleAtualizarVinculo = async (vinculo: VinculoListaTurma) => {
     const rascunho = rascunhosVinculos[vinculo.listaQuestaoId] ?? {
       prazo: isoParaInputDataHora(vinculo.prazo),
@@ -243,6 +283,10 @@ export const ModalVincularLista = ({
     }
   };
 
+  /**
+   * Remove o vinculo entre a lista e a turma, tirando-a das publicadas.
+   * @param vinculo vinculo a ser desfeito
+   */
   const handleDesvincularLista = async (vinculo: VinculoListaTurma) => {
     setIdEmOperacao(`remover-${vinculo.id}`);
     try {
@@ -292,7 +336,9 @@ export const ModalVincularLista = ({
           </button>
         </div>
 
+        {/* Layout em duas colunas: a esquerda, listas ja vinculadas; a direita, disponiveis. */}
         <div className="grid min-h-0 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          {/* Coluna esquerda: listas publicadas na turma, com edicao de prazo/gabarito. */}
           <section className="min-h-0">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-bold text-gray-900">Listas vinculadas</h4>
@@ -399,6 +445,7 @@ export const ModalVincularLista = ({
             </div>
           </section>
 
+          {/* Coluna direita: listas ainda nao vinculadas, com busca e acao de vincular. */}
           <section className="min-h-0">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-bold text-gray-900">Listas disponiveis</h4>

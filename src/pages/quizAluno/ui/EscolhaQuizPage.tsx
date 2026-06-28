@@ -4,6 +4,7 @@ import { Brain, HeartPulse, Bone, ArrowLeft, Shuffle, ChevronRight, CheckCircle2
 import { buscarQuantidadeDeQuestoesPorTema } from '../../../features/random-quiz/randomQuizService';
 import type { Dificuldade, QuantidadeQuestoesTema } from '../../../features/random-quiz/types';
 
+// Aparencia (titulo, descricao e icone) por tema conhecido; temas novos usam um fallback.
 const TEMA_VISUAL_MAP: Record<
     string,
     {
@@ -31,6 +32,7 @@ const TEMA_VISUAL_MAP: Record<
     },
   };
 
+  // Niveis de dificuldade disponiveis, com textos e classes de cor de cada cartao.
   const DIFICULDADES: {
     id: Dificuldade;
     titulo: string;
@@ -45,21 +47,29 @@ const TEMA_VISUAL_MAP: Record<
     {id: 'DIFICIL', titulo: 'Difícil', desc: 'Questões desafiadoras para avançar.', color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-200' },
   ];
 
+/**
+ * Tela de configuracao do quiz avulso: o aluno escolhe dificuldade e tema e inicia,
+ * ou usa o "Quiz aleatorio" que sorteia dificuldade e tema com questoes disponiveis.
+ */
 export const EscolhaQuizPage = () => {
   const navigate = useNavigate();
+  // Dificuldade e tema selecionados, temas carregados e estado de carga.
   const [
   dificuldadeSelecionada,
   setDificuldadeSelecionada
 ] = useState<Dificuldade>('FACIL');
   const [temaSelecionado, setTemaSelecionado] = useState<string | null>('neuro');
   const [temas, setTemas] = useState<QuantidadeQuestoesTema[]>([]);
-  
+
   const [isLoadingTemas, setIsLoadingTemas] = useState(true);
+
+  /** Inicia o quiz com a dificuldade e o tema atualmente selecionados. */
   const handleComecarQuiz = () => {
     if (!temaSelecionado || !dificuldadeSelecionada) return;
     navigate(`/aluno/quiz/responder?tema=${temaSelecionado}&dificuldade=${dificuldadeSelecionada}`);
   };
 
+/** Sorteia uma dificuldade e, entre os temas com questoes nela, um tema, e inicia o quiz. */
 const handleQuizAleatorio = () => {
 
   const dificuldadeSorteada =
@@ -96,6 +106,7 @@ const handleQuizAleatorio = () => {
   );
 };
 
+  // Carrega os temas (com contagem de questoes por dificuldade) e pre-seleciona o primeiro.
   useEffect(() => {
   const carregarTemas = async () => {
     try {
@@ -155,6 +166,7 @@ const handleQuizAleatorio = () => {
             }
             Escolha a dificuldade
           </h2>
+          {/* Cartoes de dificuldade (selecao unica). */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {DIFICULDADES.map((dif) => {
               const isSelected = dificuldadeSelecionada === dif.id;
@@ -192,9 +204,11 @@ const handleQuizAleatorio = () => {
             }
             Escolha o tema do quiz
           </h2>
+          {/* Carrossel horizontal de temas; cada card mostra o total de questoes na dificuldade. */}
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
             {temas.map((tema) => {
               const isSelected = temaSelecionado === tema.nome;
+              // Usa a aparencia mapeada do tema ou um visual generico de fallback.
               const visual =
                 TEMA_VISUAL_MAP[tema.nome] ?? {
                   titulo: tema.nome,
@@ -223,7 +237,7 @@ const handleQuizAleatorio = () => {
         </section>
       </div>
 
-      {/* Barra flutuante inferior */}
+      {/* Barra flutuante inferior: atalho de quiz aleatorio e botao de iniciar. */}
       <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-white border-t border-gray-100 p-3 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-2">
           <button onClick={handleQuizAleatorio} className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors">

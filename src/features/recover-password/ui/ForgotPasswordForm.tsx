@@ -4,13 +4,19 @@ import { Button } from '../../../shared/ui/button/Button';
 import { requestPasswordRecovery } from '../model/recoverPasswordService';
 import { FeedbackMessage } from './FeedbackMessage';
 
+/**
+ * Formulario de "esqueci a senha": valida o e-mail e solicita o envio das instrucoes
+ * de recuperacao. Em caso de sucesso, substitui o formulario por uma mensagem.
+ */
 export const ForgotPasswordForm = () => {
+  // E-mail digitado e mensagens de erro de campo/formulario e de sucesso.
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState('');
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Valida o e-mail e dispara o envio das instrucoes de recuperacao. */
   const handleSubmit = async () => {
     const trimmedEmail = email.trim();
 
@@ -56,6 +62,7 @@ export const ForgotPasswordForm = () => {
         </p>
       </div>
 
+      {/* Sucesso troca o formulario por uma confirmacao; caso contrario, mostra o campo. */}
       {successMessage ? (
         <FeedbackMessage variant="success">{successMessage}</FeedbackMessage>
       ) : (

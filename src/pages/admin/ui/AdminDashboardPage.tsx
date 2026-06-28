@@ -4,35 +4,46 @@ import { listarUsuariosAdmin, alterarStatusUsuarioAdmin } from '../../../feature
 import type { AdminUsuario, UsuarioStatus } from '../../../features/admin/types';
 import { useAuth } from '../../../app/providers/AuthProvider';
 
+// Formatos alternativos de resposta da listagem (compatibilidade entre versoes da API).
 type RespostaListarUsuariosCompat = {
   dados?: AdminUsuario[];
   resultados?: AdminUsuario[];
 };
 
+// Usuario admin com campos de papel alternativos, tolerando variacoes do backend.
 type AdminUsuarioCompat = AdminUsuario & {
   role?: string;
   perfil?: string;
 };
 
+/** Extrai o array de usuarios da resposta, aceitando as chaves `dados` ou `resultados`. */
 const extrairUsuariosResposta = (resposta: RespostaListarUsuariosCompat): AdminUsuario[] => {
   if (Array.isArray(resposta.dados)) return resposta.dados;
   if (Array.isArray(resposta.resultados)) return resposta.resultados;
   return [];
 };
 
+/** Resolve o papel do usuario tentando os campos possiveis em ordem de preferencia. */
 const obterPapelUsuario = (usuario: AdminUsuarioCompat): string => {
   return usuario.papel || usuario.role || usuario.perfil || 'INDEFINIDO';
 };
 
+/**
+ * Painel administrativo: lista contas, permite filtrar por status/texto e
+ * ativar/bloquear usuarios (exceto a propria conta), com cartoes-resumo no topo.
+ */
 export const AdminDashboardPage = () => {
   const { user: usuarioLogado } = useAuth();
+  // Lista de usuarios, estado de carga e controles de filtro/aba.
   const [usuarios, setUsuarios] = useState<AdminUsuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [abaAtual, setAbaAtual] = useState<'ALL' | UsuarioStatus>('ALL');
+  // Id em processamento (trava os botoes) e notificacao de feedback.
   const [processandoId, setProcessandoId] = useState<string | null>(null);
   const [notificacao, setNotificacao] = useState<{ texto: string; erro: boolean } | null>(null);
 
+  // Carrega ate 100 usuarios ao montar; a flag evita setState apos desmontagem.
   useEffect(() => {
     let deveAtualizarEstado = true;
 
@@ -59,6 +70,11 @@ export const AdminDashboardPage = () => {
     };
   }, []);
 
+  /**
+   * Altera o status de um usuario no backend e reflete a mudanca na lista local.
+   * @param id Id do usuario alvo.
+   * @param novoStatus Novo status (ACTIVE/INACTIVE/PENDING).
+   */
   const handleAlterarStatus = async (id: string, novoStatus: UsuarioStatus) => {
     try {
       setProcessandoId(id);
@@ -79,6 +95,7 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  /** Normaliza o status (aceitando PT-BR/EN) para o enum interno UsuarioStatus. */
   const normalizeStatus = (status: string | undefined): UsuarioStatus => {
     if (!status) return 'INACTIVE';
 
@@ -90,6 +107,7 @@ export const AdminDashboardPage = () => {
     return 'INACTIVE';
   };
 
+  // Aplica filtro de aba (status) e de texto (nome/email) sobre a lista carregada.
   const usuariosFiltrados = usuarios.filter(usuario => {
     const statusReal = normalizeStatus(usuario.status);
     const correspondeAba = abaAtual === 'ALL' || statusReal === abaAtual;
@@ -102,6 +120,7 @@ export const AdminDashboardPage = () => {
     return correspondeAba && correspondeTexto;
   });
 
+  // Metricas dos cartoes-resumo: pendentes e ativos (apenas alunos/professores).
   const totalPendentes = usuarios.filter(u => normalizeStatus(u.status) === 'PENDING').length;
 
   const totalAtivos = usuarios.filter(u => {
@@ -119,6 +138,7 @@ export const AdminDashboardPage = () => {
           <p className="text-sm text-[#0A1128]/60">Gerencie permissões, aprove cadastros de professores e monitore contas.</p>
         </div>
 
+        {/* Banner de feedback (sucesso/erro) das acoes de moderacao. */}
         {notificacao && (
           <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 text-sm font-bold animate-fade-in ${notificacao.erro ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-[#E6FCFA] border-[#14D5C2] text-[#0E9384]'
             }`}>
@@ -128,6 +148,7 @@ export const AdminDashboardPage = () => {
           </div>
         )}
 
+        {/* Cartoes-resumo: pendentes, ativos e total de contas. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
             <p className="text-xs font-black text-[#0A1128]/50 uppercase tracking-wider">Aprovações Pendentes</p>
@@ -145,6 +166,7 @@ export const AdminDashboardPage = () => {
           </div>
         </div>
 
+        {/* Barra de filtros: abas por status + busca textual. */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-0 sm:rounded-lg sm:bg-gray-100 sm:p-1">
   <button
@@ -234,6 +256,7 @@ export const AdminDashboardPage = () => {
 
                 <tbody className="text-xs font-bold text-[#0A1128]/80 divide-y divide-gray-50">
                   {usuariosFiltrados.map((usuario) => {
+                    // Dados derivados por linha; isMe protege a propria conta de moderacao.
                     const vinculoExibicao = obterPapelUsuario(usuario);
                     const statusReal = normalizeStatus(usuario.status);
                     const isMe = usuarioLogado?.email === usuario.email;

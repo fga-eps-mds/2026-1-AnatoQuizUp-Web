@@ -6,6 +6,10 @@ type FeedbackMessageProps = {
   variant: 'error' | 'success';
 };
 
+/**
+ * Mensagem de feedback (sucesso ou erro) usada nos fluxos de recuperacao de senha.
+ * Alterna icone e cores conforme a variante.
+ */
 export const FeedbackMessage = ({ children, variant }: FeedbackMessageProps) => {
   const isSuccess = variant === 'success';
   const Icon = isSuccess ? Check : TriangleAlert;

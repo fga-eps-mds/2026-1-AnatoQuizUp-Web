@@ -16,10 +16,15 @@ type AchievementDetailsModalProps = {
   onClose: () => void;
 };
 
+/**
+ * Modal de detalhes de uma conquista: medalha, progresso atual e a grade de tiers
+ * (bronze/prata/ouro) com seus objetivos e itens exclusivos recompensados.
+ */
 export const AchievementDetailsModal = ({
   conquista,
   onClose,
 }: AchievementDetailsModalProps) => {
+  // Bloqueia o scroll do body enquanto aberto e fecha o modal ao pressionar Escape.
   useEffect(() => {
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -30,12 +35,14 @@ export const AchievementDetailsModal = ({
 
     document.addEventListener('keydown', fecharComEscape);
 
+    // Restaura o overflow e remove o listener ao desmontar.
     return () => {
       document.body.style.overflow = overflowAnterior;
       document.removeEventListener('keydown', fecharComEscape);
     };
   }, [onClose]);
 
+  // Define o tier exibido na medalha principal e se a conquista esta concluida.
   const tierMaisAlto = obterTierMaisAlto(conquista.tiers);
   const tierVisual = conquista.proximoTier ?? tierMaisAlto ?? 'BRONZE';
   const concluida = conquista.proximoTier === null && conquista.tiers.length > 0;
@@ -44,6 +51,7 @@ export const AchievementDetailsModal = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1128]/55 p-4 backdrop-blur-[2px]"
       onMouseDown={(event) => {
+        // Fecha somente quando o clique ocorre no backdrop, nao dentro do dialogo.
         if (event.target === event.currentTarget) onClose();
       }}
       role="presentation"
@@ -77,6 +85,7 @@ export const AchievementDetailsModal = ({
         </header>
 
         <div className="p-5 sm:p-6">
+          {/* Bloco superior: medalha principal + descricao e barra de progresso. */}
           <div className="grid items-center gap-5 sm:grid-cols-[144px_1fr]">
             <div className="flex justify-center">
               <AchievementMedal
@@ -124,12 +133,15 @@ export const AchievementDetailsModal = ({
               Tiers
             </h3>
 
+            {/* Grade de tiers na ordem fixa; cada card mostra estado, objetivo e item. */}
             <div className="mt-3 grid gap-3 md:grid-cols-3">
               {ORDEM_TIERS.map((tier) => {
                 const registro = conquista.tiers.find((item) => item.tier === tier);
 
+                // Pula tiers que essa conquista nao possui.
                 if (!registro) return null;
 
+                // Classifica o card como atual (proximo marco), bloqueado ou ja conquistado.
                 const atual = conquista.proximoTier === tier;
                 const bloqueado = !registro.desbloqueado && !atual;
 
@@ -187,6 +199,7 @@ export const AchievementDetailsModal = ({
                           : 'Disponível após o tier anterior'}
                     </p>
 
+                    {/* Rodape do card: item exclusivo recompensado pelo tier (ou aviso de ausencia). */}
                     <div className="mt-auto pt-4">
                       <p
                         className={`mb-2 text-center text-[10px] font-black uppercase ${

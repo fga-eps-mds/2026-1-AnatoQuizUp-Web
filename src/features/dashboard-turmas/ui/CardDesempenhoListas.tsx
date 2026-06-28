@@ -22,6 +22,10 @@ interface CardDesempenhoListasProps {
   turmaId: string;
 }
 
+/**
+ * Formata a data de prazo para o padrao dd/mm/aaaa em PT-BR.
+ * @param prazo Data ISO ou null; retorna "Sem prazo" quando ausente/invalida.
+ */
 const formatarPrazo = (prazo: string | null) => {
   if (!prazo) return 'Sem prazo';
 
@@ -35,6 +39,11 @@ const formatarPrazo = (prazo: string | null) => {
   });
 };
 
+/**
+ * Formata a taxa media de acerto como percentual, ou "-" quando nao ha respostas.
+ * @param taxa Valor numerico da taxa.
+ * @param temRespostas Indica se houve submissoes (sem elas a taxa nao faz sentido).
+ */
 const formatarTaxa = (taxa: number, temRespostas: boolean) => {
   if (!temRespostas) return '-';
 
@@ -44,12 +53,20 @@ const formatarTaxa = (taxa: number, temRespostas: boolean) => {
   })}%`;
 };
 
+/**
+ * Calcula o percentual de alunos que submeteram a lista (limitado a 0–100).
+ * @param lista Dados agregados de desempenho da lista.
+ */
 const calcularPercentual = (lista: DesempenhoLista) => {
   if (lista.totalAlunos <= 0) return 0;
 
   return Math.min(100, Math.round((lista.totalSubmeteram / lista.totalAlunos) * 100));
 };
 
+/**
+ * Indica se o prazo informado ja passou em relacao ao momento atual.
+ * @param prazo Data ISO ou null.
+ */
 const prazoExpirado = (prazo: string | null) => {
   if (!prazo) return false;
 
@@ -59,12 +76,18 @@ const prazoExpirado = (prazo: string | null) => {
   return data.getTime() < Date.now();
 };
 
+/**
+ * Modal que detalha o desempenho individual dos alunos em uma lista especifica.
+ * Carrega o desempenho e resolve os nomes dos alunos a partir dos seus ids.
+ */
 const ModalAlunos = ({ turmaId, listaId, onClose }: { turmaId: string, listaId: string, onClose: () => void }) => {
+  // Desempenho detalhado da lista e mapa id->nome dos alunos (resolvido a parte).
   const [detalhes, setDetalhes] = useState<DesempenhoListaIndividual | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [nomesAlunos, setNomesAlunos] = useState<Record<string, string>>({});
 
+  // Carrega o desempenho da lista e, em seguida, os nomes dos alunos envolvidos.
   useEffect(() => {
     const carregarTudo = async () => {
       setLoading(true);
@@ -74,6 +97,7 @@ const ModalAlunos = ({ turmaId, listaId, onClose }: { turmaId: string, listaId: 
 
         const idsAlunos = dadosDesempenho.desempenhoAlunos.map((a) => a.alunoId);
 
+        // So busca os usuarios se houver alunos para resolver.
         if (idsAlunos.length > 0) {
           const usuarios = await buscarUsuariosPorIds(idsAlunos);
           
@@ -123,6 +147,7 @@ const ModalAlunos = ({ turmaId, listaId, onClose }: { turmaId: string, listaId: 
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Uma linha por aluno: nome, entrega, acertos e selo de status. */}
               {detalhes.desempenhoAlunos.map((aluno) => {
                 const submeteu = aluno.status === 'SUBMETIDA';
                 const naoRespondeu = aluno.status === 'NAO_RESPONDEU';
@@ -168,12 +193,18 @@ const ModalAlunos = ({ turmaId, listaId, onClose }: { turmaId: string, listaId: 
   );
 };
 
+/**
+ * Card do dashboard do professor com o desempenho por lista publicada na turma.
+ * Lista as publicacoes com taxa de submissao/acerto e abre o modal de detalhe por aluno.
+ */
 export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => {
+  // Listas com desempenho agregado, estado de carga/erro e lista aberta no modal.
   const [listas, setListas] = useState<DesempenhoLista[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [listaSelecionadaId, setListaSelecionadaId] = useState<string | null>(null);
 
+  // Busca o desempenho por lista da turma; memoizado para uso no efeito e no retry.
   const carregarDesempenho = useCallback(async () => {
     setIsLoading(true);
     setErro(null);
@@ -198,6 +229,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
 
   const totalPublicacoes = useMemo(() => listas.length, [listas]);
 
+  // Estado de carregamento.
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-500">
@@ -207,6 +239,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
     );
   }
 
+  // Estado de erro, com botao para tentar novamente.
   if (erro) {
     return (
       <div
@@ -227,6 +260,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
     );
   }
 
+  // Estado vazio: turma sem listas publicadas.
   if (listas.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
@@ -246,6 +280,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
         <span>submissoes</span>
       </div>
 
+      {/* Uma linha por lista publicada: prazo, barra de submissoes e estatisticas. */}
       <ul className="space-y-3">
         {listas.map((lista) => {
           const percentual = calcularPercentual(lista);
@@ -282,6 +317,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
                 />
               </div>
 
+              {/* Tres metricas resumidas: responderam, pendentes e acerto medio. */}
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md bg-white px-2 py-2">
                   <p className="flex items-center justify-center gap-1 text-sm font-bold text-gray-900">
@@ -318,8 +354,9 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
         })}
       </ul>
 
+      {/* Modal de detalhe por aluno da lista selecionada. */}
       {listaSelecionadaId && (
-        <ModalAlunos 
+        <ModalAlunos
           turmaId={turmaId} 
           listaId={listaSelecionadaId} 
           onClose={() => setListaSelecionadaId(null)} 

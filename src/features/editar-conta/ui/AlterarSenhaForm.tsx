@@ -6,23 +6,31 @@ import {
   SenhaAtualIncorretaError,
 } from '../model/editarContaService';
 
+// Erros de validacao por campo do formulario de troca de senha.
 type FieldErrors = {
   senhaAtual?: string;
   novaSenha?: string;
   confirmacaoNovaSenha?: string;
 };
 
+// Classe base compartilhada pelos inputs de senha.
 const INPUT_BASE_CLASS =
   'h-11 w-full rounded-lg border bg-white px-3.5 text-sm font-semibold text-[#0A1128] outline-none transition-colors placeholder:text-gray-400 focus:border-[#14b8a6]';
 
+/** Monta a classe do input, destacando a borda quando ha erro. */
 const campoClass = (hasError: boolean) => (
   `${INPUT_BASE_CLASS} ${hasError ? 'border-red-400' : 'border-gray-200'}`
 );
 
+/** Extrai a mensagem de um erro desconhecido, com texto de fallback. */
 const mensagemErro = (err: unknown, fallback: string) => (
   err instanceof Error ? err.message : fallback
 );
 
+/**
+ * Valida os tres campos de senha: obrigatoriedade, tamanho minimo, diferenca da
+ * senha atual e correspondencia da confirmacao.
+ */
 const validar = (
   senhaAtual: string,
   novaSenha: string,
@@ -51,15 +59,22 @@ const validar = (
   return errors;
 };
 
+/**
+ * Formulario de troca de senha: exige a senha atual e a nova senha confirmada.
+ * Valida no cliente, persiste via service e limpa os campos ao concluir com sucesso.
+ */
 export const AlterarSenhaForm = () => {
+  // Campos do formulario.
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacaoNovaSenha, setConfirmacaoNovaSenha] = useState('');
+  // Erros por campo, erro/sucesso geral e estado de envio.
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Valida, envia a troca de senha e trata o erro de senha atual incorreta. */
   const handleSubmit = async () => {
     setFormError('');
     setSuccessMessage('');

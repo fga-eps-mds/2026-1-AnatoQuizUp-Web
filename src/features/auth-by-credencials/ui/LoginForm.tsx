@@ -5,15 +5,21 @@ import { Button } from '../../../shared/ui/button/Button';
 import { Input } from '../../../shared/ui/input/Input';
 import { loginWithCredencials } from '../model/authService';
 
+/**
+ * Formulario de login por credenciais: autentica via service, guarda os tokens no
+ * contexto de auth e redireciona para a home; tambem leva a cadastro e recuperacao.
+ */
 export const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // Campos do formulario, mensagem de erro e estado de envio.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Valida os campos, autentica e armazena os tokens; em falha, exibe a mensagem de erro. */
   const handleSubmit = async () => {
     setErrorMsg('');
     if (!email || !password) return setErrorMsg('Campos obrigatórios.');

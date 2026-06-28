@@ -1,3 +1,11 @@
+/**
+ * Tela do aluno para responder uma lista de questoes (e ver o gabarito).
+ *
+ * O mesmo componente cobre varios estados mutuamente exclusivos, resolvidos por
+ * retornos antecipados: carregando, lista vazia, expirada, submetida sem gabarito,
+ * gabarito liberado (revisao) e, por fim, o modo de resposta interativo com
+ * autosave por alternativa e submissao final.
+ */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolucaoListaApi } from '../../../entities/resolucaoLista/api/resolucaoListaApi';
@@ -5,19 +13,25 @@ import type { DetalhesListaAluno } from '../../../entities/resolucaoLista/model/
 import { Clock, Lock, FileText, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
 export const ResponderLista = () => {
+  // Identificadores de turma/lista vindos da rota.
   const { turmaId, listaId } = useParams<{ turmaId: string; listaId: string }>();
   const navigate = useNavigate();
+  // Detalhes da lista para o aluno (questoes, status, gabarito); null enquanto carrega.
   const [lista, setLista] = useState<DetalhesListaAluno | null>(null);
+  // Indice da questao em foco no modo de resposta.
   const [questaoAtual, setQuestaoAtual] = useState(0);
+  // Flags de UI: autosave em andamento e visibilidade do modal de confirmacao.
   const [salvando, setSalvando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  // Busca os detalhes da lista assim que o id estiver disponivel na rota.
   useEffect(() => {
     if (listaId) {
       resolucaoListaApi.buscarDetalhes(listaId).then(setLista).catch(console.error);
     }
   }, [listaId]);
 
+  // Estado 1: ainda carregando os dados da lista.
   if (!lista) {
     return (
       <div className="flex min-h-[400px] flex-1 items-center justify-center">
@@ -26,6 +40,7 @@ export const ResponderLista = () => {
     );
   }
 
+  // Estado 2: lista publicada mas sem nenhuma questao adicionada pelo professor.
   if (lista.questoes.length === 0) {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
@@ -44,6 +59,7 @@ export const ResponderLista = () => {
     );
   }
 
+  // Estado 3: prazo encerrado e gabarito ainda nao liberado -> apenas aviso.
   if (lista.status === 'EXPIRADA' && !lista.gabaritoLiberado) {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
@@ -62,6 +78,7 @@ export const ResponderLista = () => {
     );
   }
 
+  // Estado 4: aluno ja submeteu, mas o professor ainda nao liberou o gabarito.
   if ((lista.status === 'RESPONDIDA' || lista.status === 'SUBMETIDA') && !lista.gabaritoLiberado) {
     return (
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
@@ -80,7 +97,9 @@ export const ResponderLista = () => {
     );
   }
 
+  // Estado 5: gabarito liberado -> modo revisao, mostrando acertos/erros e explicacoes.
   if (lista.gabaritoLiberado) {
+    // Estatisticas de desempenho exibidas no cabecalho do gabarito.
     const total = lista.questoes.length;
     const acertos = lista.questoes.filter(q => q.respostaMarcada === q.respostaCorreta).length;
     const taxaAcerto = Math.round((acertos / total) * 100);
@@ -99,7 +118,8 @@ export const ResponderLista = () => {
             Gabarito liberado
           </div>
         </div>
-
+        
+        {/* Lista de questoes revisadas: enunciado, alternativas marcadas/corretas e "saiba mais". */}
         <div className="p-6 md:p-7 overflow-y-auto flex-1">
           {lista.questoes.map((q, idx) => {
             const acertou = q.respostaMarcada === q.respostaCorreta;
@@ -131,8 +151,10 @@ export const ResponderLista = () => {
                   )}
 
                   <div className="flex flex-col gap-2.5 mt-4">
+                    {/* Renderiza cada alternativa nao vazia, destacando correta e a marcada pelo aluno. */}
                     {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
 
+                      // Em questoes Certo/Errado, exibe V/F em vez das letras internas C/E.
                       const labelVisual = q.tipo === 'CERTO_ERRADO'
                         ? (letra === 'C' ? 'V' : letra === 'E' ? 'F' : letra)
                         : letra;
@@ -140,6 +162,7 @@ export const ResponderLista = () => {
                       const isCorreta = letra === q.respostaCorreta;
                       const isMarcada = letra === q.respostaMarcada;
 
+                      // Monta as classes visuais conforme a alternativa seja correta, marcada ou neutra.
                       let containerClass = "flex items-center gap-3 p-3 rounded-xl border-2 ";
                       let letterClass = "w-8 h-8 rounded-lg flex shrink-0 items-center justify-center font-extrabold text-sm border-2 ";
                       let tagContent = null;
@@ -188,11 +211,17 @@ export const ResponderLista = () => {
     );
   }
 
+  // Estado 6 (padrao): modo de resposta interativo. Deriva questao atual e progresso.
   const q = lista.questoes[questaoAtual];
   const total = lista.questoes.length;
   const respondidas = lista.questoes.filter(qItem => qItem.respostaMarcada !== null).length;
   const progressoPct = total > 0 ? Math.round((respondidas / total) * 100) : 0;
 
+  /**
+   * Marca uma alternativa na questao atual, salvando-a no backend (autosave)
+   * e atualizando o estado local de forma otimista.
+   * @param alt Letra da alternativa escolhida.
+   */
   const marcarAlternativa = async (alt: string) => {
     setSalvando(true);
     try {
@@ -209,6 +238,7 @@ export const ResponderLista = () => {
     }
   };
 
+  /** Submete a lista definitivamente e redireciona para a turma; alerta em caso de erro. */
   const confirmarSubmissao = async () => {
     try {
       await resolucaoListaApi.submeter(lista.id);
@@ -238,6 +268,7 @@ export const ResponderLista = () => {
           </div>
         </div>
 
+        {/* Barra de progresso: questao atual e percentual ja respondido. */}
         <div className="pt-4 px-7 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[12.5px] font-extrabold text-gray-900">Questão {questaoAtual + 1} de {total}</span>
@@ -262,6 +293,7 @@ export const ResponderLista = () => {
               </div>
             )}
 
+            {/* Alternativas clicaveis; clique dispara o autosave da resposta. */}
             <div className="px-6 pt-2 pb-6 flex flex-col gap-3">
               {q.alternativas && Object.entries(q.alternativas).filter(([, texto]) => texto && texto.trim() !== '').map(([letra, texto]) => {
                 const isSelected = q.respostaMarcada === letra;
@@ -288,6 +320,7 @@ export const ResponderLista = () => {
           </div>
         </div>
 
+        {/* Rodape de navegacao: anterior/proxima e botao de submeter a lista. */}
         <div className="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
             <button
@@ -322,6 +355,7 @@ export const ResponderLista = () => {
         </div>
       </main>
 
+      {/* Modal de confirmacao exibido antes da submissao definitiva. */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">

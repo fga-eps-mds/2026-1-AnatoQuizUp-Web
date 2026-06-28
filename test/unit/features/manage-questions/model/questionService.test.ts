@@ -260,6 +260,22 @@ describe('questionService', () => {
       expect(formData.get('origemQuestao')).toBe('LIVRO');
       expect(formData.get('taxonomiaBloom')).toBe('APLICAR');
       expect(formData.get('regiaoAnatomica')).toBe('Abdome'); // trim aplicado
+      expect(formData.get('palavrasChave')).toBe('aorta, mediastino');
+    });
+
+    it('prioriza palavrasChave do backend sobre tags ao normalizar', async () => {
+      const { listProfessorQuestions } = await loadService(false);
+      getMock.mockResolvedValueOnce({
+        data: {
+          dados: [
+            { id: 'q1', palavrasChave: ['coração', 'aorta'], tags: 'ignorado', alternativas: null },
+          ],
+        },
+      });
+
+      const res = await listProfessorQuestions();
+
+      expect(res[0].tags).toEqual(['coração', 'aorta']);
     });
 
     it('normaliza os campos de classificacao retornados pelo backend', async () => {

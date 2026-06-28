@@ -1,3 +1,6 @@
+// Servico de edicao de conta. Atualiza os dados pessoais (nome/nickname) e a
+// senha do usuario, com tratamento detalhado dos erros do backend para lancar
+// erros tipados (ApelidoEmUsoError, SenhaAtualIncorretaError) que a UI sabe exibir.
 import axios from 'axios';
 
 import { httpClient } from '../../../shared/api/httpClient';
@@ -6,11 +9,13 @@ import { alterarSenhaMock, atualizarDadosPessoaisMock } from './mockEditarContaS
 import type { AlterarSenhaPayload, AtualizarDadosPessoaisPayload } from './types';
 import { ApelidoEmUsoError, SenhaAtualIncorretaError } from './types';
 
+// Detalhe de erro por campo { campo, mensagem }.
 type ApiErroDetalhe = {
   campo?: string;
   mensagem?: string;
 };
 
+// Formato (heterogeneo) das respostas de erro da API, incluindo codigo do erro.
 type ApiErroResponse = {
   mensagem?: string;
   message?: string;
@@ -21,9 +26,11 @@ type ApiErroResponse = {
   };
 };
 
+// Extrai a mensagem geral de erro tentando os varios campos possiveis.
 const obterMensagemBackend = (response: ApiErroResponse): string =>
   response.erro?.mensagem ?? response.mensagem ?? response.message ?? '';
 
+// Tenta extrair a primeira mensagem de validacao de `{ errors: [string, ...] }`.
 const obterMensagemAninhada = (value: unknown): string | null => {
   if (!value || typeof value !== 'object') return null;
 
@@ -35,6 +42,12 @@ const obterMensagemAninhada = (value: unknown): string | null => {
   return null;
 };
 
+/**
+ * Procura a mensagem de erro especifica de um campo nos varios formatos de
+ * detalhes (array, objeto, properties).
+ * @param response resposta de erro da API
+ * @param campo nome do campo de interesse
+ */
 const extrairErroCampo = (response: ApiErroResponse, campo: string): string | null => {
   const detalhes = response.erro?.detalhes;
   const mensagemBackend = obterMensagemBackend(response);
@@ -63,12 +76,14 @@ const extrairErroCampo = (response: ApiErroResponse, campo: string): string | nu
   return null;
 };
 
+// Devolve o corpo de erro de um AxiosError, ou null se nao for um erro com resposta.
 const obterRespostaErro = (err: unknown): ApiErroResponse | null => {
   if (!axios.isAxiosError(err) || !err.response) return null;
 
   return (err.response.data ?? {}) as ApiErroResponse;
 };
 
+// Normaliza os dados pessoais antes de enviar (trim no nome, nickname em minusculas).
 const normalizarDadosPessoais = (
   payload: AtualizarDadosPessoaisPayload,
 ): AtualizarDadosPessoaisPayload => ({
@@ -76,6 +91,11 @@ const normalizarDadosPessoais = (
   nickname: payload.nickname.trim().toLowerCase(),
 });
 
+/**
+ * Atualiza nome e nickname do usuario. Em 409 (ou erro de nickname) lanca
+ * ApelidoEmUsoError; outras falhas viram Error generico. No-op real em modo mock.
+ * @param payload novos dados pessoais
+ */
 export const atualizarDadosPessoais = async (
   payload: AtualizarDadosPessoaisPayload,
 ): Promise<void> => {
@@ -110,6 +130,11 @@ export const atualizarDadosPessoais = async (
   }
 };
 
+/**
+ * Altera a senha do usuario. Em 400 indicando senha atual incorreta lanca
+ * SenhaAtualIncorretaError; outras falhas viram Error generico. No-op em mock.
+ * @param payload senha atual e nova senha
+ */
 export const alterarSenha = async (payload: AlterarSenhaPayload): Promise<void> => {
   if (USE_MOCKS) {
     return alterarSenhaMock(payload);

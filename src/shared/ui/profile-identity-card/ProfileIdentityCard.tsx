@@ -1,16 +1,23 @@
-﻿import { Coins, Mail, Pencil, Plus } from 'lucide-react';
+﻿/**
+ * Cartao de identidade do perfil, reutilizado em varias telas (perfil, ranking, etc.).
+ * Compoe avatar + cosmeticos equipados (moldura, icone, titulo, plano de fundo) e,
+ * no modo editavel, exibe e-mail/saldo e botoes de personalizar/editar.
+ */
+import { Coins, Mail, Pencil, Plus } from 'lucide-react';
 
 import type { ItemInventario, TipoItemLoja } from '../../../features/loja';
 import logoAnatoQuiz from '../../assets/image/logo.png';
 import { montarIniciais } from '../../utils/iniciais';
 import { CODIGO_LOGO_PREMIUM, GRADIENTE_OURO } from '../cosmetics';
 
+// Dados textuais minimos exibidos no cartao.
 export type IdentidadePerfil = {
   nome: string;
   nickname?: string | null;
   curso?: string | null;
 };
 
+// Mapa de slots cosmeticos equipados, indexado pelo tipo de item da loja.
 export type SlotsCosmeticos = Partial<Record<TipoItemLoja, ItemInventario>>;
 
 export type ProfileIdentityCardProps = {
@@ -26,6 +33,7 @@ export type ProfileIdentityCardProps = {
 
 type TamanhoCard = NonNullable<ProfileIdentityCardProps['tamanho']>;
 
+// Tabelas de classes por tamanho do cartao (circulo do avatar, banner e texto).
 const TAMANHO_CIRCULO: Record<TamanhoCard, string> = {
   sm: 'h-10 w-10',
   md: 'h-20 w-20',
@@ -50,6 +58,11 @@ export type AvatarCosmeticoProps = {
 
 type CirculoProps = AvatarCosmeticoProps;
 
+/**
+ * Renderiza o circulo do avatar resolvendo a prioridade dos cosmeticos:
+ * avatar (imagem) > icone de perfil (com caso especial da logo premium) > iniciais.
+ * Aplica a moldura equipada por cima, quando houver.
+ */
 const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
   const moldura = cosmeticos.MOLDURA;
   const avatar = cosmeticos.AVATAR;
@@ -60,6 +73,7 @@ const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
 
   let conteudo;
 
+  // Prioridade 1: avatar com imagem propria.
   if (avatar && avatarSrc) {
     conteudo = (
       <img
@@ -68,6 +82,7 @@ const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
         className={`${dimensao} rounded-full bg-white object-cover`}
       />
     );
+  // Prioridade 2: icone de perfil; a logo premium recebe tratamento especial.
   } else if (icone) {
     const ehLogoPremium = icone.codigo === CODIGO_LOGO_PREMIUM;
     conteudo = (
@@ -90,6 +105,7 @@ const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
         )}
       </div>
     );
+  // Prioridade 3 (fallback): iniciais do nome sobre gradiente padrao.
   } else {
     conteudo = (
       <div
@@ -100,6 +116,7 @@ const Circulo = ({ identidade, cosmeticos, tamanho }: CirculoProps) => {
     );
   }
 
+  // Quando ha moldura equipada, envolve o conteudo com a borda cosmetica.
   if (moldura) {
     return (
       <div
@@ -129,6 +146,7 @@ export const ProfileIdentityCard = ({
 }: ProfileIdentityCardProps) => {
   const titulo = cosmeticos.TITULO;
 
+  // Variante compacta (sm): apenas avatar e, opcionalmente, o titulo abaixo.
   if (tamanho === 'sm') {
     return (
       <div className="flex flex-col items-center gap-1">
@@ -144,8 +162,10 @@ export const ProfileIdentityCard = ({
 
   const fundo = cosmeticos.PLANO_FUNDO;
 
+  // Variante completa (md/lg): banner com plano de fundo, avatar sobreposto e infos.
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+      {/* Banner superior com o plano de fundo equipado (ou gradiente padrao). */}
       <div
         aria-label="Plano de fundo do perfil"
         className={`relative overflow-hidden rounded-t-2xl ${TAMANHO_BANNER[tamanho]}`}
@@ -202,6 +222,7 @@ export const ProfileIdentityCard = ({
           )}
         </div>
 
+        {/* Acoes (somente no modo editavel): personalizar cosmeticos e editar dados. */}
         {!readOnly && (onPersonalizar || onEditar) && (
           <div className="flex shrink-0 flex-col items-end gap-2 pt-4">
             {onPersonalizar && (

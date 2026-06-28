@@ -1,3 +1,10 @@
+/**
+ * Listagem das listas de uma turma na visao do aluno.
+ *
+ * Busca as listas (com debounce implicito pela dependencia de busca) e as agrupa
+ * em tres secoes por status: pendentes, respondidas e expiradas. Permite responder,
+ * ver gabarito (quando liberado) e baixar o PDF de listas expiradas.
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, AlertCircle, FileText, Clock, ListOrdered, CheckCircle, Lock, Eye, Loader2, Download } from 'lucide-react';
@@ -6,13 +13,17 @@ import type { ResumoListaAluno } from '../../../entities/resolucaoLista/model/ty
 
 export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
   const navigate = useNavigate();
+  // Listas carregadas, maquina de estado da requisicao e termo de busca.
   const [listas, setListas] = useState<ResumoListaAluno[]>([]);
   const [estado, setEstado] = useState<'carregando' | 'sucesso' | 'erro'>('carregando');
   const [busca, setBusca] = useState('');
+  // Contador de tentativas, usado para reenviar a requisicao no botao "tentar novamente".
   const [tentativas, setTentativas] = useState(0);
-  
+
+  // Id da lista cujo PDF esta sendo gerado (trava o botao correspondente).
   const [pdfCarregandoId, setPdfCarregandoId] = useState<string | null>(null);
 
+  // Recarrega as listas a cada mudanca de busca/turma/tentativa; flag evita setState apos unmount.
   useEffect(() => {
     let cancelado = false;
 
@@ -34,11 +45,17 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     };
   }, [busca, tentativas, turmaId]);
 
+  /**
+   * Baixa o PDF da lista: busca o conteudo em base64 e dispara o download via link temporario.
+   * @param listaTurmaId Id da lista-turma a exportar.
+   * @param nomeLista Nome usado para compor o arquivo baixado.
+   */
   const handleBaixarPdf = async (listaTurmaId: string, nomeLista: string) => {
     try {
       setPdfCarregandoId(listaTurmaId);
       const base64Data = await resolucaoListaApi.baixarPdfAluno(listaTurmaId);
-      
+
+      // Converte o base64 num data URL e simula o clique num link de download.
       const pdfUrl = `data:application/pdf;base64,${base64Data}`;
       const link = document.createElement('a');
       link.href = pdfUrl;
@@ -54,6 +71,11 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     }
   };
 
+  /**
+   * Monta o rodape de cada card com numero de questoes e o texto de prazo.
+   * Calcula urgencia (3 dias ou menos) e adapta a mensagem conforme o status da lista.
+   * @param lista Resumo da lista a renderizar.
+   */
   const renderInfoRodape = (lista: ResumoListaAluno) => {
     const temPrazo = !!lista.prazo;
     const dataPrazo = temPrazo ? new Date(lista.prazo!) : null;
@@ -61,6 +83,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     let isUrgente = false;
 
     if (dataPrazo) {
+      // Dias restantes ate o prazo, usado para marcar urgencia.
       const diffDias = Math.ceil((dataPrazo.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
       const dataStr = dataPrazo.toLocaleDateString('pt-BR');
 
@@ -92,6 +115,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     );
   };
 
+  // Estado de erro de carregamento, com retry.
   if (estado === 'erro') {
     return (
       <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl mx-auto flex flex-col items-center">
@@ -113,6 +137,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     );
   }
 
+  // Estado vazio: nenhuma lista publicada (e sem busca ativa).
   if (estado === 'sucesso' && listas.length === 0 && !busca) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl py-16 px-6 text-center w-full max-w-2xl mx-auto flex flex-col items-center">
@@ -125,12 +150,14 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
     );
   }
 
+  // Separa as listas nas tres secoes exibidas (pendentes, respondidas e expiradas).
   const pendentes = listas.filter(l => l.status === 'PENDENTE' || l.status === 'EM_ANDAMENTO');
   const respondidas = listas.filter(l => l.status === 'RESPONDIDA');
   const expiradas = listas.filter(l => l.status === 'EXPIRADA');
 
   return (
     <>
+      {/* Barra de busca por titulo/tema e atalho de filtros. */}
       <div className="flex flex-col sm:flex-row gap-3 items-center mb-7">
         <div className="flex-1 w-full relative flex items-center gap-2 border border-gray-200 bg-white rounded-xl px-4 py-2.5">
           <Search size={17} className="text-gray-400" />
@@ -150,6 +177,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
         </div>
       </div>
 
+      {/* Secao Pendentes: listas ainda em aberto, com botao Responder. */}
       {pendentes.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-2.5 mb-4">
@@ -188,6 +216,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
         </div>
       )}
 
+      {/* Secao Respondidas: ja submetidas; gabarito disponivel apenas se liberado. */}
       {respondidas.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-2.5 mb-4">
@@ -235,6 +264,7 @@ export const ListagemListas = ({ turmaId }: { turmaId: string }) => {
         </div>
       )}
 
+      {/* Secao Expiradas: fora do prazo; permite apenas baixar o PDF. */}
       {expiradas.length > 0 && (
         <div className="mb-8 opacity-75">
           <div className="flex items-center gap-2.5 mb-4">

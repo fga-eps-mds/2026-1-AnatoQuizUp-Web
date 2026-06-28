@@ -1,3 +1,7 @@
+// Formulario de cadastro de aluno em tres etapas (dados de acesso, localizacao
+// e dados academicos). Concentra a validacao de cada campo no proprio cliente,
+// alem de carregar dinamicamente nacionalidades, estados, cidades e opcoes
+// academicas a partir dos services de localidade.
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -22,6 +26,8 @@ import type {
   RegisterStudentFormValues,
 } from '../model/types';
 
+// Estado inicial do formulario: todos os campos comecam vazios e sao
+// preenchidos conforme o aluno avanca pelas etapas.
 const INITIAL_VALUES: RegisterStudentFormValues = {
   fullName: '',
   nickname: '',
@@ -38,10 +44,13 @@ const INITIAL_VALUES: RegisterStudentFormValues = {
   period: '',
 };
 
+// Classe utilitaria Tailwind reaproveitada por todos os inputs de texto do form,
+// para manter a aparencia consistente entre as etapas.
 const INPUT_CLASS =
   'h-10 w-full rounded-[7px] border px-3.5 text-sm text-[#0A1128] outline-none transition-colors ' +
   'placeholder:text-[#0A1128]/45 focus:border-[#14D5C2] bg-white';
 
+// Propriedades de um campo de texto controlado generico usado dentro do form.
 type TextFieldProps = {
   label: string;
   name: RegisterStudentField;
@@ -52,6 +61,17 @@ type TextFieldProps = {
   onChange: (name: RegisterStudentField, value: string) => void;
 };
 
+/**
+ * Campo de texto controlado com rotulo e mensagem de erro opcional.
+ * Marca `aria-invalid` e troca a cor da borda quando ha erro de validacao.
+ * @param label rotulo exibido acima do input
+ * @param name identificador do campo (chave dentro do estado do form)
+ * @param value valor atual controlado pelo componente pai
+ * @param type tipo do input HTML (texto, email ou senha)
+ * @param error mensagem de erro a exibir, quando houver
+ * @param onBlur callback disparado ao perder o foco (marca como tocado)
+ * @param onChange callback disparado a cada digitacao
+ */
 const TextField = ({
   label,
   name,
@@ -79,15 +99,19 @@ const TextField = ({
   </div>
 );
 
+// Mapeia cada etapa do formulario para os campos que ela contem. Usado tanto
+// para validar a etapa atual quanto para descobrir a qual etapa um campo pertence.
 const STEP_FIELDS: Record<number, RegisterStudentField[]> = {
   1: ['fullName', 'nickname', 'email', 'password', 'confirmPassword'],
   2: ['birthDate', 'nationality', 'state', 'city'],
   3: ['education', 'institution', 'course', 'period'],
 };
 
+// Validacoes de formato basicas para email e nickname (formato exigido pelo backend).
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,7}$/;
 const NICKNAME_REGEX = /^[a-z][a-z0-9_]*$/;
 
+// Valor neutro de opcoes academicas usado enquanto a lista real ainda nao chegou.
 const EMPTY_ACADEMIC_OPTIONS: OpcoesAcademicas = {
   escolaridades: [],
   instituicoes: [],
@@ -103,27 +127,55 @@ type RegisterStudentValidationContext = {
   academicOptions?: OpcoesAcademicas;
 };
 
+/**
+ * Descobre em qual etapa (1, 2 ou 3) um determinado campo aparece.
+ * Util para reposicionar o usuario na etapa do primeiro campo invalido.
+ * @param field campo cujo passo se deseja descobrir
+ * @returns numero da etapa que contem o campo
+ */
 const getStepByField = (field: RegisterStudentField): number => {
   if (STEP_FIELDS[1].includes(field)) return 1;
   if (STEP_FIELDS[2].includes(field)) return 2;
   return 3;
 };
 
+/**
+ * Confere se a string representa uma data de calendario valida no formato AAAA-MM-DD.
+ * @param value data em formato ISO curto
+ * @returns true se for uma data real e bem formada
+ */
 const isValidDateValue = (value: string): boolean => {
   if (!value) return false;
   const date = new Date(`${value}T00:00:00`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
+/**
+ * Indica se a data informada esta no futuro em relacao a hoje.
+ * Usado para barrar datas de nascimento posteriores ao dia atual.
+ * @param value data em formato ISO curto
+ * @returns true quando a data e posterior a hoje
+ */
 const isFutureDate = (value: string): boolean => {
   const selected = new Date(`${value}T00:00:00`);
   const today = new Date();
+  // Zera a hora para comparar apenas o dia, ignorando o horario atual.
   today.setHours(0, 0, 0, 0);
   return selected.getTime() > today.getTime();
 };
 
+// Nome completo aceita apenas letras (incluindo acentuadas) e espacos.
 const FULL_NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
 
+/**
+ * Valida um unico campo do formulario e devolve a mensagem de erro,
+ * ou `undefined` quando o valor esta correto. As regras dependem do campo
+ * e, em alguns casos, das listas carregadas dinamicamente (contexto).
+ * @param values valores atuais de todos os campos
+ * @param field campo a validar
+ * @param context listas validas (nacionalidades, estados, cidades, opcoes academicas)
+ * @returns mensagem de erro ou undefined se valido
+ */
 const validateField = (
   values: RegisterStudentFormValues,
   field: RegisterStudentField,
@@ -134,6 +186,7 @@ const validateField = (
   const academicOptions = context.academicOptions ?? EMPTY_ACADEMIC_OPTIONS;
 
   switch (field) {
+    // Etapa 1: dados de acesso e identidade do aluno.
     case 'fullName':
       if (!trimmedValue) return 'Nome completo é obrigatório.';
       if (trimmedValue.length < 3 || trimmedValue.length > 120) {
@@ -166,6 +219,7 @@ const validateField = (
       if (!value) return 'Confirmação de senha é obrigatória.';
       if (value !== values.password) return 'As senhas não coincidem';
       return undefined;
+    // Etapa 2: localizacao (validada contra as listas carregadas do backend).
     case 'birthDate':
       if (!value) return 'Data de nascimento é obrigatória.';
       if (!isValidDateValue(value)) return 'Data de nascimento inválida.';
@@ -188,6 +242,7 @@ const validateField = (
       }
       if (!context.availableCities?.includes(trimmedValue)) return 'Selecione uma cidade válida.';
       return undefined;
+    // Etapa 3: dados academicos (so aceita valores presentes no catalogo).
     case 'education':
       if (!value || !academicOptions.escolaridades.includes(value)) {
         return 'Escolaridade é obrigatória.';
@@ -209,6 +264,13 @@ const validateField = (
   }
 };
 
+/**
+ * Valida varios campos de uma vez e devolve um mapa apenas com os que falharam.
+ * @param values valores atuais do formulario
+ * @param targetFields campos a validar (normalmente os de uma etapa)
+ * @param context listas validas usadas na validacao
+ * @returns mapa campo -> mensagem de erro (vazio se tudo valido)
+ */
 const validateFields = (
   values: RegisterStudentFormValues,
   targetFields: RegisterStudentField[],
@@ -220,12 +282,26 @@ const validateFields = (
     return fieldErrors;
   }, {});
 
+/**
+ * Constroi um mapa marcando os campos informados como "tocados" pelo usuario,
+ * para que suas mensagens de erro passem a ser exibidas.
+ * @param fields campos a marcar como tocados
+ * @returns mapa campo -> true
+ */
 const touchedFieldsFrom = (fields: RegisterStudentField[]) =>
   fields.reduce<Partial<Record<RegisterStudentField, boolean>>>((touched, field) => {
     touched[field] = true;
     return touched;
   }, {});
 
+/**
+ * Mescla os erros existentes com os novos apenas para os campos informados:
+ * aplica os erros que surgiram e remove os que foram resolvidos.
+ * @param previous mapa de erros atual
+ * @param fields campos cujo estado de erro deve ser recalculado
+ * @param nextErrors erros recem-calculados para esses campos
+ * @returns novo mapa de erros atualizado
+ */
 const mergeFieldErrors = (
   previous: RegisterStudentFieldErrors,
   fields: RegisterStudentField[],
@@ -244,19 +320,26 @@ const mergeFieldErrors = (
   return updated;
 };
 
+/**
+ * Componente principal do cadastro de aluno. Orquestra as tres etapas, a
+ * validacao em tempo real, o carregamento das listas auxiliares e o envio final.
+ */
 export const RegisterStudentForm = () => {
   const navigate = useNavigate();
 
+  // Valores e estado de validacao do formulario.
   const [values, setValues] = useState<RegisterStudentFormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<RegisterStudentFieldErrors>({});
   const [touchedFields, setTouchedFields] = useState<Partial<Record<RegisterStudentField, boolean>>>(
     {},
   );
+  // Estado de fluxo: erro geral, etapa atual e flags de carregamento/sucesso.
   const [formError, setFormError] = useState('');
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingIdentity, setIsCheckingIdentity] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  // Listas dinamicas (nacionalidades/estados/cidades) e seus estados de carga/erro.
   const [availableNationalities, setAvailableNationalities] = useState<string[]>([]);
   const [availableStates, setAvailableStates] = useState<Estado[]>([]);
   const [availableCities, setAvailableCities] = useState<Cidade[]>([]);
@@ -270,6 +353,7 @@ export const RegisterStudentForm = () => {
   const [isAcademicOptionsLoading, setIsAcademicOptionsLoading] = useState(false);
   const [academicOptionsError, setAcademicOptionsError] = useState('');
 
+  // Listas convertidas para o formato { value, label } esperado pelos <Select>.
   const nationalityOptions = useMemo(
     () => availableNationalities.map((value) => ({ value, label: value })),
     [availableNationalities],
@@ -298,6 +382,7 @@ export const RegisterStudentForm = () => {
     () => academicOptions.periodos.map((value) => ({ value, label: value })),
     [academicOptions.periodos],
   );
+  // Contexto consolidado com todas as listas validas, repassado as validacoes.
   const validationContext = useMemo(
     () => ({
       availableNationalities,
@@ -307,11 +392,13 @@ export const RegisterStudentForm = () => {
     }),
     [academicOptions, availableCities, availableNationalities, availableStates],
   );
+  // Erros calculados em tempo real para a etapa atual (habilita/desabilita o botao).
   const currentStepErrors = useMemo(
     () => validateFields(values, STEP_FIELDS[step], validationContext),
     [step, validationContext, values],
   );
   const hasVisibleStepError = STEP_FIELDS[step].some((field) => !!errors[field]);
+  // Etapa so e valida se nao houver erros e nenhuma lista necessaria estiver carregando/falha.
   const isCurrentStepValid =
     Object.keys(currentStepErrors).length === 0 &&
     !hasVisibleStepError &&
@@ -326,6 +413,7 @@ export const RegisterStudentForm = () => {
         !!citiesError)
     ) &&
     !(step === 3 && (isAcademicOptionsLoading || !!academicOptionsError));
+  // Estados de habilitacao e placeholders dinamicos dos selects de localizacao.
   const isNationalitySelectDisabled = isNationalitiesLoading || !!nationalitiesError;
   const isStateSelectDisabled = isStatesLoading || !!statesError;
   const isCitySelectDisabled = !values.state || isCitiesLoading || !!citiesError;
@@ -339,6 +427,8 @@ export const RegisterStudentForm = () => {
       ? 'Carregando cidades...'
       : 'Selecione sua cidade...';
 
+  // Carrega a lista de nacionalidades uma unica vez ao montar o componente.
+  // A flag `isMounted` evita atualizar o estado apos o desmonte (evita warning do React).
   useEffect(() => {
     let isMounted = true;
 
@@ -368,6 +458,7 @@ export const RegisterStudentForm = () => {
     };
   }, []);
 
+  // Carrega a lista de estados (UFs) uma vez ao montar.
   useEffect(() => {
     let isMounted = true;
 
@@ -395,6 +486,7 @@ export const RegisterStudentForm = () => {
     };
   }, []);
 
+  // Carrega as opcoes academicas (escolaridade, instituicao, curso, periodo) uma vez.
   useEffect(() => {
     let isMounted = true;
 
@@ -419,6 +511,7 @@ export const RegisterStudentForm = () => {
     };
   }, []);
 
+  // Recarrega as cidades sempre que a UF selecionada muda; sem UF, limpa a lista.
   useEffect(() => {
     let isMounted = true;
 
@@ -453,6 +546,7 @@ export const RegisterStudentForm = () => {
     };
   }, [values.state]);
 
+  // Apos o cadastro concluido, aguarda um instante e redireciona para o login.
   useEffect(() => {
     if (!isSuccess) return undefined;
 
@@ -463,6 +557,11 @@ export const RegisterStudentForm = () => {
     return () => clearTimeout(timeout);
   }, [isSuccess, navigate]);
 
+  /**
+   * Revalida um campo e atualiza (ou remove) sua mensagem de erro no estado.
+   * @param field campo a revalidar
+   * @param nextValues valores ja com a alteracao mais recente aplicada
+   */
   const updateFieldError = (field: RegisterStudentField, nextValues: RegisterStudentFormValues) => {
     const error = validateField(nextValues, field, validationContext);
     setErrors((previous) => {
@@ -476,11 +575,21 @@ export const RegisterStudentForm = () => {
     });
   };
 
+  /**
+   * Marca o campo como tocado (ao perder o foco) e ja roda sua validacao.
+   * @param field campo que recebeu o blur
+   */
   const markTouchedAndValidate = (field: RegisterStudentField) => {
     setTouchedFields((previous) => ({ ...previous, [field]: true }));
     updateFieldError(field, values);
   };
 
+  /**
+   * Atualiza o valor de um campo de texto e revalida quando pertinente.
+   * Ao mudar a senha, tambem revalida a confirmacao para manter a coerencia.
+   * @param field campo alterado
+   * @param value novo valor digitado
+   */
   const handleTextChange = (field: RegisterStudentField, value: string) => {
     const nextValues = { ...values, [field]: value };
     setValues(nextValues);
@@ -492,6 +601,10 @@ export const RegisterStudentForm = () => {
     }
   };
 
+  /**
+   * Troca a UF selecionada e limpa a cidade (que depende da UF), revalidando ambos.
+   * @param value nova sigla de estado escolhida
+   */
   const handleStateChange = (value: string) => {
     const nextValues = { ...values, state: value, city: '' };
     setValues(nextValues);
@@ -502,9 +615,16 @@ export const RegisterStudentForm = () => {
     if (touchedFields.city || errors.city) updateFieldError('city', nextValues);
   };
 
+  /**
+   * Mantem a coerencia entre instituicao, curso e periodo: ao escolher
+   * "Nao se aplica" em um deles, propaga o mesmo valor para os tres campos.
+   * @param field campo academico alterado
+   * @param value novo valor selecionado
+   */
   const setAcademicConsistency = (field: 'institution' | 'course' | 'period', value: string) => {
     const nextValues = { ...values, [field]: value };
 
+    // "Nao se aplica" zera os tres campos academicos de uma vez.
     if (value === academicOptions.naoSeAplica) {
       nextValues.institution = academicOptions.naoSeAplica;
       nextValues.course = academicOptions.naoSeAplica;
@@ -521,6 +641,10 @@ export const RegisterStudentForm = () => {
     });
   };
 
+  /**
+   * Avanca para a proxima etapa apos validar a atual. Na etapa 1, antes de
+   * avancar, confirma no backend que email e nickname ainda estao disponiveis.
+   */
   const goToNextStep = async () => {
     const stepFields = STEP_FIELDS[step];
     const stepErrors = validateFields(values, stepFields, validationContext);
@@ -530,6 +654,7 @@ export const RegisterStudentForm = () => {
 
     if (Object.keys(stepErrors).length > 0) return;
 
+    // Etapa 1 exige checagem remota de unicidade de email/nickname.
     if (step === 1) {
       setFormError('');
       setIsCheckingIdentity(true);
@@ -537,6 +662,7 @@ export const RegisterStudentForm = () => {
       try {
         await validateRegisterStudentIdentity(values);
       } catch (error) {
+        // Erro de campo conhecido vira mensagem no proprio campo; o resto vira erro geral.
         if (error instanceof RegisterStudentError) {
           if (error.fieldErrors) {
             const fieldErrorKeys = Object.keys(error.fieldErrors) as RegisterStudentField[];
@@ -562,11 +688,17 @@ export const RegisterStudentForm = () => {
     setStep((current) => Math.min(current + 1, 3));
   };
 
+  // Volta uma etapa (sem revalidar) e limpa o erro geral.
   const goToPreviousStep = () => {
     setFormError('');
     setStep((current) => Math.max(current - 1, 1));
   };
 
+  /**
+   * Validacao final e envio do cadastro. Revalida todos os campos; se algum
+   * falhar, leva o usuario de volta a etapa do primeiro erro. Em caso de erro
+   * vindo do backend, reabre a etapa correspondente.
+   */
   const handleSubmit = async () => {
     const allFields: RegisterStudentField[] = [
       ...STEP_FIELDS[1],
@@ -613,6 +745,7 @@ export const RegisterStudentForm = () => {
     }
   };
 
+  // Renderiza a barra de progresso com os tres marcadores de etapa (passado/atual/futuro).
   const renderStepper = () => (
     <div className="mb-6 flex w-full items-center [@media(max-height:760px)]:mb-4">
       {[1, 2, 3].map((marker, index) => (
@@ -637,6 +770,7 @@ export const RegisterStudentForm = () => {
     </div>
   );
 
+  // Tela de confirmacao exibida apos o cadastro concluido com sucesso.
   if (isSuccess) {
     return (
       <section className="w-full max-w-[470px]">
@@ -665,6 +799,7 @@ export const RegisterStudentForm = () => {
         </p>
       </div>
 
+      {/* Enquanto nao for a ultima etapa, o submit apenas avanca; na etapa 3, envia. */}
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -677,6 +812,7 @@ export const RegisterStudentForm = () => {
         noValidate
         className="flex flex-col gap-4 [@media(max-height:760px)]:gap-3"
       >
+        {/* Etapa 1: nome, nickname, email e senha. */}
         {step === 1 ? (
           <>
             <TextField
@@ -725,6 +861,7 @@ export const RegisterStudentForm = () => {
           </>
         ) : null}
 
+        {/* Etapa 2: nascimento e localizacao (nacionalidade, UF e cidade). */}
         {step === 2 ? (
           <>
             <DatePicker
@@ -778,6 +915,7 @@ export const RegisterStudentForm = () => {
           </>
         ) : null}
 
+        {/* Etapa 3: dados academicos, todos vindos do catalogo de opcoes. */}
         {step === 3 ? (
           <>
             <Select

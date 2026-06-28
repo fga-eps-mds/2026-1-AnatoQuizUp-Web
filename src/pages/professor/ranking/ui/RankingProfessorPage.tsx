@@ -15,20 +15,24 @@ import {
   type StatusListaAluno,
 } from '../../../../features/ranking';
 
+// Abas disponiveis no ranking do professor: geral, por turma e por lista.
 type AbaRanking = 'geral' | 'turma' | 'lista';
 
+// Configuracao das abas (chave + rotulo) exibidas no topo.
 const TABS: Array<{ key: AbaRanking; label: string }> = [
   { key: 'geral', label: 'Geral AnatoQuiz' },
   { key: 'turma', label: 'Por turma' },
   { key: 'lista', label: 'Por lista' },
 ];
 
+// Rotulo legivel do status do aluno em uma lista (usado como detalhe da linha).
 const STATUS_LABEL: Record<StatusListaAluno, string> = {
   SUBMETIDA: 'Respondida',
   EM_ANDAMENTO: 'Em andamento',
   NAO_RESPONDEU: 'Não respondeu',
 };
 
+/** Campo de selecao reutilizavel (rotulo + <select>) usado nos filtros de turma/lista. */
 const Seletor = ({
   label,
   value,
@@ -55,15 +59,23 @@ const Seletor = ({
   </label>
 );
 
+/**
+ * Pagina de ranking do professor com tres abas (geral / por turma / por lista).
+ * Cada aba carrega seu ranking sob demanda e normaliza as entradas para o formato
+ * comum de LinhaRanking exibido pelo RankingBoard, enriquecido com cosmeticos.
+ */
 export const RankingProfessorPage = () => {
+  // Aba ativa.
   const [aba, setAba] = useState<AbaRanking>('geral');
 
+  // Turmas do professor e selecoes de turma/lista por aba.
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [turmaTurmaId, setTurmaTurmaId] = useState('');
   const [turmaListaId, setTurmaListaId] = useState('');
   const [listas, setListas] = useState<OpcaoListaTurma[]>([]);
   const [listaId, setListaId] = useState('');
 
+  // Linhas do ranking atual + estados de carga e erro.
   const [linhas, setLinhas] = useState<LinhaRanking[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -133,6 +145,7 @@ export const RankingProfessorPage = () => {
       setCarregando(true);
 
       try {
+        // Cada aba chama um endpoint diferente e mapeia a resposta para LinhaRanking.
         if (aba === 'geral') {
           const resposta = await obterRankingGeral();
           if (ativo) {
@@ -205,6 +218,7 @@ export const RankingProfessorPage = () => {
     };
   }, [aba, turmaTurmaId, turmaListaId, listaId]);
 
+  // Lista atualmente escolhida (para exibir o nome no cabecalho da aba "por lista").
   const listaSelecionada = useMemo(
     () => listas.find((lista) => lista.listaTurmaId === listaId) ?? null,
     [listas, listaId],
@@ -226,6 +240,7 @@ export const RankingProfessorPage = () => {
           </p>
         </div>
 
+        {/* Navegacao por abas (geral / por turma / por lista). */}
         <div className="w-full overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
           <div className="grid grid-cols-3">
             {TABS.map((tab) => {
@@ -250,6 +265,7 @@ export const RankingProfessorPage = () => {
           </div>
         </div>
 
+        {/* Filtro da aba "por turma": seletor de turma. */}
         {aba === 'turma' && (
           <div className="flex flex-col gap-3 rounded-2xl border border-[#0A1128]/10 bg-white p-5 shadow-sm sm:flex-row sm:items-end">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#71edc8]/20 text-[#00A88F]">
@@ -266,6 +282,7 @@ export const RankingProfessorPage = () => {
           </div>
         )}
 
+        {/* Filtro da aba "por lista": seletores encadeados de turma e lista. */}
         {aba === 'lista' && (
           <div className="flex flex-col gap-3 rounded-2xl border border-[#0A1128]/10 bg-white p-5 shadow-sm">
             <div className="flex items-start gap-3">

@@ -15,6 +15,7 @@ type AchievementMedalProps = {
   nome?: string;
 };
 
+// Dimensoes (aro externo, disco interno, icone e cadeado) para cada tamanho de medalha.
 const TAMANHOS = {
   sm: {
     externo: 'h-14 w-14',
@@ -36,6 +37,10 @@ const TAMANHOS = {
   },
 } as const;
 
+/**
+ * Medalha visual de uma conquista: aro com gradiente do tier e icone do tipo.
+ * Mostra cadeado quando bloqueada e uma estrela quando destacada no perfil.
+ */
 export const AchievementMedal = ({
   tipo,
   tier = 'BRONZE',
@@ -44,6 +49,7 @@ export const AchievementMedal = ({
   tamanho = 'md',
   nome = 'Conquista',
 }: AchievementMedalProps) => {
+  // Resolve icone, estilo do tier e dimensoes, com fallbacks seguros.
   const Icone = ICONE_POR_TIPO[tipo] ?? Trophy;
   const estilo = ESTILO_POR_TIER[tier ?? 'BRONZE'] ?? ESTILO_POR_TIER.BRONZE;
   const dimensoes = TAMANHOS[tamanho];
@@ -72,6 +78,7 @@ export const AchievementMedal = ({
         </div>
       </div>
 
+      {/* Selo de cadeado sobreposto quando a conquista ainda esta bloqueada. */}
       {bloqueada && (
         <span
           className={`absolute flex items-center justify-center rounded-full border-2 border-white bg-[#475569] text-white shadow-md ${dimensoes.cadeado}`}
@@ -80,6 +87,7 @@ export const AchievementMedal = ({
         </span>
       )}
 
+      {/* Estrela de destaque exibida quando a conquista esta fixada no perfil. */}
       {destacada && !bloqueada && (
         <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#FACC15] text-[#7C5200] shadow-md">
           <Star size={15} fill="currentColor" aria-hidden="true" />

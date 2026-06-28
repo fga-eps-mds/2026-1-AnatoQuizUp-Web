@@ -1,5 +1,9 @@
+// Tipos de dominio do dashboard de desempenho de turmas (visao do professor).
+
+// Classificacao qualitativa do desempenho em um tema/aluno.
 export type StatusDesempenho = 'Tranquilo' | 'Atenção' | 'Crítico';
 
+// Desempenho agregado de um tema (quantas respostas, taxa de acerto e status).
 export interface TemaDesempenho {
   nome: string;
   totalRespondidas: number;
@@ -7,6 +11,7 @@ export interface TemaDesempenho {
   status: StatusDesempenho;
 }
 
+// Indicadores macro da turma (totais e desempenho por tema).
 export interface DashboardMacro {
   totalAlunos: number;
   totalQuestoesRespondidas: number;
@@ -14,6 +19,7 @@ export interface DashboardMacro {
   desempenhoPorTema: TemaDesempenho[];
 }
 
+// Desempenho consolidado de um aluno (totais, taxa e detalhe por tema).
 export interface DesempenhoAluno {
   alunoId: string;
   totalRespondidas: number;
@@ -23,10 +29,12 @@ export interface DesempenhoAluno {
   desempenhoPorTema: TemaDesempenho[];
 }
 
+// Visao individual: lista de desempenho de cada aluno da turma.
 export interface DashboardIndividual {
   alunos: DesempenhoAluno[];
 }
 
+// Desempenho agregado de uma lista publicada (entregas, pendencias, taxa).
 export interface DesempenhoLista {
   listaTurmaId: string;
   nomeLista: string;
@@ -37,6 +45,7 @@ export interface DesempenhoLista {
   prazo: string | null;
 }
 
+// Desempenho de um aluno em uma lista especifica (status da entrega + acertos).
 export type AlunoDesempenhoLista = {
   alunoId: string;
   status: 'SUBMETIDA' | 'NAO_RESPONDEU' | 'EM_ANDAMENTO';
@@ -46,6 +55,7 @@ export type AlunoDesempenhoLista = {
   mensagem: string;
 };
 
+// Detalhe de uma lista: total de questoes + desempenho aluno a aluno.
 export type DesempenhoListaIndividual = {
   listaTurmaId: string;
   nomeLista: string;
