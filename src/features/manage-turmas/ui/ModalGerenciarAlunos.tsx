@@ -1,3 +1,9 @@
+/**
+ * Modal de gerenciamento de alunos de uma turma (visao do professor).
+ *
+ * Dois paineis: alunos ja vinculados (com remocao) e busca de alunos no sistema
+ * para vincular. A busca tem debounce de 300ms e exige ao menos 2 caracteres.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Search, UserMinus, UserPlus, X } from 'lucide-react';
 import {
@@ -9,6 +15,7 @@ import type { Turma, VinculoTurmaAluno } from '../../../entities/turmas/model/ty
 import { buscarAlunos, buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi';
 import type { UsuarioResumo } from '../../../entities/usuarios/model/types';
 
+// Tipo das mensagens de feedback repassadas ao componente pai.
 type TipoFeedback = 'success' | 'error';
 
 interface ModalGerenciarAlunosProps {
@@ -19,6 +26,7 @@ interface ModalGerenciarAlunosProps {
   onFeedback: (message: string, type: TipoFeedback) => void;
 }
 
+// Gera um registro de aluno provisorio quando os dados do usuario nao puderam ser carregados.
 const criarAlunoFallback = (alunoId: string): UsuarioResumo => ({
   id: alunoId,
   nome: 'Aluno sem dados carregados',
@@ -38,19 +46,24 @@ export const ModalGerenciarAlunos = ({
   onAfterChange,
   onFeedback,
 }: ModalGerenciarAlunosProps) => {
+  // Vinculos ativos e os respectivos dados de usuario ja resolvidos.
   const [vinculos, setVinculos] = useState<VinculoTurmaAluno[]>([]);
   const [alunosVinculados, setAlunosVinculados] = useState<UsuarioResumo[]>([]);
+  // Termo de busca e resultados do painel de adicao de alunos.
   const [busca, setBusca] = useState('');
   const [resultadosBusca, setResultadosBusca] = useState<UsuarioResumo[]>([]);
+  // Flags de carregamento/busca e id do aluno em operacao (trava o botao individual).
   const [isLoadingVinculos, setIsLoadingVinculos] = useState(isOpen);
   const [isBuscandoAlunos, setIsBuscandoAlunos] = useState(false);
   const [alunoEmOperacao, setAlunoEmOperacao] = useState<string | null>(null);
 
+  // Conjunto de ids ja vinculados, usado para desabilitar o botao "Adicionar" na busca.
   const idsVinculados = useMemo(
     () => new Set(vinculos.map((vinculo) => vinculo.alunoId)),
     [vinculos],
   );
 
+  // Carrega os vinculos da turma e resolve os dados de cada aluno (com fallback).
   const carregarAlunosVinculados = useCallback(async () => {
     if (!turma) return;
 
@@ -74,6 +87,7 @@ export const ModalGerenciarAlunos = ({
     }
   }, [onFeedback, turma]);
 
+  // Recarrega os vinculados sempre que o modal abre.
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -84,6 +98,7 @@ export const ModalGerenciarAlunos = ({
     return () => window.clearTimeout(timeoutId);
   }, [carregarAlunosVinculados, isOpen]);
 
+  // Busca alunos com debounce de 300ms; ignora termos com menos de 2 caracteres.
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -92,6 +107,7 @@ export const ModalGerenciarAlunos = ({
       return undefined;
     }
 
+    // Flag de cancelamento evita aplicar resultado de uma busca ja superada.
     let isCancelled = false;
     const timeoutId = window.setTimeout(async () => {
       setIsBuscandoAlunos(true);
@@ -120,8 +136,10 @@ export const ModalGerenciarAlunos = ({
     };
   }, [busca, isOpen, onFeedback]);
 
+  // Sem modal aberto ou turma alvo, nao ha o que renderizar.
   if (!isOpen || !turma) return null;
 
+  /** Vincula um aluno a turma e recarrega a lista de vinculados. */
   const handleVincularAluno = async (alunoId: string) => {
     setAlunoEmOperacao(alunoId);
 
@@ -138,6 +156,7 @@ export const ModalGerenciarAlunos = ({
     }
   };
 
+  /** Remove o vinculo do aluno com a turma e recarrega a lista de vinculados. */
   const handleDesvincularAluno = async (alunoId: string) => {
     setAlunoEmOperacao(alunoId);
 
@@ -182,7 +201,9 @@ export const ModalGerenciarAlunos = ({
           </button>
         </div>
 
+        {/* Duas colunas: alunos vinculados (esquerda) e busca para adicionar (direita). */}
         <div className="grid min-h-0 gap-6 lg:grid-cols-[1fr_1fr]">
+          {/* Painel esquerdo: alunos ja na turma, com acao de remover. */}
           <section className="min-h-0">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-bold text-gray-900">Vinculados</h4>
@@ -230,6 +251,7 @@ export const ModalGerenciarAlunos = ({
             </div>
           </section>
 
+          {/* Painel direito: campo de busca e resultados com acao de adicionar. */}
           <section className="min-h-0">
             <h4 className="mb-3 text-sm font-bold text-gray-900">Buscar alunos</h4>
 

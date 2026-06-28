@@ -1,3 +1,7 @@
+// Aba "Alunos" da pagina de detalhes da turma. Mostra os alunos matriculados em
+// uma tabela e oferece um painel lateral de busca para matricular novos alunos.
+// Como o vinculo turma-aluno guarda apenas o id, os dados completos de cada aluno
+// sao carregados a parte (com fallback quando algum nao e encontrado).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
@@ -30,6 +34,7 @@ interface ToastState {
   type: TipoToast;
 }
 
+// Paleta de cores de avatar, escolhida de forma estavel a partir do id do aluno.
 const AVATAR_COLORS = [
   'bg-teal-500',
   'bg-blue-500',
@@ -41,6 +46,7 @@ const AVATAR_COLORS = [
   'bg-cyan-500',
 ];
 
+// Cria um aluno "placeholder" quando os dados completos nao puderam ser carregados.
 const criarAlunoFallback = (alunoId: string): UsuarioResumo => ({
   id: alunoId,
   nome: 'Aluno sem dados carregados',
@@ -53,11 +59,13 @@ const criarAlunoFallback = (alunoId: string): UsuarioResumo => ({
   semestre: null,
 });
 
+// Deriva uma cor de avatar deterministica a partir do hash simples do id.
 const avatarColor = (id: string) => {
   const hash = id.split('').reduce((acc, char) => acc + char.codePointAt(0)!, 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 };
 
+// Extrai as iniciais do nome (1a e ultima palavra) para o avatar.
 const iniciais = (nome: string) => {
   const partes = nome.trim().split(' ').filter(Boolean);
   if (partes.length === 0) return '?';
@@ -65,12 +73,18 @@ const iniciais = (nome: string) => {
   return `${partes[0][0]}${partes.at(-1)![0]}`.toUpperCase();
 };
 
+// Formata a data ISO para o padrao curto pt-BR (devolve o original se invalida).
 const formatarData = (iso: string) => {
   const data = new Date(iso);
   if (Number.isNaN(data.getTime())) return iso;
   return data.toLocaleDateString('pt-BR');
 };
 
+/**
+ * Componente da aba de alunos. Carrega os matriculados, gerencia a busca com
+ * debounce e as acoes de adicionar/remover alunos da turma.
+ * @param turmaId id da turma cujos alunos serao gerenciados
+ */
 export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
   const [vinculos, setVinculos] = useState<VinculoTurmaAluno[]>([]);
   const [alunos, setAlunos] = useState<UsuarioResumo[]>([]);
@@ -81,11 +95,13 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
   const [emOperacao, setEmOperacao] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  // Conjunto de ids ja matriculados (para marcar "Vinculado" nos resultados de busca).
   const idsVinculados = useMemo(
     () => new Set(vinculos.map((vinculo) => vinculo.alunoId)),
     [vinculos],
   );
 
+  // Indice vinculo por alunoId (para recuperar a data de matricula na tabela).
   const vinculosPorAlunoId = useMemo(
     () => new Map(vinculos.map((vinculo) => [vinculo.alunoId, vinculo])),
     [vinculos],
@@ -105,6 +121,8 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  // Carrega os vinculos da turma e, a partir dos ids, os dados completos de cada
+  // aluno (usando fallback quando algum usuario nao for encontrado).
   const carregarAlunos = useCallback(async () => {
     setIsLoading(true);
 
@@ -132,6 +150,8 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
     return () => window.clearTimeout(timeoutId);
   }, [carregarAlunos]);
 
+  // Busca de alunos com debounce (300ms) e cancelamento: so dispara com 2+ caracteres
+  // e descarta resultados de buscas antigas que retornem fora de ordem.
   useEffect(() => {
     const termoBusca = busca.trim();
 
@@ -172,6 +192,7 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
     };
   }, [busca, mostrarToast]);
 
+  // Matricula um aluno na turma e recarrega a lista.
   const handleAdicionar = async (alunoId: string) => {
     setEmOperacao(alunoId);
 
@@ -187,6 +208,7 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
     }
   };
 
+  // Remove um aluno da turma e recarrega a lista.
   const handleRemover = async (alunoId: string) => {
     setEmOperacao(alunoId);
 
@@ -219,6 +241,7 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
         </div>
       )}
 
+      {/* Coluna principal: tabela de alunos matriculados (ou estados de carga/vazio). */}
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -302,6 +325,7 @@ export const AbaAlunos = ({ turmaId }: AbaAlunosProps) => {
         )}
       </div>
 
+      {/* Painel lateral: busca de alunos com debounce para matricular na turma. */}
       <aside className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-bold text-gray-900">Adicionar aluno</h3>
         <p className="mt-1 text-sm text-gray-500">
