@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eye, Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
+import { Home, LogOut, Coins, Menu, Users, X, Newspaper, BookOpen, List, Calendar, PieChart, ChevronRight, ShoppingBag, Trophy, Medal } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -24,7 +24,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isViewingAsStudent, setIsViewingAsStudent] = useState(false);
+  // const [isViewingAsStudent, setIsViewingAsStudent] = useState(false);
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -52,9 +52,9 @@ export const Header = () => {
     setIsDrawerOpen(false);
   };
 
-  const handleToggleStudentView = () => {
-    setIsViewingAsStudent((prev) => !prev);
-  };
+  // const handleToggleStudentView = () => {
+  //   setIsViewingAsStudent((prev) => !prev);
+  // };
 
   const isRouteActive = (path: string) => location.pathname === path;
 
