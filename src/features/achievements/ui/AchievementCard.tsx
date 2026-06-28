@@ -16,12 +16,17 @@ type AchievementCardProps = {
   compacto?: boolean;
 };
 
+/**
+ * Card de uma conquista: medalha, titulo/tipo, descricao, barra de progresso e
+ * status atual. Renderiza esqueleto enquanto carrega e vira botao quando ha onSelect.
+ */
 export const AchievementCard = ({
   conquista,
   onSelect,
   carregando = false,
   compacto = false,
 }: AchievementCardProps) => {
+  // Estado de carregamento (ou sem dados): renderiza um esqueleto animado.
   if (carregando || !conquista) {
     return (
       <div
@@ -41,6 +46,7 @@ export const AchievementCard = ({
     );
   }
 
+  // Deriva o estado visual da conquista (tier exibido, concluida, bloqueada, destaque).
   const tierMaisAlto = obterTierMaisAlto(conquista.tiers);
   const proximoTier = conquista.proximoTier;
   const tierVisual = proximoTier ?? tierMaisAlto ?? 'BRONZE';
@@ -49,6 +55,7 @@ export const AchievementCard = ({
   const destacada = conquista.tiers.some((tier) => tier.destaque);
   const objetivoAtual = conquista.proximoObjetivo;
 
+  // Conteudo do card, reutilizado tanto no <button> clicavel quanto no <article> estatico.
   const conteudo = (
     <>
       <AchievementMedal
@@ -126,6 +133,7 @@ export const AchievementCard = ({
     compacto ? 'min-h-28' : 'min-h-44'
   } ${onSelect ? 'cursor-pointer hover:border-[#14B8A6]/60 hover:bg-[#F8FFFD]' : ''}`;
 
+  // Com handler de selecao vira botao clicavel; sem ele, apenas um cartao informativo.
   if (onSelect) {
     return (
       <button type="button" className={className} onClick={() => onSelect(conquista)}>

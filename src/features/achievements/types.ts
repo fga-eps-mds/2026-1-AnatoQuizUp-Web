@@ -1,13 +1,17 @@
+// Tipos do dominio de conquistas (gamificacao) compartilhados pela feature.
 import type { TipoItemLoja } from '../loja';
 
+// Niveis de uma conquista, em ordem crescente de dificuldade.
 export type TierConquista = 'BRONZE' | 'PRATA' | 'OURO';
 
+// Criterios possiveis de uma conquista (streak, total/percentual de acertos, por tema).
 export type TipoConquista =
   | 'STREAK_ACERTOS'
   | 'TOTAL_ACERTOS'
   | 'TOTAL_ACERTOS_TEMA'
   | 'PERCENTUAL_ACERTO_TEMA';
 
+// Item da loja concedido como recompensa ao desbloquear um tier.
 export type ItemRecompensaConquista = {
   id: string;
   codigo: string;
@@ -19,6 +23,7 @@ export type ItemRecompensaConquista = {
   previewImagemUrl: string | null;
 };
 
+// Progresso de um tier especifico: objetivo, estado de desbloqueio e recompensas.
 export type TierProgressoConquista = {
   tier: TierConquista;
   objetivo: number;
@@ -30,6 +35,7 @@ export type TierProgressoConquista = {
   item: ItemRecompensaConquista | null;
 };
 
+// Visao agregada de uma conquista para o aluno: progresso atual e todos os seus tiers.
 export type ProgressoConquista = {
   id: string;
   nome: string;
@@ -46,6 +52,7 @@ export type ProgressoConquista = {
   tiers: TierProgressoConquista[];
 };
 
+// Evento de desbloqueio recem-ocorrido, com moedas/saldo e item concedidos.
 export type ConquistaDesbloqueada = {
   conquistaId: string;
   desbloqueioId: string;
@@ -59,6 +66,7 @@ export type ConquistaDesbloqueada = {
   itemConcedido: ItemRecompensaConquista | null;
 };
 
+// Conquista que o aluno fixou para exibir em destaque no perfil.
 export type ConquistaDestacada = {
   desbloqueioId: string;
   conquistaId: string;
@@ -73,6 +81,7 @@ export type ConquistaDestacada = {
   conquistadoEm: string;
 };
 
+// Metadados de paginacao retornados pela API de conquistas.
 export type MetadadosPaginacao = {
   page: number;
   limit: number;
@@ -80,16 +89,19 @@ export type MetadadosPaginacao = {
   totalPages: number;
 };
 
+// Envelope generico de resposta paginada (dados + metadados).
 export type RespostaPaginada<T> = {
   dados: T[];
   metadados: MetadadosPaginacao;
 };
 
+// Resposta do endpoint de conquistas destacadas do perfil.
 export type RespostaDestaques = {
   mensagem: string;
   dados: ConquistaDestacada[];
 };
 
+// Parametros de paginacao aceitos ao listar conquistas.
 export type ListarConquistasParams = {
   page?: number;
   limit?: number;

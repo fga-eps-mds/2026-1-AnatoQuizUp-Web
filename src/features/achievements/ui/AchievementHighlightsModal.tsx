@@ -16,6 +16,7 @@ type AchievementHighlightsModalProps = {
   onSaved: (desbloqueiosDestacados: Set<string>) => void;
 };
 
+// Representa um tier desbloqueado elegivel a virar destaque do perfil.
 type OpcaoDestaque = {
   desbloqueioId: string;
   conquistaId: string;
@@ -25,13 +26,20 @@ type OpcaoDestaque = {
   destaque: boolean;
 };
 
+// Numero maximo de conquistas que podem ser destacadas simultaneamente.
 const LIMITE_DESTAQUES = 3;
 
+/**
+ * Modal para o aluno escolher ate tres conquistas desbloqueadas para destacar no perfil.
+ * Mantem a selecao localmente, calcula o diff em relacao ao estado salvo e persiste as
+ * alteracoes (adicoes/remocoes) ao confirmar.
+ */
 export const AchievementHighlightsModal = ({
   conquistas,
   onClose,
   onSaved,
 }: AchievementHighlightsModalProps) => {
+  // Achata as conquistas em opcoes selecionaveis: um item por tier desbloqueado.
   const opcoes = useMemo<OpcaoDestaque[]>(
     () =>
       conquistas.flatMap((conquista) =>
@@ -52,16 +60,19 @@ export const AchievementHighlightsModal = ({
     [conquistas],
   );
 
+  // Selecao ja salva no backend, base para detectar mudancas e calcular o diff.
   const selecaoInicial = useMemo(
     () => new Set(opcoes.filter((opcao) => opcao.destaque).map((opcao) => opcao.desbloqueioId)),
     [opcoes],
   );
+  // Selecao atual editavel + flags de salvamento e erro.
   const [selecionados, setSelecionados] = useState<Set<string>>(
     () => new Set(selecaoInicial),
   );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  // Bloqueia o scroll do body e fecha no Escape (exceto durante o salvamento).
   useEffect(() => {
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -78,10 +89,12 @@ export const AchievementHighlightsModal = ({
     };
   }, [onClose, salvando]);
 
+  // Verdadeiro quando a selecao atual difere da salva (habilita o botao Salvar).
   const alterado =
     selecionados.size !== selecaoInicial.size ||
     [...selecionados].some((id) => !selecaoInicial.has(id));
 
+  /** Adiciona/remove um destaque, respeitando o limite maximo de selecoes. */
   const alternarDestaque = (desbloqueioId: string) => {
     setErro(null);
     setSelecionados((atuais) => {
@@ -97,7 +110,9 @@ export const AchievementHighlightsModal = ({
     });
   };
 
+  /** Persiste o diff de destaques: remove os retirados e adiciona os novos. */
   const salvar = async () => {
+    // Diferenca entre a selecao salva e a atual.
     const removidos = [...selecaoInicial].filter((id) => !selecionados.has(id));
     const adicionados = [...selecionados].filter((id) => !selecaoInicial.has(id));
 
@@ -125,6 +140,7 @@ export const AchievementHighlightsModal = ({
     }
   };
 
+  // Opcoes atualmente selecionadas, usadas para montar a previa do perfil.
   const destaquesSelecionados = opcoes.filter((opcao) =>
     selecionados.has(opcao.desbloqueioId),
   );
@@ -191,10 +207,12 @@ export const AchievementHighlightsModal = ({
             </div>
           )}
 
+          {/* Grade de conquistas desbloqueadas selecionaveis (ou aviso de lista vazia). */}
           {opcoes.length > 0 ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {opcoes.map((opcao) => {
                 const selecionada = selecionados.has(opcao.desbloqueioId);
+                // Bloqueia novas selecoes quando o limite foi atingido.
                 const limiteAtingido =
                   selecionados.size === LIMITE_DESTAQUES && !selecionada;
 
@@ -250,6 +268,7 @@ export const AchievementHighlightsModal = ({
             </div>
           )}
 
+          {/* Previa de como os destaques selecionados aparecerao no perfil. */}
           <section className="mt-6 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
             <h3 className="text-sm font-black text-[#0A1128]">Prévia no perfil</h3>
             {destaquesSelecionados.length > 0 ? (
