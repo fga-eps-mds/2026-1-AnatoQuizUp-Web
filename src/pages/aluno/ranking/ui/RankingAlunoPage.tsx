@@ -13,21 +13,29 @@ import {
   type RankingAlunoResposta,
 } from '../../../../features/ranking';
 
+// Abas do ranking do aluno: geral (todos) e entre amigos.
 type AbaRanking = 'geral' | 'amigos';
 
+// Configuracao das abas exibidas no topo.
 const TABS: Array<{ key: AbaRanking; label: string }> = [
   { key: 'geral', label: 'Ranking geral' },
   { key: 'amigos', label: 'Entre amigos' },
 ];
 
+/** Monta a linha de detalhe (curso · Nº semestre) de uma entrada, ou null se vazia. */
 const montarDetalhe = (curso: string | null, semestre: string | null): string | null => {
   return (
     [curso, semestre ? `${semestre}º semestre` : null].filter(Boolean).join(' · ') || null
   );
 };
 
+/**
+ * Pagina de ranking do aluno com abas geral/amigos. Mostra a posicao do usuario,
+ * trata o caso de perfil privado (fora do ranking geral) e o de poucos amigos.
+ */
 export const RankingAlunoPage = () => {
   const { user } = useAuth();
+  // Aba ativa, resposta do ranking e estados de carga/erro.
   const [aba, setAba] = useState<AbaRanking>('geral');
   const [resposta, setResposta] = useState<RankingAlunoResposta | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -64,6 +72,8 @@ export const RankingAlunoPage = () => {
     };
   }, [aba]);
 
+  // Recarrega o ranking a cada troca de aba; flag evita aplicar resultado apos unmount.
+  // Converte uma entrada bruta da API na linha exibida pelo board (com cosmeticos e destaque).
   const mapearLinha = (entrada: EntradaRanking): LinhaRanking => ({
     posicao: entrada.posicao,
     id: entrada.usuarioId,
@@ -89,8 +99,10 @@ export const RankingAlunoPage = () => {
     [resposta, user?.nickname],
   );
 
+  // Perfil privado: no ranking geral, com resposta carregada mas sem a linha do usuario.
   const perfilPrivado = aba === 'geral' && !carregando && !erro && resposta !== null && usuarioAtual === null;
 
+  /** Texto da posicao do usuario no cartao de resumo, conforme o estado atual. */
   const resumoPosicao = () => {
     if (carregando) return '—';
     if (perfilPrivado) return 'Perfil privado';
@@ -98,6 +110,7 @@ export const RankingAlunoPage = () => {
     return `${usuarioAtual.posicao}º`;
   };
 
+  /** Texto auxiliar com o total de participantes (alunos ou amigos). */
   const resumoTotal = () => {
     if (!resposta) return aba === 'amigos' ? 'amigos' : 'participantes';
     const sufixo = aba === 'amigos' ? 'amigos (incluindo você)' : 'alunos no ranking';
@@ -155,6 +168,7 @@ export const RankingAlunoPage = () => {
           </div>
         </div>
 
+        {/* Aviso quando o perfil privado impede a participacao no ranking geral. */}
         {perfilPrivado && (
           <div className="flex items-start gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
@@ -173,6 +187,7 @@ export const RankingAlunoPage = () => {
           </div>
         )}
 
+        {/* Convite para adicionar amigos quando a aba "amigos" tem so o proprio usuario. */}
         {aba === 'amigos' && !carregando && !erro && resposta && resposta.totalParticipantes <= 1 && (
           <div className="flex items-start gap-4 rounded-2xl border border-[#0A1128]/10 bg-white p-5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#71edc8]/20 text-[#00A88F]">

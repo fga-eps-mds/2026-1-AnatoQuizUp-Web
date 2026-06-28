@@ -1,3 +1,7 @@
+// Pagina "Minha Rede" do aluno: concentra busca de colegas, gerenciamento de
+// convites (recebidos/enviados), lista de amigos e o controle de privacidade do
+// perfil. Organiza tudo em tres abas e enriquece cada card com os cosmeticos
+// equipados de cada usuario.
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2, Mail, Search, ShieldCheck, UserRoundPlus, Users } from 'lucide-react';
@@ -21,8 +25,10 @@ import { listarAmigosSociais, type ResumoAmigoSocial } from '../../../features/s
 import { ProfileIdentityCard } from '../../../shared/ui/profile-identity-card';
 import { CardAmigo } from './CardAmigo';
 
+// Abas disponiveis na pagina de rede social do aluno.
 type AbaAmigos = 'buscar' | 'convites' | 'amigos';
 
+// Propriedades de um card-resumo (numero + rotulo + descricao) do topo da pagina.
 type CardResumoProps = {
   icon: LucideIcon;
   label: string;
@@ -31,18 +37,28 @@ type CardResumoProps = {
   tone: 'teal' | 'rose' | 'blue';
 };
 
+// Definicao das abas, na ordem em que aparecem no seletor.
 const TABS: Array<{ key: AbaAmigos; label: string }> = [
   { key: 'buscar', label: 'Buscar colegas' },
   { key: 'convites', label: 'Convites' },
   { key: 'amigos', label: 'Meus amigos' },
 ];
 
+// Paleta de cores por "tom" usada nos cards-resumo (icone e fundo combinando).
 const toneClasses = {
   teal: 'bg-[#71edc8]/20 text-[#00A88F]',
   rose: 'bg-rose-100 text-rose-500',
   blue: 'bg-blue-100 text-blue-600',
 };
 
+/**
+ * Card-resumo exibido no topo da pagina (ex.: total de amigos, convites pendentes).
+ * @param icon icone ilustrativo do indicador
+ * @param label titulo do indicador
+ * @param value valor em destaque (numero ou status)
+ * @param description texto complementar curto
+ * @param tone cor do card (teal, rose ou blue)
+ */
 const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoProps) => (
   <article className="flex min-h-[116px] items-center gap-5 rounded-2xl border border-[#0A1128]/10 bg-white p-5 shadow-sm">
     <span
@@ -60,10 +76,16 @@ const CardResumo = ({ icon: Icon, label, value, description, tone }: CardResumoP
   </article>
 );
 
+/**
+ * Pagina principal da rede social do aluno. Carrega convites e amigos ao montar,
+ * permite buscar colegas, aceitar/recusar convites, desfazer amizades e alternar
+ * a visibilidade do proprio perfil.
+ */
 export const AmigosPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  // Aba inicial pode vir do estado de navegacao (ex.: vindo de outro link interno).
   const [abaAtiva, setAbaAtiva] = useState<AbaAmigos>(
     (location.state as { aba?: AbaAmigos } | null)?.aba ?? 'buscar',
   );
@@ -87,9 +109,12 @@ export const AmigosPage = () => {
   const [erroPrivacidade, setErroPrivacidade] = useState<string | null>(null);
   const [cosmeticosPorUsuario, setCosmeticosPorUsuario] = useState<EquipadosPorUsuario>({});
 
+  // Ao montar a pagina, carrega em paralelo os convites pendentes e a lista de amigos.
+  // A flag `ativo` evita atualizar estado depois que o componente foi desmontado.
   useEffect(() => {
     let ativo = true;
 
+    // Busca convites recebidos e enviados; os enviados viram um Set de ids ja solicitados.
     const carregarConvites = async () => {
       setCarregandoConvites(true);
       setErroConvites(null);
@@ -117,6 +142,7 @@ export const AmigosPage = () => {
       }
     };
 
+    // Busca a lista de amigos e ja deriva os cosmeticos equipados de cada um.
     const carregarAmigos = async () => {
       setCarregandoAmigos(true);
       setErroAmigos(null);
@@ -154,6 +180,11 @@ export const AmigosPage = () => {
     };
   }, []);
 
+  /**
+   * Executa a busca de colegas. Quando o termo comeca com "@", busca por nickname;
+   * caso contrario, busca por nome.
+   * @param event evento de submit do formulario de busca
+   */
   const handleBuscarColegas = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -180,6 +211,10 @@ export const AmigosPage = () => {
     }
   };
 
+  /**
+   * Envia uma solicitacao de amizade e marca o colega como "ja solicitado".
+   * @param id id do usuario que recebera o convite
+   */
   const handleEnviarSolicitacao = async (id: string) => {
     setEnviandoSolicitacaoId(id);
     setErroBusca(null);
@@ -194,10 +229,16 @@ export const AmigosPage = () => {
     }
   };
 
+  // Remove um convite da lista de pendentes (apos aceitar ou recusar).
   const removerConviteDaLista = (id: string) => {
     setConvitesRecebidos((convitesAtuais) => convitesAtuais.filter((convite) => convite.id !== id));
   };
 
+  /**
+   * Insere o novo amigo no topo da lista logo apos um convite aceito,
+   * evitando duplicar caso ele ja esteja presente.
+   * @param convite convite que acabou de ser aceito
+   */
   const adicionarAmigoDaSolicitacao = (convite: ResumoAmizade) => {
     setAmigos((amigosAtuais) => {
       if (amigosAtuais.some((amizade) => amizade.id === convite.id)) {
@@ -216,6 +257,11 @@ export const AmigosPage = () => {
     });
   };
 
+  /**
+   * Aceita um convite: confirma no backend, remove dos pendentes e ja adiciona
+   * o usuario a lista de amigos (atualizacao otimista da UI).
+   * @param convite convite a ser aceito
+   */
   const handleAceitarConvite = async (convite: ResumoAmizade) => {
     setProcessandoConviteId(convite.id);
     setErroConvites(null);
@@ -231,6 +277,10 @@ export const AmigosPage = () => {
     }
   };
 
+  /**
+   * Desfaz uma amizade e remove o usuario da lista local.
+   * @param id id da amizade a desfazer
+   */
   const handleDesfazerAmizade = async (id: string) => {
     setProcessandoAmizadeId(id);
     setErroAmigos(null);
@@ -245,6 +295,10 @@ export const AmigosPage = () => {
     }
   };
 
+  /**
+   * Alterna a visibilidade do perfil. Atualiza a UI de forma otimista e, se a
+   * chamada ao backend falhar, reverte para o valor anterior.
+   */
   const handleAlterarVisibilidade = async () => {
     const proximoValor = !perfilVisivel;
 
@@ -262,6 +316,10 @@ export const AmigosPage = () => {
     }
   };
 
+  /**
+   * Recusa um convite pendente e o remove da lista.
+   * @param id id do convite a recusar
+   */
   const handleRecusarConvite = async (id: string) => {
     setProcessandoConviteId(id);
     setErroConvites(null);
@@ -291,6 +349,7 @@ export const AmigosPage = () => {
           </p>
         </div>
 
+        {/* Indicadores de topo: amigos, convites pendentes e status de privacidade. */}
         <div className="grid gap-4 lg:grid-cols-3">
           <CardResumo
             icon={Users}
@@ -319,6 +378,7 @@ export const AmigosPage = () => {
           />
         </div>
 
+        {/* Seletor de abas (Buscar / Convites / Meus amigos). */}
         <div className="w-full overflow-hidden rounded-2xl border border-[#0A1128]/10 bg-white shadow-sm">
           <div className="grid grid-cols-3">
             {TABS.map((tab) => {
@@ -343,6 +403,7 @@ export const AmigosPage = () => {
           </div>
         </div>
 
+        {/* Aba "Buscar colegas": formulario de busca + lista de resultados. */}
         {abaAtiva === 'buscar' && (
           <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
             <div className="flex items-start gap-4">
@@ -475,6 +536,7 @@ export const AmigosPage = () => {
           </section>
         )}
 
+        {/* Aba "Convites": solicitacoes recebidas com acoes de aceitar/recusar. */}
         {abaAtiva === 'convites' && (
           <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
             <div className="flex items-start gap-4">
@@ -593,6 +655,7 @@ export const AmigosPage = () => {
           </section>
         )}
 
+        {/* Aba "Meus amigos": grade de cards das amizades confirmadas. */}
         {abaAtiva === 'amigos' && (
           <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
             <div className="flex items-start gap-4">
@@ -656,6 +719,7 @@ export const AmigosPage = () => {
           </section>
         )}
 
+        {/* Bloco fixo de privacidade: toggle que controla a visibilidade do perfil. */}
         <section className="rounded-2xl border border-[#0A1128]/10 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">

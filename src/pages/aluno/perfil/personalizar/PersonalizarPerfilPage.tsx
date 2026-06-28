@@ -1,3 +1,7 @@
+// Pagina de personalizacao do perfil do aluno. Mostra o inventario de cosmeticos
+// (icones, molduras, avatares, titulos e fundos) por aba, permite montar uma
+// previa em tempo real e salvar as alteracoes equipando/desequipando cada slot.
+// As mudancas ficam "em rascunho" (staged) ate o aluno confirmar o salvamento.
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ban, Check, Info, Save, ShoppingBag, X } from 'lucide-react';
@@ -16,6 +20,7 @@ import {
   type TipoItemLoja,
 } from '../../../../features/loja';
 
+// Abas de personalizacao: uma por tipo de cosmetico, com rotulo e explicacao.
 const ABAS: { id: TipoItemLoja; label: string; descricao: string }[] = [
   {
     id: 'ICONE_PERFIL',
@@ -44,10 +49,15 @@ const ABAS: { id: TipoItemLoja; label: string; descricao: string }[] = [
   },
 ];
 
+/**
+ * Componente de pagina da personalizacao de perfil. Carrega o inventario,
+ * mantem a selecao em rascunho (staged) e sincroniza com a store global ao salvar.
+ */
 export const PersonalizarPerfilPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Cosmeticos realmente equipados (store global) e o setter para sincroniza-los.
   const cosmeticosEquipados = useEquippedCosmeticsStore((state) => state.cosmeticos);
   const setCosmeticosGlobais = useEquippedCosmeticsStore((state) => state.setCosmeticos);
 
@@ -55,11 +65,14 @@ export const PersonalizarPerfilPage = () => {
   const [carregando, setCarregando] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState<TipoItemLoja>('ICONE_PERFIL');
 
+  // Selecao em rascunho (ainda nao persistida) e flags de salvamento/sucesso.
   const [stagedCosmetics, setStagedCosmetics] = useState<SlotsCosmeticos>({});
   const [salvando, setSalvando] = useState(false);
 
   const [modalSucesso, setModalSucesso] = useState(false);
 
+  // Carrega o inventario completo ao montar e inicializa tanto a store global
+  // quanto o rascunho com os itens atualmente equipados.
   useEffect(() => {
     let ativo = true;
     const fetchInventario = async () => {
@@ -93,15 +106,22 @@ export const PersonalizarPerfilPage = () => {
     };
   }, [setCosmeticosGlobais]);
 
+  // Ha alteracoes pendentes quando o rascunho difere do que esta de fato equipado.
   const temAlteracoes = useMemo(() => {
     return JSON.stringify(stagedCosmetics) !== JSON.stringify(cosmeticosEquipados);
   }, [stagedCosmetics, cosmeticosEquipados]);
 
   if (!user) return null;
 
+  // Itens do inventario pertencentes a aba ativa e os metadados dessa aba.
   const itensDaAbaAtual = inventario.filter((registro) => registro.item.tipo === abaAtiva);
   const abaInfo = ABAS.find((a) => a.id === abaAtiva)!;
 
+  /**
+   * Seleciona um cosmetico para o slot do seu tipo. Avatar e icone de perfil
+   * sao mutuamente exclusivos, entao um substitui o outro no rascunho.
+   * @param item item do inventario escolhido
+   */
   const handleSelectCosmetic = (item: ItemInventario) => {
     setStagedCosmetics((prev) => {
       const novoStage = { ...prev, [item.tipo]: item };
@@ -111,6 +131,7 @@ export const PersonalizarPerfilPage = () => {
     });
   };
 
+  // Remove o cosmetico de um slot no rascunho (volta ao padrao "Nenhum").
   const removerCosmetico = (tipo: TipoItemLoja) => {
     setStagedCosmetics((prev) => {
       const novoStage = { ...prev };
@@ -119,10 +140,16 @@ export const PersonalizarPerfilPage = () => {
     });
   };
 
+  // Descarta o rascunho, restaurando a selecao para o que esta equipado de fato.
   const descartarAlteracoes = () => {
     setStagedCosmetics(cosmeticosEquipados);
   };
 
+  /**
+   * Persiste o rascunho: para cada tipo, compara com o equipado original e
+   * dispara equipar (item novo) ou desequipar (item removido). Conflitos 400 ao
+   * equipar sao tolerados (slot ja consistente). Ao final, sincroniza a store.
+   */
   const salvarAlteracoes = async () => {
     setSalvando(true);
     try {
@@ -170,6 +197,7 @@ export const PersonalizarPerfilPage = () => {
     }
   };
 
+  // Dados de identidade exibidos na previa (nickname e linha de curso/instituicao).
   const nickname = user.nickname?.trim();
   const cursoLabel =
     [user.course, user.institution].filter(Boolean).join(' · ') || 'Curso não informado';
@@ -185,7 +213,9 @@ export const PersonalizarPerfilPage = () => {
             </p>
           </header>
 
+          {/* Layout: a esquerda a previa fixa; a direita as abas e a grade de itens. */}
           <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
+            {/* Coluna de previa: reflete o rascunho em tempo real (somente leitura). */}
             <div className="sticky top-6 flex flex-col gap-4">
               <div className="rounded-2xl bg-white p-1 text-center shadow-sm">
                 <span className="mx-auto mt-3 inline-block rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-500">
@@ -217,6 +247,7 @@ export const PersonalizarPerfilPage = () => {
             </div>
 
             <div className="flex min-w-0 flex-col gap-6">
+              {/* Seletor de abas por tipo de cosmetico, com a contagem de itens possuidos. */}
               <div className="flex flex-wrap gap-2">
                 {ABAS.map((aba) => {
                   const isActive = aba.id === abaAtiva;
@@ -258,6 +289,7 @@ export const PersonalizarPerfilPage = () => {
                 <div className="h-32 animate-pulse rounded-xl bg-gray-200" />
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {/* Opcao "Nenhum (padrao)": desequipa o slot da aba atual. */}
                   <button
                     type="button"
                     onClick={() => removerCosmetico(abaAtiva)}
@@ -289,6 +321,7 @@ export const PersonalizarPerfilPage = () => {
                     </div>
                   </button>
 
+                  {/* Itens possuidos na aba: cada tipo tem uma previa visual propria. */}
                   {itensDaAbaAtual.map((registro) => {
                     const item = registro.item;
                     const estaEquipado = stagedCosmetics[abaAtiva]?.id === item.id;
@@ -389,6 +422,7 @@ export const PersonalizarPerfilPage = () => {
                 </div>
               )}
 
+              {/* Barra de acoes que so aparece quando ha alteracoes pendentes no rascunho. */}
               {temAlteracoes && (
                 <div className="mt-4 flex items-center justify-between rounded-xl border border-amber-200 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-2 text-sm font-bold text-amber-600">
@@ -417,6 +451,7 @@ export const PersonalizarPerfilPage = () => {
         </div>
       </div>
 
+      {/* Modal de confirmacao exibido apos salvar com sucesso. */}
       {modalSucesso && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-sm transform rounded-3xl bg-white p-8 text-center shadow-2xl transition-all">

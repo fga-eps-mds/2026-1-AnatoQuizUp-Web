@@ -3,6 +3,7 @@ import { useAuth } from '../../../app/providers/AuthProvider';
 import { ProfileHome } from '../../../shared/ui/profile-home/index';
 import { Button } from '../../../shared/ui/button/Button';
 
+/** Acao principal da home do aluno: atalho para iniciar um quiz. */
 const StudentActions = () => {
   const navigate = useNavigate();
   return (
@@ -12,6 +13,10 @@ const StudentActions = () => {
   );
 };
 
+/**
+ * Home do aluno: reaproveita o ProfileHome com os dados do usuario e um bloco
+ * explicativo de como a plataforma funciona.
+ */
 export const HomeAlunoPage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();

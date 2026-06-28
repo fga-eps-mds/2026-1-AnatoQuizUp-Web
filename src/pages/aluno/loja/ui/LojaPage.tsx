@@ -1,3 +1,7 @@
+// Pagina da Loja Virtual do aluno. Lista o catalogo de cosmeticos (icones,
+// molduras, avatares, titulos e fundos) e o inventario ja adquirido, permitindo
+// filtrar por categoria, ordenar por preco, pre-visualizar e comprar itens com
+// as moedas ATP do aluno.
 import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -31,9 +35,12 @@ import type {
 import { useStudentCoinsStore } from '../../../../features/student-coins/model/useStudentCoinsStore';
 import { CosmeticPreview } from '../../../../shared/ui/cosmetics';
 
+// Aba ativa: "Todos", uma categoria especifica de item, ou o inventario do aluno.
 type Aba = 'TODOS' | TipoItemLoja | 'INVENTARIO';
+// Sentido de ordenacao por preco (crescente ou decrescente).
 type Ordenacao = 'asc' | 'desc';
 
+// Categorias exibidas no menu de filtros, cada uma com rotulo e icone proprios.
 const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: 'TODOS', label: 'Todos', icon: LayoutGrid },
   { key: 'ICONE_PERFIL', label: 'Ícones', icon: Smile },
@@ -44,8 +51,13 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: 'INVENTARIO', label: 'Meu Inventário', icon: Backpack },
 ];
 
+// Mensagem de feedback exibida apos uma compra (sucesso ou erro).
 type Feedback = { tipo: 'sucesso' | 'erro'; texto: string };
 
+/**
+ * Etiqueta de preco padronizada (icone de moeda + valor em ATP).
+ * @param preco preco do item em moedas ATP
+ */
 const PrecoEtiqueta = ({ preco }: { preco: number }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F59E0B]/15 px-3 py-1 text-sm font-black text-[#B45309]">
     <Coins size={15} />
@@ -53,21 +65,30 @@ const PrecoEtiqueta = ({ preco }: { preco: number }) => (
   </span>
 );
 
+/**
+ * Componente raiz da Loja. Carrega catalogo e inventario, controla a aba/ordem
+ * selecionadas e o fluxo de compra (incluindo o modal de pre-visualizacao).
+ */
 export const LojaPage = () => {
+  // Saldo de moedas do aluno, lido da store global (compartilhada entre paginas).
   const saldoMoedas = useStudentCoinsStore((estado) => estado.saldoMoedas);
   const setSaldoMoedas = useStudentCoinsStore((estado) => estado.setSaldoMoedas);
 
+  // Catalogo e inventario carregados, com seus estados de carga/erro.
   const [itens, setItens] = useState<ItemLoja[]>([]);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Filtro de aba, ordenacao por preco e item aberto no modal de preview.
   const [abaAtiva, setAbaAtiva] = useState<Aba>('TODOS');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>('asc');
   const [itemPreview, setItemPreview] = useState<ItemLoja | null>(null);
+  // Id em compra (trava o botao), feedback de compra e gatilho de recarga.
   const [comprandoId, setComprandoId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [recarregar, setRecarregar] = useState(0);
 
+  // Busca catalogo e inventario em paralelo ao montar e a cada pedido de recarga.
   useEffect(() => {
     let ativo = true;
 
@@ -103,8 +124,10 @@ export const LojaPage = () => {
     };
   }, [recarregar]);
 
+  // Forca uma nova busca do catalogo/inventario (botao "Tentar novamente").
   const handleTentarNovamente = () => setRecarregar((valor) => valor + 1);
 
+  // Limpa a mensagem de feedback automaticamente apos alguns segundos.
   useEffect(() => {
     if (!feedback) return;
 
@@ -113,6 +136,7 @@ export const LojaPage = () => {
     return () => clearTimeout(temporizador);
   }, [feedback]);
 
+  // Conta quantos itens existem por tipo, para exibir o numero em cada aba.
   const contagemPorTipo = useMemo(() => {
     const contagem: Record<string, number> = {};
 
@@ -123,6 +147,7 @@ export const LojaPage = () => {
     return contagem;
   }, [itens]);
 
+  // Itens da aba atual ja filtrados por categoria e ordenados pelo preco escolhido.
   const itensVisiveis = useMemo(() => {
     const base = abaAtiva === 'TODOS' ? itens : itens.filter((item) => item.tipo === abaAtiva);
 
@@ -131,6 +156,11 @@ export const LojaPage = () => {
     );
   }, [itens, abaAtiva, ordenacao]);
 
+  /**
+   * Compra um item: ao concluir, atualiza o saldo, marca o item como adquirido,
+   * adiciona-o ao inventario e mostra feedback. Em caso de falha, exibe o erro.
+   * @param item item do catalogo a ser comprado
+   */
   const handleComprar = async (item: ItemLoja) => {
     setComprandoId(item.id);
     setFeedback(null);
@@ -138,6 +168,7 @@ export const LojaPage = () => {
     try {
       const resposta = await comprarItem(item.id);
 
+      // Sincroniza o saldo retornado e reflete a aquisicao na UI sem novo fetch.
       setSaldoMoedas(resposta.saldoMoedas);
       setItens((anteriores) =>
         anteriores.map((atual) =>
@@ -189,6 +220,7 @@ export const LojaPage = () => {
           </div>
         </header>
 
+        {/* Banner de feedback da ultima compra (sucesso/erro), some sozinho. */}
         {feedback && (
           <div
             role="status"
@@ -203,6 +235,7 @@ export const LojaPage = () => {
           </div>
         )}
 
+        {/* Barra de categorias, cada chip mostra a contagem de itens correspondente. */}
         <nav className="mt-6 flex flex-wrap gap-2">
           {CATEGORIAS.map((categoria) => {
             const Icon = categoria.icon;
@@ -240,6 +273,7 @@ export const LojaPage = () => {
           })}
         </nav>
 
+        {/* Contagem de itens e botao que alterna a ordenacao por preco. */}
         {!carregando && !erro && abaAtiva !== 'INVENTARIO' && itensVisiveis.length > 0 && (
           <div className="mt-5 flex items-center justify-between">
             <p className="text-sm font-bold text-[#0A1128]/50">
@@ -260,6 +294,7 @@ export const LojaPage = () => {
           </div>
         )}
 
+        {/* Area principal: alterna entre carregando, erro, inventario e catalogo. */}
         <section className="mt-6">
           {carregando ? (
             <p className="py-16 text-center text-sm font-bold text-[#0A1128]/40">
@@ -303,6 +338,10 @@ export const LojaPage = () => {
   );
 };
 
+/**
+ * Grade de itens do catalogo. Cada card mostra preview, preco e o botao de
+ * compra (desabilitado quando o aluno nao tem saldo ou ja esta comprando).
+ */
 const CatalogoGrid = ({
   itens,
   saldoMoedas,
@@ -327,6 +366,7 @@ const CatalogoGrid = ({
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {itens.map((item) => {
+        // Sem saldo suficiente, o botao de compra fica bloqueado.
         const semSaldo = saldoMoedas < item.precoMoedas;
 
         return (
@@ -379,6 +419,11 @@ const CatalogoGrid = ({
   );
 };
 
+/**
+ * Grade do inventario do aluno (itens ja adquiridos). Mostra um estado vazio
+ * convidando a comprar quando ainda nao ha nenhum item.
+ * @param inventario itens que o aluno ja possui
+ */
 const InventarioGrid = ({ inventario }: { inventario: InventarioItem[] }) => {
   if (inventario.length === 0) {
     return (
@@ -414,6 +459,10 @@ const InventarioGrid = ({ inventario }: { inventario: InventarioItem[] }) => {
   );
 };
 
+/**
+ * Modal de pre-visualizacao de um item, com descricao, preco e confirmacao de
+ * compra. Fecha ao clicar fora da caixa ou no botao de fechar.
+ */
 const ModalPreview = ({
   item,
   saldoMoedas,
@@ -432,6 +481,7 @@ const ModalPreview = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      // Clique no fundo escurecido (fora da caixa) fecha o modal.
       onMouseDown={(evento) => {
         if (evento.target === evento.currentTarget) {
           onFechar();
