@@ -163,6 +163,42 @@ describe("QuestionsPage", () => {
     expect(screen.getByText("1 resultado(s)")).toBeInTheDocument();
   });
 
+  it("mantém a busca focada e permite recuperar a lista após nenhum resultado", async () => {
+    const testUser = userEvent.setup();
+    listProfessorQuestionsMock.mockImplementation(async (params) => (
+      params?.tema === "termo-inexistente" ? [] : questions
+    ));
+
+    renderQuestionsPage();
+
+    const search = await screen.findByRole("textbox", { name: /Buscar questão/i });
+    listProfessorQuestionsMock.mockClear();
+
+    await testUser.type(search, "termo-inexistente");
+
+    expect(search).toHaveFocus();
+    expect(listProfessorQuestionsMock).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(listProfessorQuestionsMock).toHaveBeenCalledTimes(1);
+      expect(listProfessorQuestionsMock).toHaveBeenCalledWith(
+        expect.objectContaining({ tema: "termo-inexistente" }),
+      );
+    });
+
+    expect(await screen.findByText("Nenhuma questão encontrada")).toBeInTheDocument();
+    expect(search).toBeInTheDocument();
+    expect(search).toHaveFocus();
+
+    await testUser.clear(search);
+
+    await waitFor(() => {
+      expect(listProfessorQuestionsMock).toHaveBeenLastCalledWith(undefined);
+    });
+    expect(await screen.findByText(/atelectasia/i)).toBeInTheDocument();
+    expect(search).toHaveFocus();
+  });
+
   it("filters questions by topic and difficulty", async () => {
     const testUser = userEvent.setup();
 

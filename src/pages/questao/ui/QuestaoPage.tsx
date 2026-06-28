@@ -10,7 +10,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import {
@@ -175,16 +175,22 @@ const PageHeader = () => {
 
 const QuestionsSummary = ({
   total,
+  hasActiveFilters,
   onCreate,
 }: {
   total: number;
+  hasActiveFilters: boolean;
   onCreate: () => void;
 }) => (
   <section className="flex w-full flex-col gap-4 rounded-xl border border-[#e0e5ef] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 className="text-base font-bold text-[#0b1840]">Suas questões</h2>
       <p className="text-xs text-[#8a9ab8]">
-        {total > 0 ? `${total} questões cadastradas` : 'Nenhuma questão cadastrada ainda'}
+        {hasActiveFilters
+          ? `${total} resultado(s) encontrado(s)`
+          : total > 0
+            ? `${total} questões cadastradas`
+            : 'Nenhuma questão cadastrada ainda'}
       </p>
     </div>
 
@@ -361,6 +367,28 @@ const EmptyQuestionsState = ({ onCreate }: { onCreate: () => void }) => (
           Nova questão
         </button>
       </div>
+    </div>
+  </section>
+);
+
+const EmptySearchState = ({ onClear }: { onClear: () => void }) => (
+  <section className="flex min-h-[280px] w-full items-center justify-center rounded-xl border border-[#e0e5ef] bg-white px-6 py-10 text-center">
+    <div className="flex max-w-[340px] flex-col items-center">
+      <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-[#eef4ff]">
+        <Search size={28} className="text-[#185fa5]" aria-hidden="true" />
+      </div>
+      <h2 className="text-base font-bold text-[#0b1840]">Nenhuma questão encontrada</h2>
+      <p className="mt-2 text-xs leading-5 text-[#8a9ab8]">
+        Tente alterar o termo pesquisado ou limpar os filtros aplicados.
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#c8d6f8] bg-white px-4 py-2.5 text-xs font-bold text-[#185fa5] transition-colors hover:bg-[#eef4ff]"
+      >
+        <X size={14} aria-hidden="true" />
+        Limpar filtros
+      </button>
     </div>
   </section>
 );
@@ -956,10 +984,12 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<ProfessorQuestion[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | 'all'>('all');
   const [selectedBloom, setSelectedBloom] = useState<TaxonomiaBloom | 'all'>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
@@ -968,7 +998,16 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   const [formValues, setFormValues] = useState<QuestionFormValues>(emptyFormValues);
   const [editingQuestion, setEditingQuestion] = useState<ProfessorQuestion | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<ProfessorQuestion | null>(null);
+  const hasLoadedQuestions = useRef(false);
   const isQuestionModalOpen = openCreateModal || editingQuestion !== null;
+
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() ||
+    selectedTopic !== 'all' ||
+    selectedDifficulty !== 'all' ||
+    selectedBloom !== 'all'
+  );
+  const isSearchPending = isSearching || searchTerm !== debouncedSearchTerm;
 
   const openCreateQuestion = () => {
     setFormValues(emptyFormValues);
@@ -991,16 +1030,24 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
   };
 
   useEffect(() => {
+    const timeoutId = globalThis.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  useEffect(() => {
     let isMounted = true;
     const shouldUseSearchEndpoint =
-      searchTerm.trim() ||
+      debouncedSearchTerm.trim() ||
       selectedTopic !== 'all' ||
       selectedDifficulty !== 'all' ||
       selectedBloom !== 'all';
 
     const loadQuestions = async () => {
       if (isMounted) {
-        setIsLoading(true);
+        if (hasLoadedQuestions.current) setIsSearching(true);
         setError('');
       }
 
@@ -1008,7 +1055,7 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
         const loadedQuestions = await listProfessorQuestions(
           shouldUseSearchEndpoint
             ? {
-              tema: selectedTopic !== 'all' ? selectedTopic : searchTerm.trim() || undefined,
+              tema: selectedTopic !== 'all' ? selectedTopic : debouncedSearchTerm.trim() || undefined,
               dificuldade: mapDifficultyToApi(selectedDifficulty),
               taxonomiaBloom: selectedBloom !== 'all' ? selectedBloom : undefined,
             }
@@ -1018,19 +1065,20 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       } catch (loadError) {
         if (isMounted) setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar as questões.');
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          hasLoadedQuestions.current = true;
+          setIsInitialLoading(false);
+          setIsSearching(false);
+        }
       }
     };
 
-    const timeoutId = globalThis.setTimeout(() => {
-      void loadQuestions();
-    }, searchTerm.trim() ? 300 : 0);
+    void loadQuestions();
 
     return () => {
       isMounted = false;
-      globalThis.clearTimeout(timeoutId);
     };
-  }, [searchTerm, selectedDifficulty, selectedTopic, selectedBloom]);
+  }, [debouncedSearchTerm, selectedDifficulty, selectedTopic, selectedBloom]);
 
   const topicOptions = useMemo(() => {
     const questionTopics = Array.from(
@@ -1056,6 +1104,13 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
       return matchesSearch && matchesTopic && matchesDifficulty;
     });
   }, [questions, searchTerm, selectedDifficulty, selectedTopic]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedTopic('all');
+    setSelectedDifficulty('all');
+    setSelectedBloom('all');
+  };
 
   const handleSubmitQuestion = async () => {
     if (!isFormValid(formValues)) return;
@@ -1116,12 +1171,16 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
             {error}
           </div>
         ) : null}
-        <QuestionsSummary total={questions.length} onCreate={openCreateQuestion} />
-        {isLoading ? (
+        <QuestionsSummary
+          total={filteredQuestions.length}
+          hasActiveFilters={hasActiveFilters}
+          onCreate={openCreateQuestion}
+        />
+        {isInitialLoading ? (
           <section className="flex min-h-[338px] items-center justify-center rounded-xl border border-[#e0e5ef] bg-white text-sm font-bold text-[#4a5578]">
             Carregando questões...
           </section>
-        ) : questions.length > 0 ? (
+        ) : (
           <>
             <QuestionsFilters
               resultCount={filteredQuestions.length}
@@ -1135,14 +1194,20 @@ export const QuestionsPage = ({ openCreateModal = false }: { openCreateModal?: b
               onTopicChange={setSelectedTopic}
               onBloomChange={setSelectedBloom}
             />
+            {isSearchPending ? (
+              <div role="status" className="flex items-center gap-2 text-xs font-medium text-[#4a5578]">
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                Atualizando resultados...
+              </div>
+            ) : null}
             {filteredQuestions.length > 0 ? (
               <QuestionsTable items={filteredQuestions} onEdit={openEditQuestion} onDelete={setQuestionToDelete} />
+            ) : hasActiveFilters || isSearchPending ? (
+              <EmptySearchState onClear={clearFilters} />
             ) : (
               <EmptyQuestionsState onCreate={openCreateQuestion} />
             )}
           </>
-        ) : (
-          <EmptyQuestionsState onCreate={openCreateQuestion} />
         )}
       </main>
 
