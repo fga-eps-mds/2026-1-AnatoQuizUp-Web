@@ -33,11 +33,11 @@ export async function login(
 }
 
 export function createLoginFixture(options: LoginFixtureOptions) {
-  return baseTest.extend<{}, { workerStorageState: string }>({
-    storageState: ({ workerStorageState }, use) => use(workerStorageState),
+  return baseTest.extend<object, { workerStorageState: string }>({
+    storageState: ({ workerStorageState }, applyFixture) => applyFixture(workerStorageState),
 
     workerStorageState: [
-      async ({ browser }, use) => {
+      async ({ browser }, applyFixture) => {
         const id = baseTest.info().parallelIndex;
 
         const fileName = path.resolve(
@@ -46,7 +46,7 @@ export function createLoginFixture(options: LoginFixtureOptions) {
         );
 
         if (fs.existsSync(fileName)) {
-          await use(fileName);
+          await applyFixture(fileName);
           return;
         }
 
@@ -69,7 +69,7 @@ export function createLoginFixture(options: LoginFixtureOptions) {
 
         await context.close();
 
-        await use(fileName);
+        await applyFixture(fileName);
       },
       { scope: 'worker' },
     ],
