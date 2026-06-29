@@ -1,0 +1,196 @@
+networks:
+  anatoquizup-network:
+    driver: bridge
+
+volumes:
+  postgres_user_data:
+  postgres_quiz_data:
+  minio_data:
+
+services:
+
+  db-quiz:
+    image: postgres:18-alpine
+    container_name: anatoquizup-postgres-quiz
+    restart: unless-stopped
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+
+    ports:
+      - "5432"
+
+    volumes:
+      - postgres_quiz_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: anatoquizup-minio-quiz
+
+    restart: unless-stopped
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+    ports:
+      - "9000"
+      - "9001"
+
+    volumes:
+      - minio_data:/data
+
+    command: server /data --console-address ":9001"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-user:
+    image: postgres:18-alpine
+    container_name: anatoquizup-postgres-user
+    restart: unless-stopped
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+
+    ports:
+      - "5432"
+
+    volumes:
+      - postgres_user_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend-quiz:
+    image: anatoquizup-quiz:local
+    container_name: anatoquizup-backend-quiz
+
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run prisma:seed:e2e && npm run dev"
+
+    ports:
+      - "3334"
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+      - ./envs/.env.e2e.quiz
+
+    depends_on:
+      db-quiz:
+        condition: service_healthy
+
+      minio:
+        condition: service_started
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://backend-quiz:3334/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend-user:
+    image: anatoquizup-backend:local
+    container_name: anatoquizup-backend-user
+
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run prisma:seed:e2e && npm run dev"
+
+    ports:
+      - "3333"
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+      - ./envs/.env.e2e.user
+
+    depends_on:
+      db-user:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://backend-user:3333/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  bff:
+    image: anatoquizup-bff:local
+    container_name: anatoquizup-bff
+
+    ports:
+      - "14000:4000"
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./.env.e2e
+      - ./envs/.env.e2e.bff
+
+    depends_on:
+      backend-user:
+        condition: service_healthy
+
+      backend-quiz:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://bff:4000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    image: anatoquizup-web:local
+    container_name: anatoquizup-web
+
+    ports:
+      - "15173:5173"
+
+    networks:
+      - anatoquizup-network
+
+    env_file:
+      - ./envs/.env.e2e.web
+
+    depends_on:
+      bff:
+        condition: service_healthy
