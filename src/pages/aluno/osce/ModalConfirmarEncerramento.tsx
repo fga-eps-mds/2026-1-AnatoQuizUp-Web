@@ -1,7 +1,7 @@
 // Confirmacao de encerramento da simulacao OSCE, aberta quando o aluno se despede
 // no chat. A confirmacao (em vez de encerrar sozinho) evita encerramento acidental;
-// ver a observacao da US24. Segue o padrao de acessibilidade do ModalConfirmarCompra:
-// role="dialog", aria-modal, Esc fecha e o foco entra no modal ao abrir.
+// ver a observacao da US24. Usa o <dialog> nativo (como o ChatAjudaModal), com
+// aria-modal; Esc fecha e o foco entra no modal ao abrir.
 import { useEffect, useId, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -39,14 +39,14 @@ export const ModalConfirmarEncerramento = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       // Clique no fundo escurecido (fora da caixa) equivale a continuar.
+      data-testid="osce-encerramento-overlay"
       onMouseDown={(evento) => {
         if (evento.target === evento.currentTarget && !finalizando) onContinuar();
       }}
-      role="presentation"
     >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
-        role="dialog"
+      <dialog
+        open
+        className="relative m-0 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
         aria-modal="true"
         aria-labelledby={tituloId}
         aria-describedby={descricaoId}
@@ -78,7 +78,7 @@ export const ModalConfirmarEncerramento = ({
             Encerrar
           </button>
         </div>
-      </div>
+      </dialog>
     </div>
   );
 };

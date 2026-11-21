@@ -289,6 +289,16 @@ describe('OscePage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('clicar no fundo escurecido fecha a confirmacao', async () => {
+    await abrirCaso();
+    await conversar('Tchau', 'Até logo.');
+
+    await screen.findByRole('dialog');
+    await userEvent.click(screen.getByTestId('osce-encerramento-overlay'));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('Esc fecha a confirmacao', async () => {
     await abrirCaso();
     await conversar('Tchau', 'Até logo.');
