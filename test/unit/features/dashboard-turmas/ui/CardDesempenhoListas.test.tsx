@@ -223,6 +223,8 @@ describe('CardDesempenhoListas', () => {
     render(<CardDesempenhoListas turmaId="turma-123" />);
 
     const botao = await screen.findByRole('button', { name: 'Ver questões com mais erros' });
+    expect(botao.querySelector('svg')).toHaveAttribute('width', '14');
+    expect(botao.querySelector('svg')).toHaveAttribute('height', '14');
     fireEvent.click(botao);
 
     expect(screen.getByRole('heading', { name: 'Questões com mais erros' })).toBeInTheDocument();

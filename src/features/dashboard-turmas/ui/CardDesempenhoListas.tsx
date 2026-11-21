@@ -357,6 +357,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
                 onClick={() => setListaTopErros(lista)}
                 className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 py-2 text-[12px] font-bold text-teal-600 hover:bg-teal-50 hover:border-teal-200 transition-colors"
               >
+                <Eye size={14} />
                 Ver questões com mais erros
               </button>
 
