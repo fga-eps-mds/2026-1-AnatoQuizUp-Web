@@ -7,6 +7,7 @@ import type {
   DashboardMacro,
   DesempenhoLista,
   TopErrosLista,
+  EvolucaoTemasAluno,
 } from '../model/types';
 import { httpClient } from '../../../shared/api/httpClient';
 
@@ -62,5 +63,17 @@ export const buscarTopErrosLista = async (
   listaId: string
 ): Promise<TopErrosLista> => {
   const { data } = await httpClient.get(`/turmasDashboard/${turmaId}/listas/${listaId}/top-erros`);
+  return data;
+};
+
+export const buscarEvolucaoTemasAluno = async (
+  turmaId: string,
+  alunoId: string,
+  periodo?: { inicio: string; fim: string },
+): Promise<EvolucaoTemasAluno> => {
+  const { data } = await httpClient.get(
+    `/turmasDashboard/${turmaId}/alunos/${alunoId}/evolucao-temas`,
+    { params: periodo },
+  );
   return data;
 };
