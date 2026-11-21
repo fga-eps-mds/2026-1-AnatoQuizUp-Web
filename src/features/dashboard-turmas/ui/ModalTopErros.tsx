@@ -15,7 +15,7 @@ export function ModalTopErros({ turmaId, listaId, nomeLista, onClose }: ModalTop
   const [erro, setErro] = useState(false);
 
   useEffect(() => {
-    let isMounted = true; // Evita atualização de estado se o componente fechar antes da API responder
+    let isMounted = true;
     
     async function carregarDados() {
       try {
@@ -29,7 +29,7 @@ export function ModalTopErros({ turmaId, listaId, nomeLista, onClose }: ModalTop
       }
     }
     
-    carregarDados();
+    void carregarDados();
     return () => { isMounted = false; };
   }, [turmaId, listaId]);
 
