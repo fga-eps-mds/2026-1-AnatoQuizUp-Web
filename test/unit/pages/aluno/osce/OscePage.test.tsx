@@ -98,6 +98,26 @@ describe('OscePage', () => {
     expect(screen.queryByText(/Carregando casos clínicos/)).not.toBeInTheDocument();
   });
 
+  it('mostra o contexto inicial do caso quando o BFF devolve', async () => {
+    listarMock.mockResolvedValue([
+      {
+        ...CENARIOS[0],
+        contextoInicial: {
+          local: 'Pronto-socorro de um hospital geral',
+          papelEstudante: 'Médico(a) responsável pelo primeiro atendimento',
+          idade: 58,
+          sexo: 'Masculino',
+          queixa: 'Dor torácica',
+        },
+      },
+    ]);
+
+    render(<OscePage />);
+
+    expect(await screen.findByText(/Pronto-socorro de um hospital geral/)).toBeInTheDocument();
+    expect(screen.getByText(/Paciente: 58 anos, Masculino/)).toBeInTheDocument();
+  });
+
   it('avisa quando a lista de casos falha', async () => {
     listarMock.mockRejectedValue(new Error('Serviço de IA indisponível'));
 

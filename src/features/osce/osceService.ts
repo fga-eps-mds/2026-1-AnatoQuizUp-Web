@@ -6,11 +6,22 @@ import { extractErrorMessage } from '../manage-questions/model/questionService';
 
 const OSCE_ENDPOINT = '/ia/osce';
 
+// "Porta da estação": o que o aluno le antes de iniciar o atendimento — nunca o
+// diagnostico ou pistas do roteiro oculto.
+export type ContextoInicialOsce = {
+  local: string;
+  papelEstudante: string;
+  idade: number;
+  sexo: 'Masculino' | 'Feminino';
+  queixa: string;
+};
+
 export type CenarioOsceResumo = {
   id: string;
   titulo: string;
   especialidade: string;
   dificuldade: 'Fácil' | 'Médio' | 'Difícil';
+  contextoInicial?: ContextoInicialOsce;
 };
 
 export type TurnoOsce = {
