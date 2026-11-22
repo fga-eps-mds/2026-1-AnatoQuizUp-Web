@@ -12,6 +12,7 @@ import type {
   CasoOsceFormValues,
   ExameCasoOsce,
 } from '../../../../features/manage-casos-osce/model/types';
+import { CampoComIA } from '../../../../features/melhorar-texto-ia/ui/CampoComIA';
 
 // Editor do caso OSCE (US26): pagina propria em 4 passos (padrao do prototipo da
 // Doc#197), substituindo o modal anterior. /novo cria o rascunho e redireciona
@@ -104,8 +105,6 @@ const Hint = ({ children }: { children: string }) => (
 
 const inputClassName =
   'h-8 w-full rounded-md border border-[#d8dee9] bg-white px-3 text-xs text-[#0b1840] outline-none transition-colors focus:border-[#00e5cc]';
-const textareaClassName =
-  'w-full resize-none rounded-md border border-[#d8dee9] px-3 py-3 text-xs leading-5 text-[#0b1840] outline-none transition-colors focus:border-[#00e5cc]';
 
 // Indicador dos 4 passos (mesmo padrao visual do Stepper de questoes).
 const Stepper = ({ currentStep }: { currentStep: number }) => (
@@ -258,6 +257,14 @@ export const CasoOsceEditorPage = () => {
     .filter(Boolean)
     .join(' ');
 
+  // Contexto enviado em toda chamada de "Melhorar com IA", pra manter coerencia
+  // com o resto do caso mesmo reescrevendo um campo isolado.
+  const contextoIa = {
+    titulo: formValues.titulo,
+    especialidade: formValues.especialidade,
+    diagnosticoEsperado: formValues.diagnosticoEsperado,
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-[#f3f6fb] text-sm font-bold text-[#4a5578]">
@@ -298,16 +305,18 @@ export const CasoOsceEditorPage = () => {
           <div className="overflow-y-auto">
             {step === 1 ? (
               <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
-                <label className="sm:col-span-2">
-                  <FieldLabel required>Título (queixa principal)</FieldLabel>
-                  <input
+                <div className="sm:col-span-2">
+                  <CampoComIA
+                    campo="titulo"
+                    label="Título (queixa principal)"
+                    required
                     value={formValues.titulo}
-                    onChange={(event) => updateValue('titulo', event.target.value)}
+                    onChange={(value) => updateValue('titulo', value)}
                     placeholder="ex: Dor torácica no pronto-socorro"
-                    className={inputClassName}
+                    hint="Não cite o diagnóstico aqui — o aluno vai ler este título."
+                    contexto={contextoIa}
                   />
-                  <Hint>Não cite o diagnóstico aqui — o aluno vai ler este título.</Hint>
-                </label>
+                </div>
                 <label>
                   <FieldLabel required>Especialidade</FieldLabel>
                   <input
@@ -332,39 +341,41 @@ export const CasoOsceEditorPage = () => {
                     ))}
                   </select>
                 </label>
-                <label className="sm:col-span-2">
-                  <FieldLabel required>Diagnóstico esperado</FieldLabel>
-                  <input
+                <div className="sm:col-span-2">
+                  <CampoComIA
+                    campo="diagnosticoEsperado"
+                    label="Diagnóstico esperado"
+                    required
                     value={formValues.diagnosticoEsperado}
-                    onChange={(event) => updateValue('diagnosticoEsperado', event.target.value)}
+                    onChange={(value) => updateValue('diagnosticoEsperado', value)}
                     placeholder="ex: Infarto agudo do miocárdio"
-                    className={inputClassName}
+                    hint="Fica oculto para o estudante até o fim do atendimento."
+                    contexto={contextoIa}
                   />
-                  <Hint>Fica oculto para o estudante até o fim do atendimento.</Hint>
-                </label>
+                </div>
               </div>
             ) : null}
 
             {step === 2 ? (
               <div className="space-y-4 px-5 py-5">
-                <label className="block">
-                  <FieldLabel required>Local</FieldLabel>
-                  <input
-                    value={formValues.local}
-                    onChange={(event) => updateValue('local', event.target.value)}
-                    placeholder="ex: Pronto-socorro de um hospital geral"
-                    className={inputClassName}
-                  />
-                </label>
-                <label className="block">
-                  <FieldLabel required>Papel do estudante</FieldLabel>
-                  <input
-                    value={formValues.papelEstudante}
-                    onChange={(event) => updateValue('papelEstudante', event.target.value)}
-                    placeholder="ex: Médico(a) responsável pelo primeiro atendimento"
-                    className={inputClassName}
-                  />
-                </label>
+                <CampoComIA
+                  campo="local"
+                  label="Local"
+                  required
+                  value={formValues.local}
+                  onChange={(value) => updateValue('local', value)}
+                  placeholder="ex: Pronto-socorro de um hospital geral"
+                  contexto={contextoIa}
+                />
+                <CampoComIA
+                  campo="papelEstudante"
+                  label="Papel do estudante"
+                  required
+                  value={formValues.papelEstudante}
+                  onChange={(value) => updateValue('papelEstudante', value)}
+                  placeholder="ex: Médico(a) responsável pelo primeiro atendimento"
+                  contexto={contextoIa}
+                />
                 <div className="grid grid-cols-3 gap-3">
                   <label>
                     <FieldLabel required>Idade</FieldLabel>
@@ -385,15 +396,15 @@ export const CasoOsceEditorPage = () => {
                       className={inputClassName}
                     />
                   </label>
-                  <label>
-                    <FieldLabel required>Queixa</FieldLabel>
-                    <input
-                      value={formValues.queixaPaciente}
-                      onChange={(event) => updateValue('queixaPaciente', event.target.value)}
-                      placeholder="ex: Dor no peito"
-                      className={inputClassName}
-                    />
-                  </label>
+                  <CampoComIA
+                    campo="queixaPaciente"
+                    label="Queixa"
+                    required
+                    value={formValues.queixaPaciente}
+                    onChange={(value) => updateValue('queixaPaciente', value)}
+                    placeholder="ex: Dor no peito"
+                    contexto={contextoIa}
+                  />
                 </div>
 
                 <div>
@@ -407,34 +418,37 @@ export const CasoOsceEditorPage = () => {
 
             {step === 3 ? (
               <div className="space-y-4 px-5 py-5">
-                <label className="block">
-                  <FieldLabel required>Perfil do paciente</FieldLabel>
-                  <textarea
-                    value={formValues.perfilPaciente}
-                    onChange={(event) => updateValue('perfilPaciente', event.target.value)}
-                    placeholder="Jeito de falar, profissão, contexto..."
-                    rows={2}
-                    className={textareaClassName}
-                  />
-                </label>
-                <label className="block">
-                  <FieldLabel required>História e sintomas</FieldLabel>
-                  <textarea
-                    value={formValues.historiaSintomas}
-                    onChange={(event) => updateValue('historiaSintomas', event.target.value)}
-                    rows={3}
-                    className={textareaClassName}
-                  />
-                </label>
-                <label className="block">
-                  <FieldLabel required>Exame físico</FieldLabel>
-                  <textarea
-                    value={formValues.exameFisico}
-                    onChange={(event) => updateValue('exameFisico', event.target.value)}
-                    rows={2}
-                    className={textareaClassName}
-                  />
-                </label>
+                <CampoComIA
+                  as="textarea"
+                  campo="perfilPaciente"
+                  label="Perfil do paciente"
+                  required
+                  value={formValues.perfilPaciente}
+                  onChange={(value) => updateValue('perfilPaciente', value)}
+                  placeholder="Jeito de falar, profissão, contexto..."
+                  rows={2}
+                  contexto={contextoIa}
+                />
+                <CampoComIA
+                  as="textarea"
+                  campo="historiaSintomas"
+                  label="História e sintomas"
+                  required
+                  value={formValues.historiaSintomas}
+                  onChange={(value) => updateValue('historiaSintomas', value)}
+                  rows={3}
+                  contexto={contextoIa}
+                />
+                <CampoComIA
+                  as="textarea"
+                  campo="exameFisico"
+                  label="Exame físico"
+                  required
+                  value={formValues.exameFisico}
+                  onChange={(value) => updateValue('exameFisico', value)}
+                  rows={2}
+                  contexto={contextoIa}
+                />
 
                 <div>
                   <FieldLabel>Exames complementares</FieldLabel>
