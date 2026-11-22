@@ -106,6 +106,12 @@ const Hint = ({ children }: { children: string }) => (
 const inputClassName =
   'h-8 w-full rounded-md border border-[#d8dee9] bg-white px-3 text-xs text-[#0b1840] outline-none transition-colors focus:border-[#00e5cc]';
 
+const stepCircleClassName = (isComplete: boolean, isCurrent: boolean) => {
+  if (isComplete) return 'bg-[#00e5cc] text-[#0b1840]';
+  if (isCurrent) return 'border-2 border-[#00e5cc] bg-[#0b1840] text-white';
+  return 'bg-[#e5e9f0] text-[#aaaabb]';
+};
+
 // Indicador dos 4 passos (mesmo padrao visual do Stepper de questoes).
 const Stepper = ({ currentStep }: { currentStep: number }) => (
   <div className="flex items-center justify-center gap-2 border-y border-[#e5e9f0] bg-[#f8f9fc] px-5 py-3">
@@ -120,11 +126,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
             <span
               className={
                 'flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none ' +
-                (isComplete
-                  ? 'bg-[#00e5cc] text-[#0b1840]'
-                  : isCurrent
-                    ? 'border-2 border-[#00e5cc] bg-[#0b1840] text-white'
-                    : 'bg-[#e5e9f0] text-[#aaaabb]')
+                stepCircleClassName(isComplete, isCurrent)
               }
             >
               {isComplete ? <Check size={12} aria-hidden="true" /> : step}
@@ -149,6 +151,8 @@ export const CasoOsceEditorPage = () => {
   const { id } = useParams<{ id: string }>();
 
   const [formValues, setFormValues] = useState<CasoOsceFormValues>(emptyFormValues);
+  // Chaves estaveis pros itens de `exames` (o payload do backend nao tem id).
+  const [exameChaves, setExameChaves] = useState<string[]>([]);
   const [step, setStep] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [status, setStatus] = useState<CasoOsce['status']>('RASCUNHO');
@@ -175,6 +179,7 @@ export const CasoOsceEditorPage = () => {
         const caso = await buscarCasoOscePorId(id);
         if (isMounted) {
           setFormValues(casoParaFormValues(caso));
+          setExameChaves(caso.exames.map(() => crypto.randomUUID()));
           setEditingId(caso.id);
           setStatus(caso.status);
         }
@@ -207,10 +212,12 @@ export const CasoOsceEditorPage = () => {
 
   const removerExame = (index: number) => {
     setFormValues((atual) => ({ ...atual, exames: atual.exames.filter((_, i) => i !== index) }));
+    setExameChaves((atual) => atual.filter((_, i) => i !== index));
   };
 
   const adicionarExame = () => {
     setFormValues((atual) => ({ ...atual, exames: [...atual.exames, { nome: '', resultado: '' }] }));
+    setExameChaves((atual) => [...atual, crypto.randomUUID()]);
   };
 
   // Autosave do passo (so os passos 1-3 tem campos proprios).
@@ -454,7 +461,10 @@ export const CasoOsceEditorPage = () => {
                   <FieldLabel>Exames complementares</FieldLabel>
                   <div className="space-y-2">
                     {formValues.exames.map((exame, index) => (
-                      <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-start gap-2">
+                      <div
+                        key={exameChaves[index] ?? index}
+                        className="grid grid-cols-[1fr_1fr_auto] items-start gap-2"
+                      >
                         <input
                           value={exame.nome}
                           onChange={(event) => atualizarExame(index, 'nome', event.target.value)}

@@ -30,11 +30,10 @@ type ModalExcluirCasoOsceProps = {
 // Confirmacao de exclusao: tentativas dos alunos nao sao apagadas (soft delete no Quiz-Service).
 const ModalExcluirCasoOsce = ({ caso, isDeleting, onCancel, onConfirm }: ModalExcluirCasoOsceProps) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1840]/40 px-4 py-6">
-    <section
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      open
       aria-labelledby="excluir-caso-osce-title"
-      className="w-full max-w-[420px] rounded-xl bg-white p-6 shadow-2xl"
+      className="m-0 w-full max-w-[420px] rounded-xl border-0 bg-white p-6 shadow-2xl"
     >
       <h2 id="excluir-caso-osce-title" className="text-base font-bold text-[#0b1840]">
         Excluir o caso &quot;{caso.titulo || 'Sem título'}&quot;?
@@ -61,7 +60,7 @@ const ModalExcluirCasoOsce = ({ caso, isDeleting, onCancel, onConfirm }: ModalEx
           {isDeleting ? 'Excluindo...' : 'Excluir'}
         </button>
       </div>
-    </section>
+    </dialog>
   </div>
 );
 
@@ -113,6 +112,88 @@ export const OsceCasosPage = () => {
 
   const publicados = casos.filter((caso) => caso.status === 'PUBLICADO').length;
 
+  let conteudoCasos;
+  if (isLoading) {
+    conteudoCasos = (
+      <section className="flex min-h-[338px] items-center justify-center rounded-xl border border-[#e0e5ef] bg-white text-sm font-bold text-[#4a5578]">
+        Carregando casos...
+      </section>
+    );
+  } else if (casos.length === 0) {
+    conteudoCasos = (
+      <section className="flex min-h-[338px] w-full items-center justify-center rounded-xl border border-[#e0e5ef] bg-white px-6 py-10 text-center">
+        <div className="flex max-w-[300px] flex-col items-center">
+          <Stethoscope size={34} className="mb-4 text-[#0b1840]" aria-hidden="true" />
+          <h2 className="text-base font-bold text-[#0b1840]">Nenhum caso cadastrado</h2>
+          <p className="mt-3 text-xs leading-5 text-[#8a9ab8]">
+            Cadastre o primeiro caso clínico da simulação OSCE.
+          </p>
+        </div>
+      </section>
+    );
+  } else {
+    conteudoCasos = (
+      <section className="w-full overflow-hidden rounded-xl border border-[#e0e5ef] bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-left">
+            <thead className="bg-[#f8f9fc]">
+              <tr className="border-b border-[#e8eaf2]">
+                {['Título', 'Especialidade', 'Dificuldade', 'Status', 'Ações'].map((heading) => (
+                  <th key={heading} scope="col" className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a9ab8]">
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {casos.map((caso) => (
+                <tr key={caso.id} className="border-b border-[#f2f4f8] last:border-b-0">
+                  <td className="max-w-[260px] px-4 py-4 text-xs text-[#4a5578]">
+                    {caso.titulo || <span className="italic text-[#aaaabb]">Sem título</span>}
+                  </td>
+                  <td className="px-4 py-4 text-[11px] text-[#4a5578]">{caso.especialidade || '—'}</td>
+                  <td className="px-4 py-4 align-top">
+                    {caso.dificuldade ? (
+                      <span className={`inline-flex w-fit items-center rounded px-2 py-1 text-[10px] font-bold ${dificuldadeStyles[caso.dificuldade]}`}>
+                        {dificuldadeRotulo[caso.dificuldade]}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-[11px] text-[#8a9ab8]">
+                    {caso.status === 'PUBLICADO' ? 'Publicado' : 'Rascunho'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/professor/osce/${caso.id}/editar`)}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#c8d6f8] bg-[#f8f9fc] px-3 py-2 text-[11px] font-bold text-[#185fa5] transition-colors hover:bg-[#e0e8ff]"
+                      >
+                        <Edit2 size={12} aria-hidden="true" />
+                        {caso.status === 'PUBLICADO' ? 'Ver' : 'Continuar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCasoParaExcluir(caso)}
+                        aria-label={`Excluir caso ${caso.titulo || 'sem título'}`}
+                        title="Excluir"
+                        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#f7c1c1] text-[#a32d2d] transition-colors hover:bg-[#fef0f0]"
+                      >
+                        <Trash2 size={13} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#f3f6fb]">
       <header className="flex items-center justify-between gap-4 border-b border-[#e1f5ee] bg-white px-5 py-3">
@@ -148,80 +229,7 @@ export const OsceCasosPage = () => {
           </button>
         </section>
 
-        {isLoading ? (
-          <section className="flex min-h-[338px] items-center justify-center rounded-xl border border-[#e0e5ef] bg-white text-sm font-bold text-[#4a5578]">
-            Carregando casos...
-          </section>
-        ) : casos.length === 0 ? (
-          <section className="flex min-h-[338px] w-full items-center justify-center rounded-xl border border-[#e0e5ef] bg-white px-6 py-10 text-center">
-            <div className="flex max-w-[300px] flex-col items-center">
-              <Stethoscope size={34} className="mb-4 text-[#0b1840]" aria-hidden="true" />
-              <h2 className="text-base font-bold text-[#0b1840]">Nenhum caso cadastrado</h2>
-              <p className="mt-3 text-xs leading-5 text-[#8a9ab8]">
-                Cadastre o primeiro caso clínico da simulação OSCE.
-              </p>
-            </div>
-          </section>
-        ) : (
-          <section className="w-full overflow-hidden rounded-xl border border-[#e0e5ef] bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-left">
-                <thead className="bg-[#f8f9fc]">
-                  <tr className="border-b border-[#e8eaf2]">
-                    {['Título', 'Especialidade', 'Dificuldade', 'Status', 'Ações'].map((heading) => (
-                      <th key={heading} scope="col" className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a9ab8]">
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {casos.map((caso) => (
-                    <tr key={caso.id} className="border-b border-[#f2f4f8] last:border-b-0">
-                      <td className="max-w-[260px] px-4 py-4 text-xs text-[#4a5578]">
-                        {caso.titulo || <span className="italic text-[#aaaabb]">Sem título</span>}
-                      </td>
-                      <td className="px-4 py-4 text-[11px] text-[#4a5578]">{caso.especialidade || '—'}</td>
-                      <td className="px-4 py-4 align-top">
-                        {caso.dificuldade ? (
-                          <span className={`inline-flex w-fit items-center rounded px-2 py-1 text-[10px] font-bold ${dificuldadeStyles[caso.dificuldade]}`}>
-                            {dificuldadeRotulo[caso.dificuldade]}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-[11px] text-[#8a9ab8]">
-                        {caso.status === 'PUBLICADO' ? 'Publicado' : 'Rascunho'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/professor/osce/${caso.id}/editar`)}
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#c8d6f8] bg-[#f8f9fc] px-3 py-2 text-[11px] font-bold text-[#185fa5] transition-colors hover:bg-[#e0e8ff]"
-                          >
-                            <Edit2 size={12} aria-hidden="true" />
-                            {caso.status === 'PUBLICADO' ? 'Ver' : 'Continuar'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setCasoParaExcluir(caso)}
-                            aria-label={`Excluir caso ${caso.titulo || 'sem título'}`}
-                            title="Excluir"
-                            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#f7c1c1] text-[#a32d2d] transition-colors hover:bg-[#fef0f0]"
-                          >
-                            <Trash2 size={13} aria-hidden="true" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+        {conteudoCasos}
       </main>
 
       {casoParaExcluir ? (

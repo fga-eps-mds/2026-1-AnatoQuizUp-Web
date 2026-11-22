@@ -168,7 +168,7 @@ describe("CasoOsceEditorPage", () => {
 
     expect(screen.getByTestId("location")).toHaveTextContent("/professor/osce");
     // Concluir no passo 4 nao dispara autosave (passo 4 nao tem payload).
-    expect(atualizarCasoOsceMock.mock.calls.length).toBe(chamadasAntesDoConcluir);
+    expect(atualizarCasoOsceMock.mock.calls).toHaveLength(chamadasAntesDoConcluir);
   });
 
   it("cancelar salva o passo atual e volta para a lista", async () => {
