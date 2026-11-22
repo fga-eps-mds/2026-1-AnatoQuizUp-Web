@@ -104,4 +104,105 @@ describe("OsceCasosPage", () => {
 
     expect(await screen.findByText("Contextualização", { selector: "span" })).toBeInTheDocument();
   });
+
+  it("mostra erro quando falha ao listar os casos", async () => {
+    listarCasosOsceMock.mockRejectedValue(new Error("Serviço indisponível"));
+
+    render(<OsceCasosPage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Serviço indisponível");
+  });
+
+  it("mostra erro e fecha o modal quando falha ao criar o rascunho", async () => {
+    const user = userEvent.setup();
+    listarCasosOsceMock.mockResolvedValue([]);
+    criarCasoOsceMock.mockRejectedValue(new Error("Falha ao criar"));
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: /novo caso/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao criar");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("abre um caso em rascunho (Continuar), percorre os 3 passos, gerencia exames e conclui", async () => {
+    const user = userEvent.setup();
+    const casoRascunhoCompleto: CasoOsce = { ...casoBase, status: "RASCUNHO" };
+    listarCasosOsceMock.mockResolvedValue([casoRascunhoCompleto]);
+    atualizarCasoOsceMock.mockResolvedValue(casoRascunhoCompleto);
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: /continuar/i }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Dor torácica")).toBeInTheDocument();
+
+    await user.clear(screen.getByPlaceholderText(/ex: cardiologia/i));
+    await user.type(screen.getByPlaceholderText(/ex: cardiologia/i), "Cardiologia infantil");
+    await user.selectOptions(screen.getByDisplayValue("Médio"), "DIFICIL");
+    await user.type(screen.getByPlaceholderText(/infarto agudo do miocárdio/i), " grave");
+    await user.click(screen.getByRole("button", { name: /próximo/i }));
+
+    await waitFor(() =>
+      expect(atualizarCasoOsceMock).toHaveBeenCalledWith(
+        "caso-1",
+        expect.objectContaining({ especialidade: "Cardiologia infantil", dificuldade: "DIFICIL" }),
+      ),
+    );
+    // Passo 2: campo "Local" so existe na Contextualização.
+    expect(await screen.findByDisplayValue("Pronto-socorro")).toBeInTheDocument();
+    await user.type(screen.getByDisplayValue("Pronto-socorro"), " de nível terciário");
+    await user.type(screen.getByDisplayValue("Médico(a)"), ", residente");
+    await user.clear(screen.getByDisplayValue("58"));
+    await user.type(screen.getByDisplayValue(""), "60");
+    await user.type(screen.getByDisplayValue("Masculino"), " cis");
+    await user.type(screen.getByDisplayValue("Dor no peito"), " irradiando");
+
+    await user.click(screen.getByRole("button", { name: /voltar/i }));
+    // De volta ao passo 1: campo "Diagnóstico esperado" so existe nos Dados gerais.
+    expect(await screen.findByDisplayValue("Infarto grave")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /próximo/i }));
+    await user.click(screen.getByRole("button", { name: /próximo/i }));
+
+    // Passo 3: campo "Perfil do paciente" so existe no Roteiro do paciente.
+    expect(await screen.findByDisplayValue("Perfil")).toBeInTheDocument();
+    await user.type(screen.getByDisplayValue("Perfil"), " detalhado");
+    await user.type(screen.getByDisplayValue("História"), " clínica");
+    await user.type(screen.getByDisplayValue("Exame"), " físico");
+    await user.click(screen.getByRole("button", { name: /adicionar exame/i }));
+    await user.type(screen.getByLabelText("Nome do exame 1"), "Hemograma");
+    await user.type(screen.getByLabelText("Resultado do exame 1"), "Normal");
+    await user.click(screen.getByRole("button", { name: /adicionar exame/i }));
+    await user.click(screen.getByLabelText("Remover exame 2"));
+
+    await user.click(screen.getByRole("button", { name: /concluir rascunho/i }));
+
+    await waitFor(() =>
+      expect(atualizarCasoOsceMock).toHaveBeenLastCalledWith(
+        "caso-1",
+        expect.objectContaining({
+          exames: [{ nome: "Hemograma", resultado: "Normal" }],
+        }),
+      ),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("mostra erro quando o autosave falha e fecha o modal pelo X salvando o passo atual", async () => {
+    const user = userEvent.setup();
+    listarCasosOsceMock.mockResolvedValue([casoBase]);
+    atualizarCasoOsceMock.mockRejectedValue(new Error("Falha ao salvar"));
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: /ver/i }));
+    await user.click(screen.getByRole("button", { name: /fechar e salvar rascunho/i }));
+
+    await waitFor(() => expect(atualizarCasoOsceMock).toHaveBeenCalledWith("caso-1", expect.anything()));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao salvar");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
