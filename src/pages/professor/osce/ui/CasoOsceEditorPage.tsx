@@ -169,7 +169,7 @@ export const CasoOsceEditorPage = () => {
       try {
         if (!id) {
           const casoCriado = await criarCasoOsce({});
-          if (isMounted) navigate(`/professor/osce/${casoCriado.id}/editar`, { replace: true });
+          if (isMounted) void navigate(`/professor/osce/${casoCriado.id}/editar`, { replace: true });
           return;
         }
 
@@ -241,11 +241,11 @@ export const CasoOsceEditorPage = () => {
 
   const cancelar = () => {
     void salvarPasso(step);
-    navigate('/professor/osce');
+    void navigate('/professor/osce');
   };
 
   const concluir = () => {
-    navigate('/professor/osce');
+    void navigate('/professor/osce');
   };
 
   // Texto exatamente como o aluno vai ler na tela de cenario (US24).
