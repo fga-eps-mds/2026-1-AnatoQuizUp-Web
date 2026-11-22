@@ -55,6 +55,8 @@ const ACESSORIOS: { id: EstiloAcessorio; label: string; imagem: string }[] = [
 
 // Luvas: `imagem` e o icone usado na grade; `posicao` e o par (mao esquerda + direita)
 // ja recortado e posicionado para encaixar nas luvas da arte base, usado no overlay.
+// Luvas: `imagem` e o icone usado na grade; `posicao` e o par (mao esquerda + direita)
+// ja recortado e posicionado para encaixar nas luvas da arte base, usado no overlay.
 const LUVAS: { id: EstiloLuva; label: string; imagem: string; posicao: string }[] = [
   { id: 'luva-boxe', label: 'Luva de boxe', imagem: luvaBoxeIcone, posicao: luvaBoxePosicao },
   { id: 'luva-cirurgica', label: 'Luva cirúrgica', imagem: luvaCirurgicaIcone, posicao: luvaCirurgicaPosicao },
