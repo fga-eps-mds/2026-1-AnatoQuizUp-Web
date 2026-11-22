@@ -3,6 +3,7 @@ import {
   atualizarCasoOsce,
   buscarCasoOscePorId,
   criarCasoOsce,
+  excluirCasoOsce,
   listarCasosOsce,
 } from '../../../../../src/features/manage-casos-osce/model/casoOsceService';
 import type { CasoOsce } from '../../../../../src/features/manage-casos-osce/model/types';
@@ -12,6 +13,7 @@ jest.mock('../../../../../src/shared/api/httpClient', () => ({
     get: jest.fn(),
     post: jest.fn(),
     patch: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
@@ -19,6 +21,7 @@ const httpClientMock = httpClient as unknown as {
   get: jest.Mock;
   post: jest.Mock;
   patch: jest.Mock;
+  delete: jest.Mock;
 };
 
 const caso: CasoOsce = {
@@ -117,6 +120,31 @@ describe('casoOsceService', () => {
       await expect(atualizarCasoOsce('caso-1', {})).rejects.toThrow(
         'Não foi possível conectar ao servidor. Tente novamente.',
       );
+    });
+  });
+
+  describe('excluirCasoOsce', () => {
+    it('exclui o caso via DELETE (soft delete, tentativas preservadas)', async () => {
+      httpClientMock.delete.mockResolvedValue({});
+
+      await excluirCasoOsce('caso-1');
+
+      expect(httpClientMock.delete).toHaveBeenCalledWith('/casos-osce/caso-1');
+    });
+
+    it('relanca a mensagem do backend quando o caso nao existe (404)', async () => {
+      httpClientMock.delete.mockRejectedValue({
+        isAxiosError: true,
+        response: { data: { erro: { mensagem: 'Caso OSCE não encontrado.' } } },
+      });
+
+      await expect(excluirCasoOsce('caso-x')).rejects.toThrow('Caso OSCE não encontrado.');
+    });
+
+    it('usa um fallback especifico de exclusao quando o backend nao devolve mensagem conhecida', async () => {
+      httpClientMock.delete.mockRejectedValue({ isAxiosError: true, response: { data: {} } });
+
+      await expect(excluirCasoOsce('caso-1')).rejects.toThrow('Não foi possível excluir o caso OSCE.');
     });
   });
 });

@@ -3,6 +3,7 @@ jest.mock("../../../../../src/features/manage-casos-osce/model/casoOsceService",
   criarCasoOsce: jest.fn(),
   atualizarCasoOsce: jest.fn(),
   buscarCasoOscePorId: jest.fn(),
+  excluirCasoOsce: jest.fn(),
 }));
 
 import { render, screen, waitFor } from "@testing-library/react";
@@ -10,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import {
   atualizarCasoOsce,
   criarCasoOsce,
+  excluirCasoOsce,
   listarCasosOsce,
 } from "../../../../../src/features/manage-casos-osce/model/casoOsceService";
 import type { CasoOsce } from "../../../../../src/features/manage-casos-osce/model/types";
@@ -18,6 +20,7 @@ import { OsceCasosPage } from "../../../../../src/pages/professor/osce/ui/OsceCa
 const listarCasosOsceMock = listarCasosOsce as jest.Mock;
 const criarCasoOsceMock = criarCasoOsce as jest.Mock;
 const atualizarCasoOsceMock = atualizarCasoOsce as jest.Mock;
+const excluirCasoOsceMock = excluirCasoOsce as jest.Mock;
 
 const casoBase: CasoOsce = {
   id: "caso-1",
@@ -204,5 +207,68 @@ describe("OsceCasosPage", () => {
     await waitFor(() => expect(atualizarCasoOsceMock).toHaveBeenCalledWith("caso-1", expect.anything()));
     expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao salvar");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("mostra o contador 'N casos · M publicados' e abre a confirmacao ao clicar em excluir", async () => {
+    const user = userEvent.setup();
+    const casoRascunho: CasoOsce = { ...casoRascunhoVazio, titulo: "Rascunho sem revisar" };
+    listarCasosOsceMock.mockResolvedValue([casoBase, casoRascunho]);
+
+    render(<OsceCasosPage />);
+
+    expect(await screen.findByText("2 caso(s) · 1 publicado(s)")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Excluir caso Dor torácica" }));
+
+    const dialogo = screen.getByRole("dialog");
+    expect(dialogo).toHaveTextContent('Excluir o caso "Dor torácica"?');
+    expect(dialogo).toHaveTextContent("As tentativas dos alunos são preservadas");
+    expect(excluirCasoOsceMock).not.toHaveBeenCalled();
+  });
+
+  it("cancela a exclusao sem chamar o service", async () => {
+    const user = userEvent.setup();
+    listarCasosOsceMock.mockResolvedValue([casoBase]);
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Excluir caso Dor torácica" }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(excluirCasoOsceMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Dor torácica")).toBeInTheDocument();
+  });
+
+  it("confirma a exclusao: remove a linha e atualiza o contador", async () => {
+    const user = userEvent.setup();
+    const casoRascunho: CasoOsce = { ...casoRascunhoVazio, titulo: "Rascunho sem revisar" };
+    listarCasosOsceMock.mockResolvedValue([casoBase, casoRascunho]);
+    excluirCasoOsceMock.mockResolvedValue(undefined);
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Excluir caso Dor torácica" }));
+    await user.click(screen.getByRole("button", { name: "Excluir" }));
+
+    await waitFor(() => expect(excluirCasoOsceMock).toHaveBeenCalledWith("caso-1"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dor torácica")).not.toBeInTheDocument();
+    expect(screen.getByText("1 caso(s) · 0 publicado(s)")).toBeInTheDocument();
+  });
+
+  it("mostra erro e mantem a confirmacao aberta quando a exclusao falha", async () => {
+    const user = userEvent.setup();
+    listarCasosOsceMock.mockResolvedValue([casoBase]);
+    excluirCasoOsceMock.mockRejectedValue(new Error("Não foi possível excluir o caso OSCE."));
+
+    render(<OsceCasosPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Excluir caso Dor torácica" }));
+    await user.click(screen.getByRole("button", { name: "Excluir" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível excluir o caso OSCE.");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Dor torácica")).toBeInTheDocument();
   });
 });

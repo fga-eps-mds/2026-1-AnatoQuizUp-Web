@@ -1,8 +1,9 @@
-import { Check, Edit2, Loader2, Plus, Stethoscope, X } from 'lucide-react';
+import { Check, Edit2, Loader2, Plus, Stethoscope, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
   atualizarCasoOsce,
   criarCasoOsce,
+  excluirCasoOsce,
   listarCasosOsce,
 } from '../../../../features/manage-casos-osce/model/casoOsceService';
 import type {
@@ -458,6 +459,51 @@ const CasoOsceModal = ({
   );
 };
 
+type ModalExcluirCasoOsceProps = {
+  caso: CasoOsce;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+// Confirmacao de exclusao: tentativas dos alunos nao sao apagadas (soft delete no Quiz-Service).
+const ModalExcluirCasoOsce = ({ caso, isDeleting, onCancel, onConfirm }: ModalExcluirCasoOsceProps) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1840]/40 px-4 py-6">
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="excluir-caso-osce-title"
+      className="w-full max-w-[420px] rounded-xl bg-white p-6 shadow-2xl"
+    >
+      <h2 id="excluir-caso-osce-title" className="text-base font-bold text-[#0b1840]">
+        Excluir o caso &quot;{caso.titulo || 'Sem título'}&quot;?
+      </h2>
+      <p className="mt-2 text-xs leading-5 text-[#64748b]">
+        As tentativas dos alunos são preservadas. Esta ação não pode ser desfeita.
+      </p>
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isDeleting}
+          className="h-8 rounded-md border border-[#d8dee9] px-4 text-xs font-bold text-[#4a5578] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={isDeleting}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#a32d2d] px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isDeleting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Trash2 size={13} aria-hidden="true" />}
+          {isDeleting ? 'Excluindo...' : 'Excluir'}
+        </button>
+      </div>
+    </section>
+  </div>
+);
+
 export const OsceCasosPage = () => {
   const [casos, setCasos] = useState<CasoOsce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -467,6 +513,8 @@ export const OsceCasosPage = () => {
   const [formValues, setFormValues] = useState<CasoOsceFormValues>(emptyFormValues);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [casoParaExcluir, setCasoParaExcluir] = useState<CasoOsce | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const hasLoaded = useRef(false);
 
   useEffect(() => {
@@ -561,6 +609,25 @@ export const OsceCasosPage = () => {
     setIsModalOpen(false);
   };
 
+  const confirmarExclusao = async () => {
+    if (!casoParaExcluir) return;
+
+    setIsDeleting(true);
+    setError('');
+
+    try {
+      await excluirCasoOsce(casoParaExcluir.id);
+      setCasos((currentCasos) => currentCasos.filter((item) => item.id !== casoParaExcluir.id));
+      setCasoParaExcluir(null);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Não foi possível excluir o caso.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const publicados = casos.filter((caso) => caso.status === 'PUBLICADO').length;
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#f3f6fb]">
       <header className="flex items-center justify-between gap-4 border-b border-[#e1f5ee] bg-white px-5 py-3">
@@ -581,7 +648,9 @@ export const OsceCasosPage = () => {
           <div>
             <h2 className="text-base font-bold text-[#0b1840]">Seus casos</h2>
             <p className="text-xs text-[#8a9ab8]">
-              {casos.length > 0 ? `${casos.length} caso(s) cadastrado(s)` : 'Nenhum caso cadastrado ainda'}
+              {casos.length > 0
+                ? `${casos.length} caso(s) · ${publicados} publicado(s)`
+                : 'Nenhum caso cadastrado ainda'}
             </p>
           </div>
           <button
@@ -641,14 +710,25 @@ export const OsceCasosPage = () => {
                         {caso.status === 'PUBLICADO' ? 'Publicado' : 'Rascunho'}
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => abrirCasoExistente(caso)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#c8d6f8] bg-[#f8f9fc] px-3 py-2 text-[11px] font-bold text-[#185fa5] transition-colors hover:bg-[#e0e8ff]"
-                        >
-                          <Edit2 size={12} aria-hidden="true" />
-                          {caso.status === 'PUBLICADO' ? 'Ver' : 'Continuar'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => abrirCasoExistente(caso)}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#c8d6f8] bg-[#f8f9fc] px-3 py-2 text-[11px] font-bold text-[#185fa5] transition-colors hover:bg-[#e0e8ff]"
+                          >
+                            <Edit2 size={12} aria-hidden="true" />
+                            {caso.status === 'PUBLICADO' ? 'Ver' : 'Continuar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCasoParaExcluir(caso)}
+                            aria-label={`Excluir caso ${caso.titulo || 'sem título'}`}
+                            title="Excluir"
+                            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#f7c1c1] text-[#a32d2d] transition-colors hover:bg-[#fef0f0]"
+                          >
+                            <Trash2 size={13} aria-hidden="true" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -669,6 +749,15 @@ export const OsceCasosPage = () => {
           onAdvance={avancarPasso}
           onBack={() => setStep((currentStep) => Math.max(currentStep - 1, 1))}
           onFinish={() => void concluirRascunho()}
+        />
+      ) : null}
+
+      {casoParaExcluir ? (
+        <ModalExcluirCasoOsce
+          caso={casoParaExcluir}
+          isDeleting={isDeleting}
+          onCancel={() => setCasoParaExcluir(null)}
+          onConfirm={() => void confirmarExclusao()}
         />
       ) : null}
     </div>

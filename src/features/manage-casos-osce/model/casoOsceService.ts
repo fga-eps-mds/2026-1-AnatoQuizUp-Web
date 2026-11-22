@@ -10,14 +10,17 @@ type ApiSuccessResponse<T> = { mensagem: string; dados: T };
 type ApiPaginatedResponse<T> = { dados: T[] };
 
 // Extrai uma mensagem de erro amigavel de um erro do Axios.
-export const extractCasoOsceErrorMessage = (error: unknown): string => {
+export const extractCasoOsceErrorMessage = (
+  error: unknown,
+  fallback = 'Não foi possível salvar o caso OSCE.',
+): string => {
   if (!axios.isAxiosError(error) || !error.response) {
     return 'Não foi possível conectar ao servidor. Tente novamente.';
   }
 
   const data = error.response.data as { mensagem?: string; erro?: { mensagem?: string } };
 
-  return data.erro?.mensagem ?? data.mensagem ?? 'Não foi possível salvar o caso OSCE.';
+  return data.erro?.mensagem ?? data.mensagem ?? fallback;
 };
 
 export const listarCasosOsce = async (): Promise<CasoOsce[]> => {
@@ -66,5 +69,14 @@ export const atualizarCasoOsce = async (
     return data.dados;
   } catch (error) {
     throw new Error(extractCasoOsceErrorMessage(error));
+  }
+};
+
+// Exclui um caso (soft delete no Quiz-Service); tentativas dos alunos sao preservadas.
+export const excluirCasoOsce = async (id: string): Promise<void> => {
+  try {
+    await httpClient.delete(`${CASO_OSCE_ENDPOINT}/${id}`);
+  } catch (error) {
+    throw new Error(extractCasoOsceErrorMessage(error, 'Não foi possível excluir o caso OSCE.'));
   }
 };
