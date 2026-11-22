@@ -42,7 +42,12 @@ export const carregarAparencia = (id?: string): AparenciaAvatar => {
       cabelo: ['loiro', 'cacheado', 'moicano'].includes(valor.cabelo ?? '') ? valor.cabelo! : null,
       acessorio: ['coroa', 'oculos', 'chapeu-formatura'].includes(valor.acessorio ?? '') ? valor.acessorio! : null,
       luva: ['luva-boxe', 'luva-cirurgica', 'luva-la'].includes(valor.luva ?? '') ? valor.luva! : null,
-      calcado: ['sapato-plantao', 'tenis-cano-alto', 'tenis-esportivo'].includes(valor.calcado ?? '') ? valor.calcado! : null,
+      calcado: [
+        'sapato-plantao', 'tenis-cano-alto', 'tenis-esportivo',
+        'tenis-esportivo-vermelho', 'tenis-esportivo-verde', 'tenis-esportivo-amarelo', 'tenis-esportivo-preto',
+        'tenis-cano-alto-azul', 'tenis-cano-alto-verde', 'tenis-cano-alto-amarelo', 'tenis-cano-alto-preto',
+        'tenis-skate', 'bota-coturno',
+      ].includes(valor.calcado ?? '') ? valor.calcado! : null,
     };
   } catch {
     return APARENCIA_PADRAO;
