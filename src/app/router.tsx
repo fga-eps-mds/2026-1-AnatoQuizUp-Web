@@ -41,7 +41,7 @@ import { LojaPage } from "../pages/aluno/loja";
 import { MissoesPage } from "../pages/aluno/missoes/MissoesPage";
 import { ConquistasPage } from "../pages/aluno/conquistas";
 import { OscePage } from "../pages/aluno/osce/OscePage";
-import { OsceCasosPage } from "../pages/professor/osce";
+import { CasoOsceEditorPage, OsceCasosPage } from "../pages/professor/osce";
 
 import { NotFoundPage } from '../pages/not-found';
 
@@ -294,6 +294,24 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute allowedRoles={['PROFESSOR']}>
               <OsceCasosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professor/osce/novo"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR']}>
+              <CasoOsceEditorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professor/osce/:id/editar"
+          element={
+            <ProtectedRoute allowedRoles={['PROFESSOR']}>
+              <CasoOsceEditorPage />
             </ProtectedRoute>
           }
         />
