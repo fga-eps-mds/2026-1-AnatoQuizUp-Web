@@ -40,7 +40,11 @@ export const carregarAparencia = (id?: string): AparenciaAvatar => {
       corCerebro: valor.corCerebro && Object.hasOwn(HUE_ROTATE_COR, valor.corCerebro)
         ? valor.corCerebro : APARENCIA_PADRAO.corCerebro,
       cabelo: ['loiro', 'cacheado', 'moicano'].includes(valor.cabelo ?? '') ? valor.cabelo! : null,
-      acessorio: ['coroa', 'oculos', 'chapeu-formatura'].includes(valor.acessorio ?? '') ? valor.acessorio! : null,
+      acessorio: [
+        'coroa', 'oculos', 'chapeu-formatura',
+        'bone', 'tiara', 'oculos-sol', 'chapeu-festa', 'capacete',
+        'chapeu-mago', 'chapeu-chef', 'chapeu-palha', 'mascara-carnaval', 'chapeu-cowboy',
+      ].includes(valor.acessorio ?? '') ? valor.acessorio! : null,
       luva: ['luva-boxe', 'luva-cirurgica', 'luva-la'].includes(valor.luva ?? '') ? valor.luva! : null,
       calcado: ['sapato-plantao', 'tenis-cano-alto', 'tenis-esportivo'].includes(valor.calcado ?? '') ? valor.calcado! : null,
     };
