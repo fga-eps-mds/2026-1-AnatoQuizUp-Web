@@ -3,10 +3,10 @@ import { buscarTopErrosLista } from '../../../entities/dashboardTurma/api/dashbo
 import type { TopErrosLista } from '../../../entities/dashboardTurma/model/types';
 
 interface ModalTopErrosProps {
-  turmaId: string;
-  listaId: string;
-  nomeLista: string;
-  onClose: () => void;
+  readonly turmaId: string;
+  readonly listaId: string;
+  readonly nomeLista: string;
+  readonly onClose: () => void;
 }
 
 export function ModalTopErros({ turmaId, listaId, nomeLista, onClose }: ModalTopErrosProps) {
@@ -33,6 +33,34 @@ export function ModalTopErros({ turmaId, listaId, nomeLista, onClose }: ModalTop
     return () => { isMounted = false; };
   }, [turmaId, listaId]);
 
+  let conteudo: React.ReactNode;
+  if (carregando) {
+    conteudo = <p className="text-center text-gray-500 py-10">Carregando...</p>;
+  } else if (erro) {
+    conteudo = <p className="text-center text-red-500 py-10">Erro ao carregar dados.</p>;
+  } else if (dados?.questoes.length === 0) {
+    conteudo = <p className="text-center text-gray-600 py-10">Nenhuma questão recebeu respostas erradas nesta lista.</p>;
+  } else {
+    conteudo = (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-500 font-medium">
+          {dados?.totalAlunosResponderam} {dados?.totalAlunosResponderam === 1 ? 'aluno respondeu' : 'alunos responderam'} · Ordenado por quantidade de erros
+        </p>
+        <div className="space-y-3">
+          {dados?.questoes.map((q) => (
+            <div key={q.questaoId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="font-bold text-gray-800">Questão {q.numeroQuestao} - {q.tema}</div>
+              <div className="text-sm text-gray-600 line-clamp-2">{q.enunciado}</div>
+              <div className="text-sm font-semibold text-red-500 mt-2">
+                {q.totalErros} de {q.totalRespostas} alunos erraram · {q.percentualErro}%
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
@@ -48,30 +76,7 @@ export function ModalTopErros({ turmaId, listaId, nomeLista, onClose }: ModalTop
         </div>
 
         <div className="p-6">
-          {carregando ? (
-            <p className="text-center text-gray-500 py-10">Carregando...</p>
-          ) : erro ? (
-            <p className="text-center text-red-500 py-10">Erro ao carregar dados.</p>
-          ) : dados && dados.questoes.length === 0 ? (
-            <p className="text-center text-gray-600 py-10">Nenhuma questão recebeu respostas erradas nesta lista.</p>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500 font-medium">
-                {dados?.totalAlunosResponderam} {dados?.totalAlunosResponderam === 1 ? 'aluno respondeu' : 'alunos responderam'} · Ordenado por quantidade de erros
-              </p>
-              <div className="space-y-3">
-                {dados?.questoes.map((q) => (
-                  <div key={q.questaoId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="font-bold text-gray-800">Questão {q.numeroQuestao} - {q.tema}</div>
-                    <div className="text-sm text-gray-600 line-clamp-2">{q.enunciado}</div>
-                    <div className="text-sm font-semibold text-red-500 mt-2">
-                      {q.totalErros} de {q.totalRespostas} alunos erraram · {q.percentualErro}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {conteudo}
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50">
