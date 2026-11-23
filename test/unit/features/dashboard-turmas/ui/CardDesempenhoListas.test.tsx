@@ -242,4 +242,185 @@ describe('CardDesempenhoListas', () => {
     fireEvent.click(screen.getByRole('button', { name: '✕' }));
     expect(screen.queryByRole('heading', { name: 'Questões com mais erros' })).not.toBeInTheDocument();
   });
+
+  it('nao exibe campo de busca quando nao ha listas publicadas na turma', async () => {
+    mockedBuscarDesempenhoPorListas.mockResolvedValue([]);
+
+    render(<CardDesempenhoListas turmaId="turma-123" />);
+
+    expect(await screen.findByText('Nenhuma lista publicada nesta turma.')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Buscar lista por nome')).not.toBeInTheDocument();
+  });
+
+  it('filtra listas por nome parcial ignorando maiusculas, minusculas e acentos e atualiza o contador', async () => {
+    const user = userEvent.setup();
+    mockedBuscarDesempenhoPorListas.mockResolvedValue([
+      {
+        listaTurmaId: 'lista-1',
+        nomeLista: 'A ser manipulada',
+        totalAlunos: 3,
+        totalSubmeteram: 0,
+        totalPendentes: 3,
+        taxaMediaAcerto: 0,
+        prazo: null,
+      },
+      {
+        listaTurmaId: 'lista-2',
+        nomeLista: 'Aquecimento Geral (Nível Fácil)',
+        totalAlunos: 3,
+        totalSubmeteram: 1,
+        totalPendentes: 2,
+        taxaMediaAcerto: 80,
+        prazo: null,
+      },
+      {
+        listaTurmaId: 'lista-3',
+        nomeLista: 'Simulado de Neuroanatomia - 2026.1',
+        totalAlunos: 3,
+        totalSubmeteram: 3,
+        totalPendentes: 0,
+        taxaMediaAcerto: 73,
+        prazo: '2000-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    render(<CardDesempenhoListas turmaId="turma-123" />);
+
+    const campoBusca = await screen.findByPlaceholderText('Buscar lista por nome');
+    expect(screen.getByText('3 lista(s) publicada(s)')).toBeInTheDocument();
+
+    // Busca sem acento e minuscula por "nivel facil".
+    await user.type(campoBusca, 'nivel facil');
+
+    expect(screen.getByText('1 de 3 lista(s) publicada(s)')).toBeInTheDocument();
+    expect(screen.getByText('Aquecimento Geral (Nível Fácil)')).toBeInTheDocument();
+    expect(screen.queryByText('A ser manipulada')).not.toBeInTheDocument();
+    expect(screen.queryByText('Simulado de Neuroanatomia - 2026.1')).not.toBeInTheDocument();
+
+    // Limpa pelo botao X dentro do input e restaura todas as listas.
+    await user.click(screen.getByRole('button', { name: 'Limpar busca' }));
+
+    expect(campoBusca).toHaveValue('');
+    expect(screen.getByText('3 lista(s) publicada(s)')).toBeInTheDocument();
+    expect(screen.getByText('A ser manipulada')).toBeInTheDocument();
+    expect(screen.getByText('Simulado de Neuroanatomia - 2026.1')).toBeInTheDocument();
+  });
+
+  it('exibe mensagem informativa quando nao encontra resultados e permite limpar a busca', async () => {
+    const user = userEvent.setup();
+    mockedBuscarDesempenhoPorListas.mockResolvedValue([
+      {
+        listaTurmaId: 'lista-1',
+        nomeLista: 'Simulado de Neuroanatomia - 2026.1',
+        totalAlunos: 3,
+        totalSubmeteram: 3,
+        totalPendentes: 0,
+        taxaMediaAcerto: 73,
+        prazo: null,
+      },
+      {
+        listaTurmaId: 'lista-2',
+        nomeLista: 'Aquecimento Geral (Nível Fácil)',
+        totalAlunos: 3,
+        totalSubmeteram: 0,
+        totalPendentes: 3,
+        taxaMediaAcerto: 0,
+        prazo: null,
+      },
+    ]);
+
+    render(<CardDesempenhoListas turmaId="turma-123" />);
+
+    const campoBusca = await screen.findByPlaceholderText('Buscar lista por nome');
+    await user.type(campoBusca, 'Cardiologia');
+
+    expect(screen.getByText('0 de 2 lista(s) publicada(s)')).toBeInTheDocument();
+    expect(screen.getByText('Nenhuma lista encontrada.')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Não encontramos listas correspondentes a/i),
+    ).toBeInTheDocument();
+
+    // Botao "Limpar busca" do estado vazio restaura todas as listas.
+    const botoesLimpar = screen.getAllByRole('button', { name: 'Limpar busca' });
+    await user.click(botoesLimpar[botoesLimpar.length - 1]);
+
+    expect(campoBusca).toHaveValue('');
+    expect(screen.getByText('2 lista(s) publicada(s)')).toBeInTheDocument();
+    expect(screen.getByText('Simulado de Neuroanatomia - 2026.1')).toBeInTheDocument();
+    expect(screen.getByText('Aquecimento Geral (Nível Fácil)')).toBeInTheDocument();
+  });
+
+  it('preserva dados e acoes de desempenho dos alunos e top erros no cartao filtrado', async () => {
+    const user = userEvent.setup();
+    mockedBuscarDesempenhoPorListas.mockResolvedValue([
+      {
+        listaTurmaId: 'lista-1',
+        nomeLista: 'A ser manipulada',
+        totalAlunos: 3,
+        totalSubmeteram: 0,
+        totalPendentes: 3,
+        taxaMediaAcerto: 0,
+        prazo: null,
+      },
+      {
+        listaTurmaId: 'lista-3',
+        nomeLista: 'Simulado de Neuroanatomia - 2026.1',
+        totalAlunos: 3,
+        totalSubmeteram: 3,
+        totalPendentes: 0,
+        taxaMediaAcerto: 73,
+        prazo: '2000-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    mockedBuscarDesempenhoListaIndividual.mockResolvedValue({
+      listaTurmaId: 'lista-3',
+      nomeLista: 'Simulado de Neuroanatomia - 2026.1',
+      totalQuestoes: 10,
+      desempenhoAlunos: [
+        {
+          alunoId: 'aluno-1',
+          status: 'SUBMETIDA',
+          totalAcertos: 8,
+          taxaAcerto: 80,
+          submissaoEm: '2026-06-14T10:00:00.000Z',
+          mensagem: 'Respondida',
+        },
+      ],
+    });
+    mockedBuscarUsuariosPorIds.mockResolvedValue([
+      { id: 'aluno-1', nome: 'João Silva', email: 'joao@seed.com' } as UsuarioResumo,
+    ]);
+    mockedBuscarTopErrosLista.mockResolvedValue({
+      listaTurmaId: 'lista-3',
+      nomeLista: 'Simulado de Neuroanatomia - 2026.1',
+      totalAlunosResponderam: 3,
+      questoes: [],
+    });
+
+    render(<CardDesempenhoListas turmaId="turma-123" />);
+
+    const campoBusca = await screen.findByPlaceholderText('Buscar lista por nome');
+    await user.type(campoBusca, 'NEUROANATOMIA');
+
+    expect(screen.getByText('1 de 2 lista(s) publicada(s)')).toBeInTheDocument();
+    const titulo = screen.getByText('Simulado de Neuroanatomia - 2026.1');
+    const card = titulo.closest('li');
+    expect(card).not.toBeNull();
+    expect(within(card!).getByText('Prazo expirado')).toBeInTheDocument();
+    expect(within(card!).getByText('100%')).toBeInTheDocument();
+    expect(within(card!).getByText('73%')).toBeInTheDocument();
+
+    // Acao 1: Ver desempenho dos alunos
+    await user.click(within(card!).getByRole('button', { name: /Ver desempenho dos alunos/i }));
+    expect(await screen.findByText('João Silva')).toBeInTheDocument();
+    expect(mockedBuscarDesempenhoListaIndividual).toHaveBeenCalledWith('turma-123', 'lista-3');
+
+    // Acao 2: Ver questoes com mais erros
+    await user.click(within(card!).getByRole('button', { name: 'Ver questões com mais erros' }));
+    expect(screen.getByRole('heading', { name: 'Questões com mais erros' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockedBuscarTopErrosLista).toHaveBeenCalledWith('turma-123', 'lista-3');
+    });
+  });
 });
