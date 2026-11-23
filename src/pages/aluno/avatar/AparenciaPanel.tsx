@@ -43,7 +43,7 @@ const CORES: { id: CorCerebro; hex: string; label: string }[] = [
 const CABELOS: { id: EstiloCabelo; label: string; imagem: string }[] = [
   { id: 'loiro', label: 'Loiro', imagem: cabeloLoiro },
   { id: 'cacheado', label: 'Cacheado', imagem: cabeloCacheado },
-  { id: 'moicano', label: 'Moicano', imagem: cabeloMoicano },
+  { id: 'moicano', label: 'Topete', imagem: cabeloMoicano },
 ];
 
 // Base liberada da issue #34; os demais acessorios da loja entram depois.
