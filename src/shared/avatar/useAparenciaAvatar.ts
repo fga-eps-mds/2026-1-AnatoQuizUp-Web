@@ -7,6 +7,15 @@ const chaveAvatar = (id: string) => `anatoquizup:avatar:${id}`;
 const requisicoes = new Map<string, Promise<void>>();
 const versoes = new Map<string, number>();
 
+const normalizarAparencia = (valor: Partial<AparenciaAvatar>): AparenciaAvatar => ({
+  corCerebro: valor.corCerebro && Object.hasOwn(HUE_ROTATE_COR, valor.corCerebro)
+    ? valor.corCerebro : APARENCIA_PADRAO.corCerebro,
+  cabelo: ['loiro', 'cacheado', 'moicano'].includes(valor.cabelo ?? '') ? valor.cabelo! : null,
+  acessorio: ['coroa', 'oculos', 'chapeu-formatura'].includes(valor.acessorio ?? '') ? valor.acessorio! : null,
+  luva: ['luva-boxe', 'luva-cirurgica', 'luva-la'].includes(valor.luva ?? '') ? valor.luva! : null,
+  calcado: ['sapato-plantao', 'tenis-cano-alto', 'tenis-esportivo'].includes(valor.calcado ?? '') ? valor.calcado! : null,
+});
+
 export const sincronizarAparencia = (id: string) => {
   const existente = requisicoes.get(id);
   if (existente) return existente;
@@ -35,15 +44,7 @@ export const carregarAparencia = (id?: string): AparenciaAvatar => {
   try {
     const dados: unknown = JSON.parse(lerRegistro(id) ?? 'null');
     if (!dados || typeof dados !== 'object') return APARENCIA_PADRAO;
-    const valor = dados as Partial<AparenciaAvatar>;
-    return {
-      corCerebro: valor.corCerebro && Object.hasOwn(HUE_ROTATE_COR, valor.corCerebro)
-        ? valor.corCerebro : APARENCIA_PADRAO.corCerebro,
-      cabelo: ['loiro', 'cacheado', 'moicano'].includes(valor.cabelo ?? '') ? valor.cabelo! : null,
-      acessorio: ['coroa', 'oculos', 'chapeu-formatura'].includes(valor.acessorio ?? '') ? valor.acessorio! : null,
-      luva: ['luva-boxe', 'luva-cirurgica', 'luva-la'].includes(valor.luva ?? '') ? valor.luva! : null,
-      calcado: ['sapato-plantao', 'tenis-cano-alto', 'tenis-esportivo'].includes(valor.calcado ?? '') ? valor.calcado! : null,
-    };
+    return normalizarAparencia(dados as Partial<AparenciaAvatar>);
   } catch {
     return APARENCIA_PADRAO;
   }
@@ -51,7 +52,7 @@ export const carregarAparencia = (id?: string): AparenciaAvatar => {
 
 export const salvarAparencia = (id: string, aparencia: AparenciaAvatar | null) => {
   versoes.set(id, (versoes.get(id) ?? 0) + 1);
-  if (aparencia) localStorage.setItem(chaveAvatar(id), JSON.stringify(aparencia));
+  if (aparencia) localStorage.setItem(chaveAvatar(id), JSON.stringify(normalizarAparencia(aparencia)));
   else localStorage.removeItem(chaveAvatar(id));
   window.dispatchEvent(new Event(EVENTO));
 };
