@@ -46,4 +46,14 @@ describe('armazenamento da aparência do avatar', () => {
 
     expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, cabelo });
   });
+
+  it.each([
+    'luva-boxe-azul', 'luva-boxe-verde', 'luva-boxe-dourado', 'luva-boxe-roxo',
+    'luva-boxe-preta', 'luva-la-rosa', 'luva-la-verde', 'luva-la-azul',
+    'luva-jardinagem', 'luva-goleiro',
+  ] as const)('aceita o luva novo %s ao salvar e carregar', (luva) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, luva });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, luva });
+  });
 });
