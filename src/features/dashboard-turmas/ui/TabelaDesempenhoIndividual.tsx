@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HistoricoListasAluno } from './HistoricoListasAluno';
+import { EvolucaoTemaAluno } from './EvolucaoTemaAluno';
 import { BarChart3, X } from 'lucide-react';
 import { buscarDesempenhoIndividual } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
 import { buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi';
@@ -269,14 +270,34 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
             ) : (
               <p className="text-center text-sm text-gray-400">Nenhuma questão respondida ainda.</p>
             )}
-            <HistoricoListasAluno
-              key={selected.alunoId}
-              turmaId={turmaId}
-              alunoId={selected.alunoId}
-            />
+            <AcompanhamentoAluno key={selected.alunoId} turmaId={turmaId} alunoId={selected.alunoId} />
           </div>
         </div>
       )}
     </>
+  );
+};
+
+const AcompanhamentoAluno = ({ turmaId, alunoId }: { turmaId: string; alunoId: string }) => {
+  const [evolucao, setEvolucao] = useState(false);
+
+  return (
+    <div className="mt-5">
+      <div className="flex gap-3 border-b border-gray-200">
+        <button type="button" aria-pressed={!evolucao} onClick={() => setEvolucao(false)}
+          className={`border-b-2 px-3 py-2 text-sm font-bold ${!evolucao ? 'border-teal-600 text-teal-700' : 'border-transparent text-gray-600'}`}>
+          Histórico
+        </button>
+        <button type="button" aria-pressed={evolucao} onClick={() => setEvolucao(true)}
+          className={`border-b-2 px-3 py-2 text-sm font-bold ${evolucao ? 'border-teal-600 text-teal-700' : 'border-transparent text-gray-600'}`}>
+          Evolução por tema
+        </button>
+      </div>
+      {evolucao ? (
+        <div className="mt-4">
+          <EvolucaoTemaAluno turmaId={turmaId} alunoId={alunoId} onVoltar={() => setEvolucao(false)} />
+        </div>
+      ) : <HistoricoListasAluno turmaId={turmaId} alunoId={alunoId} />}
+    </div>
   );
 };
