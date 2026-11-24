@@ -46,4 +46,14 @@ describe('armazenamento da aparência do avatar', () => {
 
     expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, cabelo });
   });
+
+  it.each([
+    'tenis-esportivo-vermelho', 'tenis-esportivo-verde', 'tenis-esportivo-amarelo', 'tenis-esportivo-preto',
+    'tenis-cano-alto-azul', 'tenis-cano-alto-verde', 'tenis-cano-alto-amarelo', 'tenis-cano-alto-preto',
+    'tenis-skate', 'bota-coturno',
+  ] as const)('aceita o calçado novo %s ao salvar e carregar', (calcado) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, calcado });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, calcado });
+  });
 });
