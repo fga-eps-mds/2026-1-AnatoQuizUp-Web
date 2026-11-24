@@ -25,6 +25,16 @@ const normalizarCabelo = (valor: unknown): AparenciaAvatar['cabelo'] => {
     case 'loiro': return 'loiro';
     case 'cacheado': return 'cacheado';
     case 'moicano': return 'moicano';
+    case 'loiro-castanho': return 'loiro-castanho';
+    case 'loiro-ruivo': return 'loiro-ruivo';
+    case 'cacheado-loiro': return 'cacheado-loiro';
+    case 'cacheado-castanho': return 'cacheado-castanho';
+    case 'moicano-loiro': return 'moicano-loiro';
+    case 'moicano-ruivo': return 'moicano-ruivo';
+    case 'curto-cacheado': return 'curto-cacheado';
+    case 'trancas': return 'trancas';
+    case 'curto-grisalho': return 'curto-grisalho';
+    case 'curto-cacheado-loiro': return 'curto-cacheado-loiro';
     default: return null;
   }
 };

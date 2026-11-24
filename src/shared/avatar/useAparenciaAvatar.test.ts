@@ -36,4 +36,14 @@ describe('armazenamento da aparência do avatar', () => {
     expect(localStorage).toHaveLength(0);
     expect(carregarAparencia('../outro-registro')).toEqual(APARENCIA_PADRAO);
   });
+
+  it.each([
+    'loiro-castanho', 'loiro-ruivo', 'cacheado-loiro', 'cacheado-castanho',
+    'moicano-loiro', 'moicano-ruivo', 'curto-cacheado', 'trancas',
+    'curto-grisalho', 'curto-cacheado-loiro',
+  ] as const)('aceita o cabelo novo %s ao salvar e carregar', (cabelo) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, cabelo });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, cabelo });
+  });
 });
