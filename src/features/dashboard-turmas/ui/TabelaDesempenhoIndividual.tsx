@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HistoricoListasAluno } from './HistoricoListasAluno';
 import { BarChart3, X } from 'lucide-react';
 import { buscarDesempenhoIndividual } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
 import { buscarUsuariosPorIds } from '../../../entities/usuarios/api/usuarioApi';
@@ -268,6 +269,11 @@ export const TabelaDesempenhoIndividual = ({ turmaId }: Props) => {
             ) : (
               <p className="text-center text-sm text-gray-400">Nenhuma questão respondida ainda.</p>
             )}
+            <HistoricoListasAluno
+              key={selected.alunoId}
+              turmaId={turmaId}
+              alunoId={selected.alunoId}
+            />
           </div>
         </div>
       )}
