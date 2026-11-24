@@ -318,10 +318,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
       </label>
 
       {listasFiltradas.length === 0 ? (
-        <div
-          role="status"
-          className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center"
-        >
+        <output className="flex w-full flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center">
           <Search size={24} className="mb-2 text-gray-300" aria-hidden="true" />
           <p className="text-sm font-bold text-gray-900">Nenhuma lista encontrada.</p>
           <p className="mt-1 text-xs text-gray-500">
@@ -334,7 +331,7 @@ export const CardDesempenhoListas = ({ turmaId }: CardDesempenhoListasProps) => 
           >
             Limpar busca
           </button>
-        </div>
+        </output>
       ) : (
         /* Uma linha por lista publicada: prazo, barra de submissoes e estatisticas. */
         <ul className="space-y-3">
