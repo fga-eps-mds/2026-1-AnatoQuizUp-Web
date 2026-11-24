@@ -3,6 +3,16 @@ import avatarBase from '../assets/avatar/avatar-base.png';
 import loiro from '../assets/avatar/cabelo/cabelo-loiro.png';
 import cacheado from '../assets/avatar/cabelo/cabelo-cacheado.png';
 import moicano from '../assets/avatar/cabelo/cabelo-moicano.png';
+import loiroCastanho from '../assets/avatar/cabelo/cabelo-loiro-castanho.png';
+import loiroRuivo from '../assets/avatar/cabelo/cabelo-loiro-ruivo.png';
+import cacheadoLoiro from '../assets/avatar/cabelo/cabelo-cacheado-loiro.png';
+import cacheadoCastanho from '../assets/avatar/cabelo/cabelo-cacheado-castanho.png';
+import moicanoLoiro from '../assets/avatar/cabelo/cabelo-moicano-loiro.png';
+import moicanoRuivo from '../assets/avatar/cabelo/cabelo-moicano-ruivo.png';
+import curtoCacheado from '../assets/avatar/cabelo/cabelo-curto-cacheado.png';
+import trancas from '../assets/avatar/cabelo/cabelo-trancas.png';
+import curtoGrisalho from '../assets/avatar/cabelo/cabelo-curto-grisalho.png';
+import curtoCacheadoLoiro from '../assets/avatar/cabelo/cabelo-curto-cacheado-loiro.png';
 import coroa from '../assets/avatar/acessorios/coroa.png';
 import oculos from '../assets/avatar/acessorios/oculos.png';
 import chapeu from '../assets/avatar/acessorios/chapeu_formatura.png';
@@ -28,6 +38,26 @@ const cabelos = {
   loiro: { src: loiro, top: '40%', left: '50%', width: '100%' },
   cacheado: { src: cacheado, top: '40%', left: '46%', width: '82%' },
   moicano: { src: moicano, top: '30%', left: '50%', width: '82%' },
+  // Recolors herdam exatamente a posicao do estilo-base.
+  'loiro-castanho': { src: loiroCastanho, top: '40%', left: '50%', width: '100%' },
+  'loiro-ruivo': { src: loiroRuivo, top: '40%', left: '50%', width: '100%' },
+  'cacheado-loiro': { src: cacheadoLoiro, top: '40%', left: '46%', width: '82%' },
+  'cacheado-castanho': { src: cacheadoCastanho, top: '40%', left: '46%', width: '82%' },
+  'moicano-loiro': { src: moicanoLoiro, top: '30%', left: '50%', width: '82%' },
+  'moicano-ruivo': { src: moicanoRuivo, top: '30%', left: '50%', width: '82%' },
+  // Estimativa inicial (cortes novos, sem base pra herdar posicao) — calibrar visualmente.
+  // Mesma escala do moicano (mesma familia de corte, sem repartiçao central).
+  'curto-cacheado': { src: curtoCacheado, top: '28%', left: '50%', width: '68%' },
+  // top calculado a partir da estrutura real da imagem: a touca ocupa so os
+  // primeiros ~34% da altura (o resto sao as trancas penduradas), entao o
+  // centro da imagem (ponto usado pelo top/left) precisa ficar bem mais
+  // abaixo do que o de um corte comum pra touca sentar na altura certa.
+  trancas: { src: trancas, top: '40%', left: '50%', width: '55%' },
+  // Reusa o anchor do moicano (mesma familia: corte varrido, sem repartição
+  // central), em vez de recalcular do zero — moicano ja funciona nessa mesma
+  // faixa de top/width.
+  'curto-grisalho': { src: curtoGrisalho, top: '30%', left: '52%', width: '68%' },
+  'curto-cacheado-loiro': { src: curtoCacheadoLoiro, top: '28%', left: '50%', width: '68%' },
 };
 // 'rosto': fica sempre no mesmo top (nao sobe quando tem cabelo), abaixo do cabelo (zIndex 1).
 // Os demais sao headwear: sobem quando tem cabelo, ficam por cima (zIndex 3).

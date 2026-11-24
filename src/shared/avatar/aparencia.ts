@@ -1,5 +1,18 @@
 export type CorCerebro = 'rosa' | 'roxo' | 'azul' | 'verde' | 'laranja' | 'amarelo';
-export type EstiloCabelo = 'loiro' | 'cacheado' | 'moicano';
+export type EstiloCabelo =
+  | 'loiro'
+  | 'cacheado'
+  | 'moicano'
+  | 'loiro-castanho'
+  | 'loiro-ruivo'
+  | 'cacheado-loiro'
+  | 'cacheado-castanho'
+  | 'moicano-loiro'
+  | 'moicano-ruivo'
+  | 'curto-cacheado'
+  | 'trancas'
+  | 'curto-grisalho'
+  | 'curto-cacheado-loiro';
 
 export type EstiloAcessorio =
   | 'coroa'
