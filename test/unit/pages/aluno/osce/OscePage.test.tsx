@@ -4,7 +4,7 @@ jest.mock('../../../../../src/features/osce/osceService', () => ({
   finalizarOsce: jest.fn(),
 }));
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -20,7 +20,20 @@ const enviarMock = enviarMensagemOsce as jest.Mock;
 const finalizarMock = finalizarOsce as jest.Mock;
 
 const CENARIOS = [
-  { id: 'dor-toracica', titulo: 'Dor torácica', especialidade: 'Cardiologia', dificuldade: 'Médio' },
+  {
+    id: 'dor-toracica',
+    titulo: 'Dor torácica',
+    especialidade: 'Cardiologia',
+    dificuldade: 'Médio',
+    contextoInicial: {
+      local: 'Pronto-socorro de um hospital geral',
+      papelEstudante: 'Médico(a) responsável pelo primeiro atendimento',
+      idade: 58,
+      sexo: 'Masculino',
+      queixa: 'Dor torácica',
+    },
+  },
+  // Sem contextoInicial: simula o ChatbotOSCE ainda sem o campo novo.
   { id: 'cefaleia-subita', titulo: 'Cefaleia súbita', especialidade: 'Neurologia', dificuldade: 'Difícil' },
 ];
 
@@ -68,10 +81,26 @@ const promiseControlavel = <T,>() => {
   return { promise, resolve, reject };
 };
 
-const abrirCaso = async (titulo = 'Dor torácica') => {
+const escolherCaso = async (titulo = 'Dor torácica') => {
   render(<OscePage />);
   const caso = await screen.findByText(titulo);
   await userEvent.click(caso);
+};
+
+// Escolhe o caso e passa pela etapa de cenario ate o chat.
+const abrirCaso = async (titulo = 'Dor torácica') => {
+  await escolherCaso(titulo);
+  await userEvent.click(screen.getByRole('button', { name: /Iniciar atendimento/ }));
+};
+
+const campo = () => screen.getByPlaceholderText(/Pergunte algo ao paciente/);
+const atalhoEncerrar = () => screen.getByRole('button', { name: /Encerrar e receber feedback/ });
+
+// Envia uma fala e espera a resposta do paciente aparecer.
+const conversar = async (fala: string, resposta: string) => {
+  enviarMock.mockResolvedValueOnce(resposta);
+  await userEvent.type(campo(), `${fala}{Enter}`);
+  await screen.findByText(resposta);
 };
 
 beforeEach(() => {
@@ -126,12 +155,43 @@ describe('OscePage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Serviço de IA indisponível');
   });
 
-  it('abre a conversa do caso escolhido', async () => {
+  it('mostra o cenario do caso antes do chat, sem campo de texto', async () => {
+    await escolherCaso();
+
+    expect(screen.getByText('Cenário do caso')).toBeInTheDocument();
+    expect(screen.getByText('Pronto-socorro de um hospital geral')).toBeInTheDocument();
+    expect(screen.getByText('Médico(a) responsável pelo primeiro atendimento')).toBeInTheDocument();
+    expect(screen.getByText('58 anos, sexo masculino')).toBeInTheDocument();
+    expect(screen.getByText('Dor torácica', { selector: 'dd' })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Pergunte algo ao paciente/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Cefaleia súbita')).not.toBeInTheDocument();
+  });
+
+  it('mostra um texto padrao quando o caso nao tem contextoInicial', async () => {
+    await escolherCaso('Cefaleia súbita');
+
+    expect(screen.getByText(/O cenário detalhado deste caso ainda não está disponível/)).toBeInTheDocument();
+    expect(screen.queryByText('Local')).not.toBeInTheDocument();
+  });
+
+  it('voltar do cenario retorna para a lista de casos', async () => {
+    await escolherCaso();
+
+    await userEvent.click(screen.getByRole('button', { name: /Voltar/ }));
+
+    expect(screen.getByText('Cefaleia súbita')).toBeInTheDocument();
+    expect(screen.queryByText('Cenário do caso')).not.toBeInTheDocument();
+  });
+
+  it('abre a conversa ao iniciar o atendimento', async () => {
     await abrirCaso();
 
-    expect(screen.getByPlaceholderText(/Pergunte algo ao paciente/)).toBeInTheDocument();
-    expect(screen.getByText(/Inicie a anamnese/)).toBeInTheDocument();
-    expect(screen.queryByText('Cefaleia súbita')).not.toBeInTheDocument();
+    expect(campo()).toBeInTheDocument();
+    expect(screen.queryByText('Cenário do caso')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Inicie a anamnese/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Finalizar e ver feedback/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trocar caso' })).toBeInTheDocument();
   });
 
   it('envia a fala do aluno e mostra a resposta do paciente', async () => {
@@ -195,17 +255,130 @@ describe('OscePage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Erro ao falar com o paciente');
   });
 
-  it('so libera a finalizacao depois da primeira fala', async () => {
-    enviarMock.mockResolvedValue('Dor no peito.');
+  it('mantem o atalho de encerrar sempre presente e so o libera depois da primeira fala', async () => {
     await abrirCaso();
 
-    const finalizar = screen.getByRole('button', { name: /Finalizar e ver feedback/ });
-    expect(finalizar).toBeDisabled();
+    expect(atalhoEncerrar()).toBeDisabled();
 
-    await userEvent.type(screen.getByPlaceholderText(/Pergunte algo ao paciente/), 'O que sente?{Enter}');
-    await screen.findByText('Dor no peito.');
+    await conversar('O que sente?', 'Dor no peito.');
+    expect(atalhoEncerrar()).toBeEnabled();
 
-    expect(finalizar).toBeEnabled();
+    await conversar('Desde quando?', 'Desde cedo.');
+    expect(atalhoEncerrar()).toBeEnabled();
+  });
+
+  it('pergunta antes de encerrar quando o aluno se despede', async () => {
+    await abrirCaso();
+    await conversar('O que sente?', 'Dor no peito.');
+
+    enviarMock.mockResolvedValueOnce('Obrigado, doutor.');
+    await userEvent.type(campo(), 'Obrigado, era isso. Tchau!{Enter}');
+
+    // O paciente responde uma vez a despedida e entao vem a confirmacao.
+    expect(await screen.findByText('Obrigado, doutor.')).toBeInTheDocument();
+    const modal = await screen.findByRole('dialog', { name: 'Encerrar e ver avaliação?' });
+    expect(enviarMock).toHaveBeenCalledTimes(2);
+    // O foco entra no modal.
+    expect(within(modal).getByRole('button', { name: 'Continuar atendimento' })).toHaveFocus();
+  });
+
+  it('abre a confirmacao mesmo quando o envio da despedida falha', async () => {
+    await abrirCaso();
+    await conversar('O que sente?', 'Dor no peito.');
+
+    enviarMock.mockRejectedValueOnce(new Error('Erro ao falar com o paciente'));
+    await userEvent.type(campo(), 'Tchau{Enter}');
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Erro ao falar com o paciente');
+  });
+
+  it('continuar atendimento fecha a confirmacao e devolve o foco ao campo', async () => {
+    await abrirCaso();
+    await conversar('O que sente?', 'Dor no peito.');
+    await conversar('Tchau', 'Até logo, doutor.');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar atendimento' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(campo()).toHaveFocus();
+    expect(screen.getByText('Até logo, doutor.')).toBeInTheDocument();
+
+    // A conversa continua normalmente com uma fala que nao e despedida.
+    await conversar('Na verdade, a dor irradia?', 'Vai pro braço.');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('clicar no fundo escurecido fecha a confirmacao', async () => {
+    await abrirCaso();
+    await conversar('Tchau', 'Até logo.');
+
+    await screen.findByRole('dialog');
+    await userEvent.click(screen.getByTestId('osce-encerramento-overlay'));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('Esc fecha a confirmacao', async () => {
+    await abrirCaso();
+    await conversar('Tchau', 'Até logo.');
+
+    await screen.findByRole('dialog');
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('uma segunda despedida abre a confirmacao sem chamar a IA de novo', async () => {
+    await abrirCaso();
+    await conversar('O que sente?', 'Dor no peito.');
+    await conversar('Obrigado, tchau', 'Tchau, doutor.');
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar atendimento' }));
+    expect(enviarMock).toHaveBeenCalledTimes(2);
+
+    await userEvent.type(campo(), 'tchau{Enter}');
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(enviarMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryAllByText('tchau')).toHaveLength(0);
+  });
+
+  it('encerrar na confirmacao finaliza a estacao', async () => {
+    finalizarMock.mockResolvedValue(AVALIACAO);
+    await abrirCaso();
+    await conversar('O que sente?', 'Dor no peito.');
+    await conversar('Vou encerrar a consulta', 'Tudo bem.');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Encerrar' }));
+
+    expect(await screen.findByText('Feedback do examinador')).toBeInTheDocument();
+    expect(finalizarMock).toHaveBeenCalledWith('dor-toracica', [
+      { autor: 'aluno', texto: 'O que sente?' },
+      { autor: 'paciente', texto: 'Dor no peito.' },
+      { autor: 'aluno', texto: 'Vou encerrar a consulta' },
+      { autor: 'paciente', texto: 'Tudo bem.' },
+    ]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('desabilita a confirmacao enquanto avalia e mostra o erro no chat se falhar', async () => {
+    const avaliacao = promiseControlavel<AvaliacaoOsce>();
+    finalizarMock.mockReturnValue(avaliacao.promise);
+    await abrirCaso();
+    await conversar('Tchau', 'Até logo.');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Encerrar' }));
+
+    expect(screen.getByRole('button', { name: 'Encerrar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Continuar atendimento' })).toBeDisabled();
+    // Esc nao fecha durante a avaliacao.
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    avaliacao.reject(new Error('Avaliação indisponível'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Avaliação indisponível');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('finaliza a estacao e mostra o feedback do examinador', async () => {
@@ -216,7 +389,7 @@ describe('OscePage', () => {
     await userEvent.type(screen.getByPlaceholderText(/Pergunte algo ao paciente/), 'O que sente?{Enter}');
     await screen.findByText('Dor no peito.');
 
-    await userEvent.click(screen.getByRole('button', { name: /Finalizar e ver feedback/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Encerrar e receber feedback/ }));
 
     expect(await screen.findByText('Feedback do examinador')).toBeInTheDocument();
     expect(screen.getByText('Faltou investigar fatores de risco.')).toBeInTheDocument();
@@ -226,7 +399,7 @@ describe('OscePage', () => {
     ]);
     // Com a estacao avaliada, nao se conversa mais nem se finaliza de novo.
     expect(screen.getByPlaceholderText(/Pergunte algo ao paciente/)).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Finalizar e ver feedback/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Encerrar e receber feedback/ })).toBeDisabled();
   });
 
   it('avisa quando a avaliacao falha', async () => {
@@ -237,7 +410,7 @@ describe('OscePage', () => {
     await userEvent.type(screen.getByPlaceholderText(/Pergunte algo ao paciente/), 'O que sente?{Enter}');
     await screen.findByText('Dor no peito.');
 
-    await userEvent.click(screen.getByRole('button', { name: /Finalizar e ver feedback/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Encerrar e receber feedback/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Avaliação indisponível');
   });
@@ -254,8 +427,9 @@ describe('OscePage', () => {
     expect(screen.getByText('Cefaleia súbita')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Dor torácica'));
+    await userEvent.click(screen.getByRole('button', { name: /Iniciar atendimento/ }));
 
-    expect(screen.getByText(/Inicie a anamnese/)).toBeInTheDocument();
     expect(screen.queryByText('Dor no peito.')).not.toBeInTheDocument();
+    expect(atalhoEncerrar()).toBeDisabled();
   });
 });

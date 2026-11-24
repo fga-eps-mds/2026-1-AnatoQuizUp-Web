@@ -6,8 +6,8 @@ import { extractErrorMessage } from '../manage-questions/model/questionService';
 
 const OSCE_ENDPOINT = '/ia/osce';
 
-// "Porta da estação": o que o aluno le antes de iniciar o atendimento — nunca o
-// diagnostico ou pistas do roteiro oculto.
+// "Porta da estação": o que o aluno le antes de iniciar o atendimento (local,
+// papel e a apresentacao do paciente) — nunca o diagnostico ou pistas do roteiro oculto.
 export type ContextoInicialOsce = {
   local: string;
   papelEstudante: string;
@@ -21,6 +21,8 @@ export type CenarioOsceResumo = {
   titulo: string;
   especialidade: string;
   dificuldade: 'Fácil' | 'Médio' | 'Difícil';
+  // Opcional para nao quebrar a tela se o Web for publicado antes do ChatbotOSCE:
+  // sem ele, a etapa de cenario mostra um texto padrao.
   contextoInicial?: ContextoInicialOsce;
 };
 
@@ -29,7 +31,8 @@ export type TurnoOsce = {
   texto: string;
 };
 
-// GET /ia/osce/cenarios — lista publica dos casos disponiveis (sem o roteiro oculto).
+// GET /ia/osce/cenarios — lista publica dos casos disponiveis, com o contexto inicial
+// de cada um (sem o roteiro oculto nem o diagnostico).
 export const listarCenariosOsce = async (): Promise<CenarioOsceResumo[]> => {
   try {
     const { data } = await httpClient.get<{ cenarios: CenarioOsceResumo[] }>(
