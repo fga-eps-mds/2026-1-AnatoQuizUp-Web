@@ -95,7 +95,13 @@ test('aluno escolhe um cenário, conversa com o paciente e vê o feedback da rub
 
   await page.getByText('Dor torácica aguda').click();
 
-  const textarea = page.getByPlaceholder('Pergunte algo ao paciente...');
+  // Tela "porta da estação": o aluno lê o cenário antes do chat abrir.
+  await expect(page.getByRole('heading', { name: 'Dor torácica aguda' })).toBeVisible();
+  await page.getByRole('button', { name: 'Iniciar atendimento' }).click();
+
+  // Trecho estável do placeholder (sem o sufixo literal), resiliente a ajustes de
+  // texto que a US25 venha a trazer no campo de mensagem.
+  const textarea = page.getByPlaceholder('Pergunte algo ao paciente');
   await textarea.fill('Qual é a sua queixa principal e desde quando ela começou?');
   await page.getByRole('button', { name: 'Enviar pergunta ao paciente' }).click();
 
@@ -103,7 +109,7 @@ test('aluno escolhe um cenário, conversa com o paciente e vê o feedback da rub
     page.getByText('A dor começou há duas horas, no peito, e piora ao respirar.'),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Finalizar e ver feedback' }).click();
+  await page.getByRole('button', { name: 'Encerrar e receber feedback' }).click();
 
   const feedback = page.getByRole('region', { name: 'Resultado da estação OSCE' });
   await expect(feedback).toBeVisible();
