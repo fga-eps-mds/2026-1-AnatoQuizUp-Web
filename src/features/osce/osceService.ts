@@ -26,9 +26,15 @@ export type CenarioOsceResumo = {
   contextoInicial?: ContextoInicialOsce;
 };
 
+// Quem produziu o turno. "exame" e "indisponivel" nao sao falas: sao os cards de
+// resultado de exame que o ChatbotOSCE monta a partir do cadastro do caso (US25).
+export type AutorTurnoOsce = 'aluno' | 'paciente' | 'exame' | 'indisponivel';
+
 export type TurnoOsce = {
-  autor: 'aluno' | 'paciente';
+  autor: AutorTurnoOsce;
   texto: string;
+  // Nome do exame, so nos turnos "exame" e "indisponivel".
+  exame?: string;
 };
 
 // GET /ia/osce/cenarios — lista publica dos casos disponiveis, com o contexto inicial
@@ -44,18 +50,20 @@ export const listarCenariosOsce = async (): Promise<CenarioOsceResumo[]> => {
   }
 };
 
-// POST /ia/osce/:id/mensagem — fala do aluno; devolve a resposta do paciente (IA).
+// POST /ia/osce/:id/mensagem — fala do aluno; devolve os turnos da resposta na ordem
+// em que aparecem no chat: a fala do paciente e, depois dela, um card por exame pedido.
 export const enviarMensagemOsce = async (
   cenarioId: string,
   mensagem: string,
   historico: TurnoOsce[],
-): Promise<string> => {
+): Promise<TurnoOsce[]> => {
   try {
-    const { data } = await httpClient.post<{ resposta: string }>(
+    const { data } = await httpClient.post<{ resposta: string; turnos?: TurnoOsce[] }>(
       `${OSCE_ENDPOINT}/${cenarioId}/mensagem`,
       { mensagem, historico },
     );
-    return data.resposta;
+    // Sem `turnos` (ChatbotOSCE anterior a US25), a resposta e so a fala do paciente.
+    return data.turnos ?? [{ autor: 'paciente', texto: data.resposta }];
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
