@@ -31,9 +31,21 @@ describe('osceService', () => {
   });
 
   describe('listarCenariosOsce', () => {
-    it('devolve a lista de cenarios publicos', async () => {
+    it('devolve a lista de cenarios publicos com o contexto inicial', async () => {
       const cenarios = [
-        { id: 'dor-toracica', titulo: 'Dor torácica', especialidade: 'Cardiologia', dificuldade: 'Médio' },
+        {
+          id: 'dor-toracica',
+          titulo: 'Dor torácica',
+          especialidade: 'Cardiologia',
+          dificuldade: 'Médio',
+          contextoInicial: {
+            local: 'Pronto-socorro',
+            papelEstudante: 'Médico(a) responsável pelo primeiro atendimento',
+            idade: 58,
+            sexo: 'Masculino',
+            queixa: 'Dor torácica',
+          },
+        },
       ];
       httpClientMock.get.mockResolvedValue({ data: { cenarios } });
 
