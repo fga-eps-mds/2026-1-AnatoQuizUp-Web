@@ -3,6 +3,7 @@
 // Ver docs/arquitetura/chatbot-osce.md para a arquitetura e os parametros completos.
 import { httpClient } from '../../shared/api/httpClient';
 import { extractErrorMessage } from '../manage-questions/model/questionService';
+import { criarErroOsce } from './erroOsce';
 
 const OSCE_ENDPOINT = '/ia/osce';
 
@@ -65,7 +66,8 @@ export const enviarMensagemOsce = async (
     // Sem `turnos` (ChatbotOSCE anterior a US25), a resposta e so a fala do paciente.
     return data.turnos ?? [{ autor: 'paciente', texto: data.resposta }];
   } catch (error) {
-    throw new Error(extractErrorMessage(error));
+    // Falhas da IA (503, 502, 504, timeout) viram um aviso claro para o aluno (T1.9).
+    throw criarErroOsce(error);
   }
 };
 

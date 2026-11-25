@@ -6,6 +6,14 @@ jest.mock('../../../../../src/features/osce/osceService', () => ({
 
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AxiosError, type AxiosResponse } from 'axios';
+
+import {
+  AVISO_DEMORA,
+  AVISO_FALHA_FINALIZAR,
+  AVISO_IA_INDISPONIVEL,
+  criarErroOsce,
+} from '../../../../../src/features/osce/erroOsce';
 
 import {
   enviarMensagemOsce,
@@ -96,6 +104,16 @@ const abrirCaso = async (titulo = 'Dor torácica') => {
   await escolherCaso(titulo);
   await userEvent.click(screen.getByRole('button', { name: /Iniciar atendimento/ }));
 };
+
+// Erro como o servico do OSCE lanca para um status HTTP, com a mensagem tecnica
+// que o ChatbotOSCE devolve hoje no 503.
+const erroDaIa = (status: number) =>
+  criarErroOsce(
+    new AxiosError('Request failed', 'ERR_BAD_RESPONSE', undefined, undefined, {
+      status,
+      data: { erro: { mensagem: 'Servico de IA ainda nao foi habilitado nesta release.' } },
+    } as AxiosResponse),
+  );
 
 const campo = () => screen.getByPlaceholderText(/Pergunte algo ao paciente/);
 const atalhoEncerrar = () => screen.getByRole('button', { name: /Encerrar e receber feedback/ });
@@ -430,9 +448,9 @@ describe('OscePage', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    avaliacao.reject(new Error('Avaliação indisponível'));
+    avaliacao.reject(erroDaIa(503));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Avaliação indisponível');
+    expect(await screen.findByRole('alert')).toHaveTextContent(AVISO_FALHA_FINALIZAR.texto);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -467,7 +485,120 @@ describe('OscePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Encerrar e receber feedback/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Avaliação indisponível');
+    expect(await screen.findByRole('alert')).toHaveTextContent(AVISO_FALHA_FINALIZAR.texto);
+  });
+
+  describe('falhas da IA (T1.9)', () => {
+    it('mostra o aviso de IA fora do ar no 503, sem a mensagem tecnica do backend', async () => {
+      enviarMock.mockRejectedValueOnce(erroDaIa(503));
+      await abrirCaso();
+
+      await userEvent.type(campo(), 'Onde dói?{Enter}');
+
+      const aviso = await screen.findByRole('alert');
+      expect(aviso).toHaveTextContent(AVISO_IA_INDISPONIVEL.titulo as string);
+      expect(aviso).toHaveTextContent(AVISO_IA_INDISPONIVEL.texto);
+      expect(within(aviso).getByRole('button', { name: 'Tentar de novo' })).toHaveAttribute(
+        'type',
+        'button',
+      );
+      expect(screen.queryByText(/nesta release/)).not.toBeInTheDocument();
+    });
+
+    it('mantem a fala que falhou no chat, marcada como "Nao enviada"', async () => {
+      enviarMock.mockRejectedValueOnce(erroDaIa(503));
+      await abrirCaso();
+
+      await userEvent.type(campo(), 'Onde dói?{Enter}');
+
+      expect(await screen.findByText('Não enviada')).toBeInTheDocument();
+      expect(screen.getByText('Onde dói?')).toHaveClass('border-dashed');
+      expect(screen.getByText('Onde dói?')).not.toHaveClass('bg-[#0D9488]');
+    });
+
+    it('"Tentar de novo" reenvia a mesma fala sem duplicar e remove a marcacao', async () => {
+      await abrirCaso();
+      await conversar('O que sente?', 'Dor no peito.');
+
+      enviarMock.mockRejectedValueOnce(erroDaIa(504));
+      await userEvent.type(campo(), 'Desde quando?{Enter}');
+      expect(await screen.findByRole('alert')).toHaveTextContent(AVISO_DEMORA.titulo as string);
+
+      enviarMock.mockResolvedValueOnce(respostaPaciente('Desde ontem.'));
+      await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+
+      expect(await screen.findByText('Desde ontem.')).toBeInTheDocument();
+      expect(screen.getAllByText('Desde quando?')).toHaveLength(1);
+      expect(screen.queryByText('Não enviada')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      // O reenvio usa o historico anterior a fala, sem ela mesma.
+      expect(enviarMock).toHaveBeenCalledTimes(3);
+      expect(enviarMock).toHaveBeenLastCalledWith('dor-toracica', 'Desde quando?', [
+        { autor: 'aluno', texto: 'O que sente?' },
+        { autor: 'paciente', texto: 'Dor no peito.' },
+      ]);
+    });
+
+    it('a fala nao enviada fica fora do historico das falas seguintes e da avaliacao', async () => {
+      finalizarMock.mockResolvedValue(AVALIACAO);
+      await abrirCaso();
+
+      enviarMock.mockRejectedValueOnce(erroDaIa(502));
+      await userEvent.type(campo(), 'Onde dói?{Enter}');
+      await screen.findByText('Não enviada');
+      // So com a fala nao enviada, ainda nao ha o que avaliar.
+      expect(atalhoEncerrar()).toBeDisabled();
+
+      await conversar('O que sente?', 'Dor no peito.');
+      expect(enviarMock).toHaveBeenLastCalledWith('dor-toracica', 'O que sente?', []);
+      // A nova fala tira o aviso, mas a anterior continua marcada.
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByText('Não enviada')).toBeInTheDocument();
+
+      await userEvent.click(atalhoEncerrar());
+      await waitFor(() =>
+        expect(finalizarMock).toHaveBeenCalledWith('dor-toracica', [
+          { autor: 'aluno', texto: 'O que sente?' },
+          { autor: 'paciente', texto: 'Dor no peito.' },
+        ]),
+      );
+    });
+
+    it('reenviar uma despedida que falhou abre a confirmacao de novo', async () => {
+      await abrirCaso();
+      await conversar('O que sente?', 'Dor no peito.');
+
+      enviarMock.mockRejectedValueOnce(erroDaIa(503));
+      await userEvent.type(campo(), 'Tchau{Enter}');
+      await userEvent.click(await screen.findByRole('button', { name: 'Continuar atendimento' }));
+
+      enviarMock.mockResolvedValueOnce(respostaPaciente('Até logo, doutor.'));
+      await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+
+      expect(await screen.findByText('Até logo, doutor.')).toBeInTheDocument();
+      expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('falha em /finalizar fecha o modal e "Encerrar de novo" tenta outra vez', async () => {
+      finalizarMock.mockRejectedValueOnce(erroDaIa(503)).mockResolvedValueOnce(AVALIACAO);
+      await abrirCaso();
+      await conversar('Tchau', 'Até logo.');
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Encerrar' }));
+
+      const aviso = await screen.findByRole('alert');
+      expect(aviso).toHaveTextContent(AVISO_FALHA_FINALIZAR.titulo as string);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByText(/nesta release/)).not.toBeInTheDocument();
+      // A conversa continua na tela.
+      expect(screen.getByText('Até logo.')).toBeInTheDocument();
+
+      await userEvent.click(within(aviso).getByRole('button', { name: 'Encerrar de novo' }));
+
+      expect(await screen.findByText('Feedback do examinador')).toBeInTheDocument();
+      expect(finalizarMock).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
   });
 
   it('trocar caso volta para a lista e descarta a conversa', async () => {
