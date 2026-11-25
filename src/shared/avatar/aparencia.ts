@@ -29,7 +29,20 @@ export type EstiloAcessorio =
   | 'mascara-carnaval'
   | 'chapeu-cowboy';
 export type EstiloLuva = 'luva-boxe' | 'luva-cirurgica' | 'luva-la';
-export type EstiloCalcado = 'sapato-plantao' | 'tenis-cano-alto' | 'tenis-esportivo';
+export type EstiloCalcado =
+  | 'sapato-plantao'
+  | 'tenis-cano-alto'
+  | 'tenis-esportivo'
+  | 'tenis-esportivo-vermelho'
+  | 'tenis-esportivo-verde'
+  | 'tenis-esportivo-amarelo'
+  | 'tenis-esportivo-preto'
+  | 'tenis-cano-alto-azul'
+  | 'tenis-cano-alto-verde'
+  | 'tenis-cano-alto-amarelo'
+  | 'tenis-cano-alto-preto'
+  | 'tenis-skate'
+  | 'bota-coturno';
 
 export type AparenciaAvatar = {
   corCerebro: CorCerebro;

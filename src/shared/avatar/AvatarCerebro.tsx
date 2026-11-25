@@ -32,6 +32,16 @@ import luvaLa from '../assets/avatar/luvas/luva-la-posicao.png';
 import sapatoPlantao from '../assets/avatar/calcados/sapato-plantao-posicao.png';
 import tenisCanoAlto from '../assets/avatar/calcados/tenis-cano-alto-posicao.png';
 import tenisEsportivo from '../assets/avatar/calcados/tenis-esportivo-posicao.png';
+import tenisEsportivoVermelho from '../assets/avatar/calcados/tenis-esportivo-vermelho-posicao.png';
+import tenisEsportivoVerde from '../assets/avatar/calcados/tenis-esportivo-verde-posicao.png';
+import tenisEsportivoAmarelo from '../assets/avatar/calcados/tenis-esportivo-amarelo-posicao.png';
+import tenisEsportivoPreto from '../assets/avatar/calcados/tenis-esportivo-preto-posicao.png';
+import tenisCanoAltoAzul from '../assets/avatar/calcados/tenis-cano-alto-azul-posicao.png';
+import tenisCanoAltoVerde from '../assets/avatar/calcados/tenis-cano-alto-verde-posicao.png';
+import tenisCanoAltoAmarelo from '../assets/avatar/calcados/tenis-cano-alto-amarelo-posicao.png';
+import tenisCanoAltoPreto from '../assets/avatar/calcados/tenis-cano-alto-preto-posicao.png';
+import tenisSkate from '../assets/avatar/calcados/tenis-skate-posicao.png';
+import botaCoturno from '../assets/avatar/calcados/bota-coturno-posicao.png';
 import { HUE_ROTATE_COR, type AparenciaAvatar } from './aparencia';
 
 const cabelos = {
@@ -95,6 +105,17 @@ const calcados = {
   'sapato-plantao': { src: sapatoPlantao, top: '76.07%', width: '39.80%' },
   'tenis-cano-alto': { src: tenisCanoAlto, top: '74.96%', width: '46.48%' },
   'tenis-esportivo': { src: tenisEsportivo, top: '75.79%', width: '40.91%' },
+  'tenis-esportivo-vermelho': { src: tenisEsportivoVermelho, top: '75.79%', width: '40.91%' },
+  'tenis-esportivo-verde': { src: tenisEsportivoVerde, top: '75.79%', width: '40.91%' },
+  'tenis-esportivo-amarelo': { src: tenisEsportivoAmarelo, top: '75.79%', width: '40.91%' },
+  'tenis-esportivo-preto': { src: tenisEsportivoPreto, top: '75.79%', width: '40.91%' },
+  'tenis-cano-alto-azul': { src: tenisCanoAltoAzul, top: '74.96%', width: '46.48%' },
+  'tenis-cano-alto-verde': { src: tenisCanoAltoVerde, top: '74.96%', width: '46.48%' },
+  'tenis-cano-alto-amarelo': { src: tenisCanoAltoAmarelo, top: '74.96%', width: '46.48%' },
+  'tenis-cano-alto-preto': { src: tenisCanoAltoPreto, top: '74.96%', width: '46.48%' },
+  // Estimativa inicial (modelo novo, sem base pra herdar top/width) — calibrar visualmente.
+  'tenis-skate': { src: tenisSkate, top: '75.79%', width: '41%' },
+  'bota-coturno': { src: botaCoturno, top: '74.5%', width: '44%' },
 };
 const overlay: CSSProperties = { position: 'absolute', transform: 'translate(-50%, -50%)', height: 'auto' };
 
