@@ -16,6 +16,16 @@ import curtoCacheadoLoiro from '../assets/avatar/cabelo/cabelo-curto-cacheado-lo
 import coroa from '../assets/avatar/acessorios/coroa.png';
 import oculos from '../assets/avatar/acessorios/oculos.png';
 import chapeu from '../assets/avatar/acessorios/chapeu_formatura.png';
+import bone from '../assets/avatar/acessorios/acessorio-bone.png';
+import tiara from '../assets/avatar/acessorios/acessorio-tiara.png';
+import oculosSol from '../assets/avatar/acessorios/acessorio-oculos-sol.png';
+import chapeuFesta from '../assets/avatar/acessorios/acessorio-chapeu-festa.png';
+import capacete from '../assets/avatar/acessorios/acessorio-capacete.png';
+import chapeuMago from '../assets/avatar/acessorios/acessorio-chapeu-mago.png';
+import chapeuChef from '../assets/avatar/acessorios/acessorio-chapeu-chef.png';
+import chapeuPalha from '../assets/avatar/acessorios/acessorio-chapeu-palha.png';
+import mascaraCarnaval from '../assets/avatar/acessorios/acessorio-mascara-carnaval.png';
+import chapeuCowboy from '../assets/avatar/acessorios/acessorio-chapeu-cowboy.png';
 import luvaBoxe from '../assets/avatar/luvas/luva-boxe-posicao.png';
 import luvaCirurgica from '../assets/avatar/luvas/luva-cirurgica-posicao.png';
 import luvaLa from '../assets/avatar/luvas/luva-la-posicao.png';
@@ -49,10 +59,32 @@ const cabelos = {
   'curto-grisalho': { src: curtoGrisalho, top: '30%', left: '52%', width: '68%' },
   'curto-cacheado-loiro': { src: curtoCacheadoLoiro, top: '28%', left: '50%', width: '68%' },
 };
+// 'rosto': fica sempre no mesmo top (nao sobe quando tem cabelo), abaixo do cabelo (zIndex 1).
+// Os demais sao headwear: sobem quando tem cabelo, ficam por cima (zIndex 3).
+const ACESSORIOS_ROSTO = new Set(['oculos', 'oculos-sol', 'mascara-carnaval']);
+// `topComCabelo` (so em headwear): a maioria dos chapeus precisa descer um pouco em
+// relacao ao proprio `top` (sem cabelo) pra nao ficar flutuando acima do cabelo/fora
+// do circulo; sem esse campo, usa o `top` padrao de coroa/chapeu-formatura (herdado).
 const acessorios = {
-  coroa: { src: coroa, top: '17%', width: '18%' },
+  coroa: { src: coroa, top: '17%', width: '18%', topComCabelo: '8.5%' },
   oculos: { src: oculos, top: '46%', width: '50%' },
-  'chapeu-formatura': { src: chapeu, top: '20.5%', width: '25.5%' },
+  'chapeu-formatura': { src: chapeu, top: '20.5%', width: '25.5%', topComCabelo: '10%' },
+  // Estimativa inicial (modelos novos, sem base pra herdar top/width) — calibrar visualmente.
+  bone: { src: bone, top: '20%', width: '26%', topComCabelo: '13%' },
+  tiara: { src: tiara, top: '15%', width: '20%', topComCabelo: '10%' },
+  'oculos-sol': { src: oculosSol, top: '46%', width: '50%' },
+  'chapeu-festa': { src: chapeuFesta, top: '17%', width: '16%', topComCabelo: '15%' },
+  capacete: { src: capacete, top: '18%', width: '30%', topComCabelo: '12%' },
+  'chapeu-mago': { src: chapeuMago, top: '16%', width: '26%', topComCabelo: '12%' },
+  'chapeu-chef': { src: chapeuChef, top: '18%', width: '22%', topComCabelo: '12%' },
+  'chapeu-palha': { src: chapeuPalha, top: '18%', width: '32%', topComCabelo: '12%' },
+  // Recorte quadrado centrado no ponto medio dos dois furos dos olhos (calculado
+  // a partir do canvas original), igual o oculos usa o proprio centro da imagem.
+  // width calibrado medindo os olhos reais do avatar-base.png (separacao = 22.1%
+  // da largura do avatar) contra a separacao dos furos nesta imagem (28.5% dela
+  // mesma): 22.1 / 28.5 = ~78%.
+  'mascara-carnaval': { src: mascaraCarnaval, top: '44.5%', width: '78%' },
+  'chapeu-cowboy': { src: chapeuCowboy, top: '18%', width: '34%', topComCabelo: '12%' },
 };
 const luvas = {
   'luva-boxe': { src: luvaBoxe, top: '68.76%', width: '71.46%' },
@@ -75,9 +107,9 @@ export function AvatarCerebro({ aparencia, nome, className = '' }: {
   const acessorio = aparencia.acessorio ? acessorios[aparencia.acessorio] : null;
   const luva = aparencia.luva ? luvas[aparencia.luva] : null;
   const calcado = aparencia.calcado ? calcados[aparencia.calcado] : null;
-  const topAcessorio = cabelo && aparencia.acessorio !== 'oculos'
-    ? aparencia.acessorio === 'coroa' ? '8.5%' : '10%'
-    : acessorio?.top;
+  const acessorioRosto = aparencia.acessorio ? ACESSORIOS_ROSTO.has(aparencia.acessorio) : false;
+  const topComCabelo = acessorio && 'topComCabelo' in acessorio ? acessorio.topComCabelo as string : undefined;
+  const topAcessorio = cabelo && !acessorioRosto && topComCabelo ? topComCabelo : acessorio?.top;
   return (
     <div className={`relative isolate overflow-hidden rounded-full bg-[#e5fbf8] ${className}`}>
       <img src={avatarBase} alt={nome ? `Avatar de ${nome}` : 'Cérebro do AnatoQuizUp'}
@@ -86,7 +118,7 @@ export function AvatarCerebro({ aparencia, nome, className = '' }: {
       {cabelo && <img src={cabelo.src} alt="" aria-hidden="true"
         style={{ ...overlay, top: cabelo.top, left: cabelo.left, width: cabelo.width, zIndex: 2 }} />}
       {acessorio && <img src={acessorio.src} alt="" aria-hidden="true"
-        style={{ ...overlay, top: topAcessorio, left: '50%', width: acessorio.width, zIndex: aparencia.acessorio === 'oculos' ? 1 : 3 }} />}
+        style={{ ...overlay, top: topAcessorio, left: '50%', width: acessorio.width, zIndex: acessorioRosto ? 1 : 3 }} />}
       {calcado && <img src={calcado.src} alt="" aria-hidden="true"
         style={{ ...overlay, top: calcado.top, left: '50.12%', width: calcado.width, zIndex: 1 }} />}
       {luva && <img src={luva.src} alt="" aria-hidden="true"

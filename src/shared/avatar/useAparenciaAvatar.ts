@@ -44,6 +44,16 @@ const normalizarAcessorio = (valor: unknown): AparenciaAvatar['acessorio'] => {
     case 'coroa': return 'coroa';
     case 'oculos': return 'oculos';
     case 'chapeu-formatura': return 'chapeu-formatura';
+    case 'bone': return 'bone';
+    case 'tiara': return 'tiara';
+    case 'oculos-sol': return 'oculos-sol';
+    case 'chapeu-festa': return 'chapeu-festa';
+    case 'capacete': return 'capacete';
+    case 'chapeu-mago': return 'chapeu-mago';
+    case 'chapeu-chef': return 'chapeu-chef';
+    case 'chapeu-palha': return 'chapeu-palha';
+    case 'mascara-carnaval': return 'mascara-carnaval';
+    case 'chapeu-cowboy': return 'chapeu-cowboy';
     default: return null;
   }
 };
