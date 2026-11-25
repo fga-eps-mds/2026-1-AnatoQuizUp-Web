@@ -506,11 +506,13 @@ export const CasoOsceEditorPage = () => {
             {step === 4 ? (
               <div className="space-y-4 px-5 py-5">
                 <div className="rounded-lg border border-dashed border-[#c8d6f8] bg-[#f8f9fc] p-4 text-xs leading-5 text-[#4a5578]">
-                  <p className="font-bold text-[#0b1840]">Checklist e nota (em construção)</p>
+                  <p className="font-bold text-[#0b1840]">Checklist e nota (apenas visual, sem funcionalidade)</p>
                   <p className="mt-1">
-                    A rubrica de avaliação (itens do checklist e nota global) ainda depende da
-                    definição do contrato com o Quiz-Service. Por enquanto, o rascunho já salvo nos
-                    passos anteriores é suficiente para concluir o cadastro.
+                    Este passo é só uma pré-visualização do próximo formulário: ainda não salva nada
+                    nem depende do que o professor preencher aqui. A rubrica de avaliação (itens do
+                    checklist e nota global) fica para a US27, quando o contrato com o Quiz-Service
+                    for definido. Por enquanto, o rascunho já salvo nos passos anteriores é
+                    suficiente para concluir o cadastro.
                   </p>
                 </div>
               </div>

@@ -161,7 +161,9 @@ describe("CasoOsceEditorPage", () => {
       ),
     );
     // Passo 4: placeholder de avaliacao, sem campos.
-    expect(await screen.findByText(/checklist e nota \(em construção\)/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/checklist e nota \(apenas visual, sem funcionalidade\)/i),
+    ).toBeInTheDocument();
 
     const chamadasAntesDoConcluir = atualizarCasoOsceMock.mock.calls.length;
     await user.click(screen.getByRole("button", { name: /concluir rascunho/i }));
