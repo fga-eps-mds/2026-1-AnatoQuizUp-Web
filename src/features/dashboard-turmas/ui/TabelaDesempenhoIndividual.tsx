@@ -295,7 +295,7 @@ const AcompanhamentoAluno = ({ turmaId, alunoId }: { turmaId: string; alunoId: s
       </div>
       {evolucao ? (
         <div className="mt-4">
-          <EvolucaoTemaAluno turmaId={turmaId} alunoId={alunoId} onVoltar={() => setEvolucao(false)} />
+          <EvolucaoTemaAluno turmaId={turmaId} alunoId={alunoId} />
         </div>
       ) : <HistoricoListasAluno turmaId={turmaId} alunoId={alunoId} />}
     </div>

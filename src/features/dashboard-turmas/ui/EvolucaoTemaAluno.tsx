@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { buscarEvolucaoTemasAluno } from '../../../entities/dashboardTurma/api/dashboardTurmaApi';
 import type { EvolucaoTema } from '../../../entities/dashboardTurma/model/types';
 
@@ -7,7 +7,6 @@ type Props = {
   turmaId: string;
   alunoId: string;
   periodo?: { inicio: string; fim: string };
-  onVoltar?: () => void;
 };
 
 type Semestre = 1 | 2;
@@ -36,11 +35,10 @@ const formatarVariacao = (variacao: number | null) => {
   return `${variacao > 0 ? '+' : ''}${variacao} pontos percentuais`;
 };
 
-export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props) => {
+export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo }: Props) => {
   const agora = new Date();
   const anoAtual = agora.getFullYear();
   const [semestre, setSemestre] = useState<Semestre>(agora.getMonth() < 6 ? 1 : 2);
-  const [semestreAnterior, setSemestreAnterior] = useState<Semestre | null>(null);
   const [temas, setTemas] = useState<EvolucaoTema[]>([]);
   const [temaSelecionadoId, setTemaSelecionadoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -51,12 +49,6 @@ export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props
   );
   const periodoInicio = periodoConsulta.inicio;
   const periodoFim = periodoConsulta.fim;
-
-  const selecionarSemestre = (novoSemestre: Semestre) => {
-    if (novoSemestre === semestre) return;
-    setSemestreAnterior(semestre);
-    setSemestre(novoSemestre);
-  };
 
   useEffect(() => {
     let ativo = true;
@@ -119,30 +111,6 @@ export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props
     );
   }
 
-  if (temas.length === 0) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-sm text-gray-500">Nenhuma lista com temas foi encontrada no período.</p>
-        {(semestreAnterior || onVoltar) && (
-          <button
-            type="button"
-            onClick={() => {
-              if (!periodo && semestreAnterior) {
-                selecionarSemestre(semestreAnterior);
-                return;
-              }
-              onVoltar?.();
-            }}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            <ArrowLeft size={16} />
-            Voltar
-          </button>
-        )}
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -172,7 +140,7 @@ export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props
               <button
                 key={opcao}
                 type="button"
-                onClick={() => selecionarSemestre(opcao)}
+                onClick={() => setSemestre(opcao)}
                 className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                   semestre === opcao
                     ? 'border-teal-100 bg-teal-50 text-teal-700'
@@ -185,6 +153,10 @@ export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props
           </div>
         )}
       </div>
+
+      {temas.length === 0 && (
+        <p className="py-8 text-center text-sm text-gray-500">Nenhuma lista com temas foi encontrada no período.</p>
+      )}
 
       {temaSelecionado && (
         <>
@@ -228,18 +200,6 @@ export const EvolucaoTemaAluno = ({ turmaId, alunoId, periodo, onVoltar }: Props
             <p className="mt-4 text-sm font-medium text-amber-700">{temaSelecionado.mensagem}</p>
           ) : null}
 
-          {onVoltar && (
-            <div className="mt-5 border-t border-gray-100 pt-4">
-              <button
-                type="button"
-                onClick={onVoltar}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                <ArrowLeft size={16} />
-                Voltar
-              </button>
-            </div>
-          )}
         </>
       )}
 
