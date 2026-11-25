@@ -29,6 +29,16 @@ import chapeuCowboy from '../assets/avatar/acessorios/acessorio-chapeu-cowboy.pn
 import luvaBoxe from '../assets/avatar/luvas/luva-boxe-posicao.png';
 import luvaCirurgica from '../assets/avatar/luvas/luva-cirurgica-posicao.png';
 import luvaLa from '../assets/avatar/luvas/luva-la-posicao.png';
+import luvaBoxeAzul from '../assets/avatar/luvas/luva-boxe-azul-posicao.png';
+import luvaBoxeVerde from '../assets/avatar/luvas/luva-boxe-verde-posicao.png';
+import luvaBoxeDourado from '../assets/avatar/luvas/luva-boxe-dourado-posicao.png';
+import luvaBoxeRoxo from '../assets/avatar/luvas/luva-boxe-roxo-posicao.png';
+import luvaBoxePreta from '../assets/avatar/luvas/luva-boxe-preta-posicao.png';
+import luvaLaRosa from '../assets/avatar/luvas/luva-la-rosa-posicao.png';
+import luvaLaVerde from '../assets/avatar/luvas/luva-la-verde-posicao.png';
+import luvaLaAzul from '../assets/avatar/luvas/luva-la-azul-posicao.png';
+import luvaJardinagem from '../assets/avatar/luvas/luva-jardinagem-posicao.png';
+import luvaGoleiro from '../assets/avatar/luvas/luva-goleiro-posicao.png';
 import sapatoPlantao from '../assets/avatar/calcados/sapato-plantao-posicao.png';
 import tenisCanoAlto from '../assets/avatar/calcados/tenis-cano-alto-posicao.png';
 import tenisEsportivo from '../assets/avatar/calcados/tenis-esportivo-posicao.png';
@@ -100,6 +110,17 @@ const luvas = {
   'luva-boxe': { src: luvaBoxe, top: '68.76%', width: '71.46%' },
   'luva-cirurgica': { src: luvaCirurgica, top: '70.37%', width: '70.65%' },
   'luva-la': { src: luvaLa, top: '68.72%', width: '70.57%' },
+  'luva-boxe-azul': { src: luvaBoxeAzul, top: '68.76%', width: '71.46%' },
+  'luva-boxe-verde': { src: luvaBoxeVerde, top: '68.76%', width: '71.46%' },
+  'luva-boxe-dourado': { src: luvaBoxeDourado, top: '68.76%', width: '71.46%' },
+  'luva-boxe-roxo': { src: luvaBoxeRoxo, top: '68.76%', width: '71.46%' },
+  'luva-boxe-preta': { src: luvaBoxePreta, top: '68.76%', width: '71.46%' },
+  'luva-la-rosa': { src: luvaLaRosa, top: '68.72%', width: '70.57%' },
+  'luva-la-verde': { src: luvaLaVerde, top: '68.72%', width: '70.57%' },
+  'luva-la-azul': { src: luvaLaAzul, top: '68.72%', width: '70.57%' },
+  // Estimativa inicial (modelo novo, sem base pra herdar top/width) — calibrar visualmente.
+  'luva-jardinagem': { src: luvaJardinagem, top: '68.7%', width: '70%' },
+  'luva-goleiro': { src: luvaGoleiro, top: '68.7%', width: '70%' },
 };
 const calcados = {
   'sapato-plantao': { src: sapatoPlantao, top: '76.07%', width: '39.80%' },

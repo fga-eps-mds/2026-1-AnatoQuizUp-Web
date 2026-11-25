@@ -63,6 +63,16 @@ const normalizarLuva = (valor: unknown): AparenciaAvatar['luva'] => {
     case 'luva-boxe': return 'luva-boxe';
     case 'luva-cirurgica': return 'luva-cirurgica';
     case 'luva-la': return 'luva-la';
+    case 'luva-boxe-azul': return 'luva-boxe-azul';
+    case 'luva-boxe-verde': return 'luva-boxe-verde';
+    case 'luva-boxe-dourado': return 'luva-boxe-dourado';
+    case 'luva-boxe-roxo': return 'luva-boxe-roxo';
+    case 'luva-boxe-preta': return 'luva-boxe-preta';
+    case 'luva-la-rosa': return 'luva-la-rosa';
+    case 'luva-la-verde': return 'luva-la-verde';
+    case 'luva-la-azul': return 'luva-la-azul';
+    case 'luva-jardinagem': return 'luva-jardinagem';
+    case 'luva-goleiro': return 'luva-goleiro';
     default: return null;
   }
 };

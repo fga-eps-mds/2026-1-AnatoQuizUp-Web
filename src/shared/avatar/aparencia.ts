@@ -28,7 +28,20 @@ export type EstiloAcessorio =
   | 'chapeu-palha'
   | 'mascara-carnaval'
   | 'chapeu-cowboy';
-export type EstiloLuva = 'luva-boxe' | 'luva-cirurgica' | 'luva-la';
+export type EstiloLuva =
+  | 'luva-boxe'
+  | 'luva-cirurgica'
+  | 'luva-la'
+  | 'luva-boxe-azul'
+  | 'luva-boxe-verde'
+  | 'luva-boxe-dourado'
+  | 'luva-boxe-roxo'
+  | 'luva-boxe-preta'
+  | 'luva-la-rosa'
+  | 'luva-la-verde'
+  | 'luva-la-azul'
+  | 'luva-jardinagem'
+  | 'luva-goleiro';
 export type EstiloCalcado =
   | 'sapato-plantao'
   | 'tenis-cano-alto'
