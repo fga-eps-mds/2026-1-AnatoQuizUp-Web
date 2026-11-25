@@ -187,7 +187,7 @@ describe('EvolucaoTemaAluno', () => {
     ).toBeInTheDocument();
   });
 
-  it('permite voltar ao semestre anterior quando o período selecionado não tem listas', async () => {
+  it('permite selecionar outro semestre quando o período não tem listas', async () => {
     const user = userEvent.setup();
     const temaComResultado = {
       alunoId: 'aluno-1',
@@ -227,45 +227,10 @@ describe('EvolucaoTemaAluno', () => {
       await screen.findByText('Nenhuma lista com temas foi encontrada no período.'),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(screen.queryByRole('button', { name: 'Voltar' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: `${outroSemestre === 1 ? 2 : 1}º semestre` }));
 
     expect(await screen.findByText('Neuro aplicada')).toBeInTheDocument();
-  });
-
-  it('permite voltar da evolução para o resumo individual', async () => {
-    const user = userEvent.setup();
-    const onVoltar = jest.fn();
-    mockBuscarEvolucao.mockResolvedValue({
-      alunoId: 'aluno-1',
-      temas: [{
-        temaId: 'tema-1',
-        nome: 'Neuroanatomia',
-        totalResultadosValidos: 1,
-        mensagem: null,
-        resultados: [{
-          listaTurmaId: 'lista-1',
-          nomeLista: 'Neuro aplicada',
-          publicadaEm: '2026-03-12T10:00:00.000Z',
-          status: 'SUBMETIDA',
-          acertos: 3,
-          totalQuestoes: 4,
-          taxaAcerto: 75,
-          variacaoPp: null,
-        }],
-      }],
-    });
-
-    render(
-      <EvolucaoTemaAluno
-        turmaId="turma-1"
-        alunoId="aluno-1"
-        onVoltar={onVoltar}
-      />,
-    );
-
-    await user.click(await screen.findByRole('button', { name: 'Voltar' }));
-
-    expect(onVoltar).toHaveBeenCalledTimes(1);
   });
 
   it('identifica lista pendente na comparação', async () => {
