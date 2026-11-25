@@ -189,14 +189,23 @@ export const OscePage = () => {
                 key={cenario.id}
                 type="button"
                 onClick={() => escolherCenario(cenario)}
-                className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-white p-4 text-left shadow-sm hover:border-[#0D9488] hover:shadow-md"
+                className="flex items-center justify-between gap-3 rounded-lg border border-[#E2E8F0] bg-white p-4 text-left shadow-sm hover:border-[#0D9488] hover:shadow-md"
               >
                 <div>
                   <p className="text-sm font-black text-[#0A1128]">{cenario.titulo}</p>
                   <p className="text-xs font-medium text-[#64748B]">{cenario.especialidade}</p>
+                  {cenario.contextoInicial && (
+                    <p className="mt-1 text-xs font-medium text-[#64748B]">
+                      {cenario.contextoInicial.local} · {cenario.contextoInicial.papelEstudante}
+                      <br />
+                      Paciente: {cenario.contextoInicial.idade} anos,{' '}
+                      {cenario.contextoInicial.sexo} — queixa inicial:{' '}
+                      {cenario.contextoInicial.queixa}
+                    </p>
+                  )}
                 </div>
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${CORES_DIFICULDADE[cenario.dificuldade]}`}
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${CORES_DIFICULDADE[cenario.dificuldade]}`}
                 >
                   {cenario.dificuldade}
                 </span>

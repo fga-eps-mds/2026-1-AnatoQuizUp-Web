@@ -6,8 +6,8 @@ import { extractErrorMessage } from '../manage-questions/model/questionService';
 
 const OSCE_ENDPOINT = '/ia/osce';
 
-// Cenario lido pelo aluno antes de iniciar o atendimento (local, papel e a
-// apresentacao do paciente). Nao traz pistas do roteiro nem do diagnostico.
+// "Porta da estação": o que o aluno le antes de iniciar o atendimento (local,
+// papel e a apresentacao do paciente) — nunca o diagnostico ou pistas do roteiro oculto.
 export type ContextoInicialOsce = {
   local: string;
   papelEstudante: string;

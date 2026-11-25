@@ -48,6 +48,16 @@ describe('armazenamento da aparência do avatar', () => {
   });
 
   it.each([
+    'bone', 'tiara', 'oculos-sol', 'chapeu-festa',
+    'capacete', 'chapeu-mago', 'chapeu-chef', 'chapeu-palha',
+    'mascara-carnaval', 'chapeu-cowboy',
+  ] as const)('aceita o acessório novo %s ao salvar e carregar', (acessorio) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, acessorio });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, acessorio });
+  });
+
+  it.each([
     'tenis-esportivo-vermelho', 'tenis-esportivo-verde', 'tenis-esportivo-amarelo', 'tenis-esportivo-preto',
     'tenis-cano-alto-azul', 'tenis-cano-alto-verde', 'tenis-cano-alto-amarelo', 'tenis-cano-alto-preto',
     'tenis-skate', 'bota-coturno',
