@@ -48,6 +48,16 @@ describe('armazenamento da aparência do avatar', () => {
   });
 
   it.each([
+    'bone', 'tiara', 'oculos-sol', 'chapeu-festa',
+    'capacete', 'chapeu-mago', 'chapeu-chef', 'chapeu-palha',
+    'mascara-carnaval', 'chapeu-cowboy',
+  ] as const)('aceita o acessório novo %s ao salvar e carregar', (acessorio) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, acessorio });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, acessorio });
+  });
+
+  it.each([
     'luva-boxe-azul', 'luva-boxe-verde', 'luva-boxe-dourado', 'luva-boxe-roxo',
     'luva-boxe-preta', 'luva-la-rosa', 'luva-la-verde', 'luva-la-azul',
     'luva-jardinagem', 'luva-goleiro',

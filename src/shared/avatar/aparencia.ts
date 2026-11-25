@@ -14,7 +14,20 @@ export type EstiloCabelo =
   | 'curto-grisalho'
   | 'curto-cacheado-loiro';
 
-export type EstiloAcessorio = 'coroa' | 'oculos' | 'chapeu-formatura';
+export type EstiloAcessorio =
+  | 'coroa'
+  | 'oculos'
+  | 'chapeu-formatura'
+  | 'bone'
+  | 'tiara'
+  | 'oculos-sol'
+  | 'chapeu-festa'
+  | 'capacete'
+  | 'chapeu-mago'
+  | 'chapeu-chef'
+  | 'chapeu-palha'
+  | 'mascara-carnaval'
+  | 'chapeu-cowboy';
 export type EstiloLuva =
   | 'luva-boxe'
   | 'luva-cirurgica'
