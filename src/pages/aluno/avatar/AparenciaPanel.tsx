@@ -64,6 +64,8 @@ const LUVAS: { id: EstiloLuva; label: string; imagem: string; posicao: string }[
 ];
 
 // Calcados: mesmo esquema das luvas (icone para a grade, par posicionado para o overlay).
+// Calcados: mesmo esquema das luvas (icone para a grade, par posicionado para o overlay).
+// Os 10 novos calcados de US36 (ver aparencia.ts) entram pela loja/inventario, nao aqui.
 const CALCADOS: { id: EstiloCalcado; label: string; imagem: string; posicao: string }[] = [
   { id: 'sapato-plantao', label: 'Sapato de plantão', imagem: calcadoSapatoPlantaoIcone, posicao: calcadoSapatoPlantaoPosicao },
   { id: 'tenis-cano-alto', label: 'Tênis cano alto', imagem: calcadoTenisCanoAltoIcone, posicao: calcadoTenisCanoAltoPosicao },

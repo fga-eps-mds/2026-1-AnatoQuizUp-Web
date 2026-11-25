@@ -58,6 +58,16 @@ describe('armazenamento da aparência do avatar', () => {
   });
 
   it.each([
+    'tenis-esportivo-vermelho', 'tenis-esportivo-verde', 'tenis-esportivo-amarelo', 'tenis-esportivo-preto',
+    'tenis-cano-alto-azul', 'tenis-cano-alto-verde', 'tenis-cano-alto-amarelo', 'tenis-cano-alto-preto',
+    'tenis-skate', 'bota-coturno',
+  ] as const)('aceita o calçado novo %s ao salvar e carregar', (calcado) => {
+    salvarAparencia('aluna-1', { ...APARENCIA_PADRAO, calcado });
+
+    expect(carregarAparencia('aluna-1')).toEqual({ ...APARENCIA_PADRAO, calcado });
+  });
+
+  it.each([
     'luva-boxe-azul', 'luva-boxe-verde', 'luva-boxe-dourado', 'luva-boxe-roxo',
     'luva-boxe-preta', 'luva-la-rosa', 'luva-la-verde', 'luva-la-azul',
     'luva-jardinagem', 'luva-goleiro',

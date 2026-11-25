@@ -82,6 +82,16 @@ const normalizarCalcado = (valor: unknown): AparenciaAvatar['calcado'] => {
     case 'sapato-plantao': return 'sapato-plantao';
     case 'tenis-cano-alto': return 'tenis-cano-alto';
     case 'tenis-esportivo': return 'tenis-esportivo';
+    case 'tenis-esportivo-vermelho': return 'tenis-esportivo-vermelho';
+    case 'tenis-esportivo-verde': return 'tenis-esportivo-verde';
+    case 'tenis-esportivo-amarelo': return 'tenis-esportivo-amarelo';
+    case 'tenis-esportivo-preto': return 'tenis-esportivo-preto';
+    case 'tenis-cano-alto-azul': return 'tenis-cano-alto-azul';
+    case 'tenis-cano-alto-verde': return 'tenis-cano-alto-verde';
+    case 'tenis-cano-alto-amarelo': return 'tenis-cano-alto-amarelo';
+    case 'tenis-cano-alto-preto': return 'tenis-cano-alto-preto';
+    case 'tenis-skate': return 'tenis-skate';
+    case 'bota-coturno': return 'bota-coturno';
     default: return null;
   }
 };
