@@ -12,6 +12,7 @@ import {
   finalizarOsce,
   listarCenariosOsce,
   type AvaliacaoOsce,
+  type TurnoOsce,
 } from '../../../../../src/features/osce/osceService';
 import { OscePage } from '../../../../../src/pages/aluno/osce/OscePage';
 
@@ -70,6 +71,9 @@ const AVALIACAO: AvaliacaoOsce = {
   divergente: false,
 };
 
+// Resposta do ChatbotOSCE so com a fala do paciente, sem cards de exame.
+const respostaPaciente = (texto: string): TurnoOsce[] => [{ autor: 'paciente', texto }];
+
 // Promise que o teste resolve na mao, para observar o estado de carregamento.
 const promiseControlavel = <T,>() => {
   let resolve!: (valor: T) => void;
@@ -98,7 +102,7 @@ const atalhoEncerrar = () => screen.getByRole('button', { name: /Encerrar e rece
 
 // Envia uma fala e espera a resposta do paciente aparecer.
 const conversar = async (fala: string, resposta: string) => {
-  enviarMock.mockResolvedValueOnce(resposta);
+  enviarMock.mockResolvedValueOnce(respostaPaciente(resposta));
   await userEvent.type(campo(), `${fala}{Enter}`);
   await screen.findByText(resposta);
 };
@@ -195,7 +199,7 @@ describe('OscePage', () => {
   });
 
   it('envia a fala do aluno e mostra a resposta do paciente', async () => {
-    enviarMock.mockResolvedValue('Dói desde ontem, **em aperto**.');
+    enviarMock.mockResolvedValue(respostaPaciente('Dói desde ontem, **em aperto**.'));
     await abrirCaso();
 
     await userEvent.type(screen.getByPlaceholderText(/Pergunte algo ao paciente/), 'Desde quando dói?');
@@ -210,7 +214,7 @@ describe('OscePage', () => {
   });
 
   it('envia a fala ao pressionar Enter, mas nao com Shift+Enter', async () => {
-    enviarMock.mockResolvedValue('Resposta do paciente.');
+    enviarMock.mockResolvedValue(respostaPaciente('Resposta do paciente.'));
     await abrirCaso();
 
     const campo = screen.getByPlaceholderText(/Pergunte algo ao paciente/);
@@ -222,7 +226,7 @@ describe('OscePage', () => {
   });
 
   it('manda o historico anterior sem o id interno dos turnos', async () => {
-    enviarMock.mockResolvedValueOnce('Dor no peito.').mockResolvedValueOnce('Desde ontem.');
+    enviarMock.mockResolvedValueOnce(respostaPaciente('Dor no peito.')).mockResolvedValueOnce(respostaPaciente('Desde ontem.'));
     await abrirCaso();
 
     const campo = screen.getByPlaceholderText(/Pergunte algo ao paciente/);
@@ -236,6 +240,57 @@ describe('OscePage', () => {
       { autor: 'aluno', texto: 'O que sente?' },
       { autor: 'paciente', texto: 'Dor no peito.' },
     ]);
+  });
+
+  it('mostra os resultados de exame como cards separados da fala do paciente', async () => {
+    enviarMock.mockResolvedValueOnce([
+      { autor: 'paciente', texto: 'Tudo bem, doutor.' },
+      { autor: 'exame', exame: 'Eletrocardiograma', texto: 'Infradesnivelamento de ST em V4–V6.' },
+      { autor: 'indisponivel', exame: 'Tomografia de tórax', texto: 'Não disponível neste caso.' },
+    ]);
+    await abrirCaso();
+
+    await userEvent.type(campo(), 'Solicito um ECG e uma tomografia de tórax.{Enter}');
+
+    const card = await screen.findByRole('region', { name: 'Resultado de exame: Eletrocardiograma' });
+    expect(card).toHaveTextContent('Resultado de exame · Eletrocardiograma');
+    expect(card).toHaveTextContent('Infradesnivelamento de ST em V4–V6.');
+    expect(screen.getByText('Tudo bem, doutor.')).toBeInTheDocument();
+    expect(screen.getByText(/Tomografia de tórax: não disponível neste caso/)).toBeInTheDocument();
+  });
+
+  it('reenvia os cards de exame no historico, com o nome do exame', async () => {
+    enviarMock
+      .mockResolvedValueOnce([
+        { autor: 'exame', exame: 'Eletrocardiograma', texto: 'Ritmo sinusal.' },
+      ])
+      .mockResolvedValueOnce(respostaPaciente('Não sei, doutor.'));
+    finalizarMock.mockResolvedValue(AVALIACAO);
+    await abrirCaso();
+
+    await userEvent.type(campo(), 'Peço um ECG.{Enter}');
+    await screen.findByText('Ritmo sinusal.');
+    await userEvent.type(campo(), 'O senhor sabe o resultado?{Enter}');
+    await screen.findByText('Não sei, doutor.');
+
+    const historicoEsperado = [
+      { autor: 'aluno', texto: 'Peço um ECG.' },
+      { autor: 'exame', exame: 'Eletrocardiograma', texto: 'Ritmo sinusal.' },
+    ];
+    expect(enviarMock).toHaveBeenLastCalledWith(
+      'dor-toracica',
+      'O senhor sabe o resultado?',
+      historicoEsperado,
+    );
+
+    await userEvent.click(atalhoEncerrar());
+    await waitFor(() =>
+      expect(finalizarMock).toHaveBeenCalledWith('dor-toracica', [
+        ...historicoEsperado,
+        { autor: 'aluno', texto: 'O senhor sabe o resultado?' },
+        { autor: 'paciente', texto: 'Não sei, doutor.' },
+      ]),
+    );
   });
 
   it('nao envia mensagem vazia', async () => {
@@ -271,7 +326,7 @@ describe('OscePage', () => {
     await abrirCaso();
     await conversar('O que sente?', 'Dor no peito.');
 
-    enviarMock.mockResolvedValueOnce('Obrigado, doutor.');
+    enviarMock.mockResolvedValueOnce(respostaPaciente('Obrigado, doutor.'));
     await userEvent.type(campo(), 'Obrigado, era isso. Tchau!{Enter}');
 
     // O paciente responde uma vez a despedida e entao vem a confirmacao.
@@ -382,7 +437,7 @@ describe('OscePage', () => {
   });
 
   it('finaliza a estacao e mostra o feedback do examinador', async () => {
-    enviarMock.mockResolvedValue('Dor no peito.');
+    enviarMock.mockResolvedValue(respostaPaciente('Dor no peito.'));
     finalizarMock.mockResolvedValue(AVALIACAO);
     await abrirCaso();
 
@@ -403,7 +458,7 @@ describe('OscePage', () => {
   });
 
   it('avisa quando a avaliacao falha', async () => {
-    enviarMock.mockResolvedValue('Dor no peito.');
+    enviarMock.mockResolvedValue(respostaPaciente('Dor no peito.'));
     finalizarMock.mockRejectedValue(new Error('Avaliação indisponível'));
     await abrirCaso();
 
@@ -416,7 +471,7 @@ describe('OscePage', () => {
   });
 
   it('trocar caso volta para a lista e descarta a conversa', async () => {
-    enviarMock.mockResolvedValue('Dor no peito.');
+    enviarMock.mockResolvedValue(respostaPaciente('Dor no peito.'));
     await abrirCaso();
 
     await userEvent.type(screen.getByPlaceholderText(/Pergunte algo ao paciente/), 'O que sente?{Enter}');

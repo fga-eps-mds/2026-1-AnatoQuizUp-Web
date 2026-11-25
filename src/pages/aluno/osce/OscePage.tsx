@@ -13,25 +13,25 @@ import {
   type CenarioOsceResumo,
   type TurnoOsce,
 } from '../../../features/osce/osceService';
-import { renderizarTextoComNegrito } from '../../../shared/utils/textoComNegrito';
 import { CenarioApresentacao } from './CenarioApresentacao';
 import { FeedbackResultado } from './FeedbackResultado';
 import { ModalConfirmarEncerramento } from './ModalConfirmarEncerramento';
+import { TurnoChatOsce } from './TurnoChatOsce';
 
 // Etapas da tela: escolher o caso, ler o cenario e conversar com o paciente.
 type EtapaOsce = 'lista' | 'cenario' | 'chat';
 
 // Turno como a tela guarda: o id existe so para a chave da lista e nao vai para o
-// BFF, que recebe apenas autor e texto.
+// BFF, que recebe apenas autor, texto e, nos cards de exame, o nome do exame.
 type TurnoExibido = TurnoOsce & { id: string };
 
-const novoTurno = (autor: TurnoOsce['autor'], texto: string): TurnoExibido => ({
-  id: `${autor}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  autor,
-  texto,
+const novoTurno = (turno: TurnoOsce): TurnoExibido => ({
+  ...turno,
+  id: `${turno.autor}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 });
 
-const paraEnvio = ({ autor, texto }: TurnoExibido): TurnoOsce => ({ autor, texto });
+const paraEnvio = ({ autor, texto, exame }: TurnoExibido): TurnoOsce =>
+  exame ? { autor, texto, exame } : { autor, texto };
 
 const CORES_DIFICULDADE: Record<CenarioOsceResumo['dificuldade'], string> = {
   Fácil: 'bg-emerald-100 text-emerald-700',
@@ -109,16 +109,17 @@ export const OscePage = () => {
     setErro(null);
 
     const historicoAnterior = historico;
-    setHistorico((atual) => [...atual, novoTurno('aluno', texto)]);
+    setHistorico((atual) => [...atual, novoTurno({ autor: 'aluno', texto })]);
     setMensagemAtual('');
 
     try {
-      const resposta = await enviarMensagemOsce(
+      // A resposta pode trazer a fala do paciente e os cards dos exames pedidos (US25).
+      const turnosResposta = await enviarMensagemOsce(
         cenarioAtivo.id,
         texto,
         historicoAnterior.map(paraEnvio),
       );
-      setHistorico((atual) => [...atual, novoTurno('paciente', resposta)]);
+      setHistorico((atual) => [...atual, ...turnosResposta.map(novoTurno)]);
     } catch (error) {
       setErro((error as Error).message);
     } finally {
@@ -241,20 +242,7 @@ export const OscePage = () => {
           <div className="flex-1 overflow-y-auto p-5">
             <ul className="flex flex-col gap-3">
               {historico.map((turno) => (
-                <li
-                  key={turno.id}
-                  className={`flex flex-col gap-1.5 ${turno.autor === 'aluno' ? 'items-end' : 'items-start'}`}
-                >
-                  <p
-                    className={
-                      turno.autor === 'aluno'
-                        ? 'max-w-[85%] rounded-lg bg-[#0D9488] px-3 py-2 text-sm font-medium text-white'
-                        : 'max-w-[85%] whitespace-pre-wrap rounded-lg bg-[#F8FAFC] px-3 py-2 text-sm font-medium leading-relaxed text-[#0A1128]/80'
-                    }
-                  >
-                    {renderizarTextoComNegrito(turno.texto)}
-                  </p>
-                </li>
+                <TurnoChatOsce key={turno.id} turno={turno} />
               ))}
             </ul>
 
@@ -295,7 +283,7 @@ export const OscePage = () => {
                     void handleEnviarMensagem();
                   }
                 }}
-                placeholder="Pergunte algo ao paciente..."
+                placeholder="Pergunte algo ao paciente ou solicite um exame..."
                 rows={1}
                 maxLength={500}
                 disabled={enviando || Boolean(avaliacao)}
