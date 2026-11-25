@@ -6,6 +6,7 @@ import { buscarUsuariosPorIds } from '../../../../../src/entities/usuarios/api/u
 
 jest.mock('../../../../../src/entities/dashboardTurma/api/dashboardTurmaApi', () => ({
   buscarDesempenhoIndividual: jest.fn(),
+  buscarHistoricoAluno: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('../../../../../src/entities/usuarios/api/usuarioApi', () => ({

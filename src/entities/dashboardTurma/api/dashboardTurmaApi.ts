@@ -10,6 +10,25 @@ import type {
 } from '../model/types';
 import { httpClient } from '../../../shared/api/httpClient';
 
+export type ItemHistoricoAluno = {
+  listaTurmaId: string;
+  nomeLista: string;
+  publicadaEm: string;
+  status: 'ENTREGUE' | 'PENDENTE';
+};
+
+export const buscarHistoricoAluno = async (
+  turmaId: string,
+  alunoId: string,
+  params: { inicio: string; fim: string },
+): Promise<ItemHistoricoAluno[]> => {
+  const { data } = await httpClient.get<{ listas: ItemHistoricoAluno[] }>(
+    `/turmasDashboard/${turmaId}/alunos/${encodeURIComponent(alunoId)}/historico-listas`,
+    { params },
+  );
+  return data.listas;
+};
+
 // GET /turmasDashboard/:turmaId/macro — indicadores agregados da turma.
 export const buscarDashboardMacro = async (turmaId: string): Promise<DashboardMacro> => {
   const { data } = await httpClient.get(`/turmasDashboard/${turmaId}/macro`);
