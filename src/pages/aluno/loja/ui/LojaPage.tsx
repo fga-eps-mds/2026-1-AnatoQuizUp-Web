@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Lock,
   Palette,
+  Scissors,
   ShoppingBag,
   Smile,
   Lightbulb,
@@ -62,6 +63,7 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: "AVATAR", label: "Avatares", icon: UserRound },
   { key: "TITULO", label: "Títulos", icon: BadgeCheck },
   { key: "PLANO_FUNDO", label: "Fundos", icon: Palette },
+  { key: "CABELO", label: "Cabelos", icon: Scissors },
   { key: "INVENTARIO", label: "Meu Inventário", icon: Backpack },
   { key: "HISTORICO", label: "Histórico", icon: History },
 ];
