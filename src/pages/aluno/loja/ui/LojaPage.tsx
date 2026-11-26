@@ -14,6 +14,7 @@ import {
   Coins,
   Crown,
   Frame,
+  Hand,
   History,
   LayoutGrid,
   Lock,
@@ -66,6 +67,7 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: "PLANO_FUNDO", label: "Fundos", icon: Palette },
   { key: "CABELO", label: "Cabelos", icon: Scissors },
   { key: "ACESSORIO", label: "Acessórios", icon: Crown },
+  { key: "LUVA", label: "Luvas", icon: Hand },
   { key: "INVENTARIO", label: "Meu Inventário", icon: Backpack },
   { key: "HISTORICO", label: "Histórico", icon: History },
 ];

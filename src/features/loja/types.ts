@@ -11,6 +11,7 @@ export type TipoItemLoja =
   | 'ROSTO'
   | 'CABELO'
   | 'ACESSORIO'
+  | 'LUVA'
   | 'DICA'
   | 'POTENCIALIZADOR';
 export type OrigemItemInventario = 'COMPRA' | 'CONQUISTA';
