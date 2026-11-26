@@ -237,4 +237,84 @@ describe('AvatarPage', () => {
       expect(screen.getByRole('button', { name: 'Tênis esportivo' })).toBeInTheDocument();
     });
   });
+
+  describe('itens não comprados', () => {
+    const daLoja = (codigo: string, nome: string, tipo: string, pasta: string, adquirido: boolean) => ({
+      id: codigo, codigo, nome, tipo, descricao: null, precoMoedas: 120, valor: null,
+      imagemUrl: `/avatar/${pasta}/${codigo}.png`, previewImagemUrl: null, ativo: true, adquirido,
+    });
+
+    const catalogo = (...itens: ReturnType<typeof daLoja>[]) =>
+      jest.mocked(listarCatalogo).mockResolvedValue({
+        dados: itens,
+        metadados: { page: 1, limit: 100, total: itens.length, totalPages: 1 },
+      } as Awaited<ReturnType<typeof listarCatalogo>>);
+
+    const abrirEditor = async () => {
+      renderPage();
+      await waitFor(() => expect(listarCatalogo).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Editar aparência do avatar' })).toBeEnabled());
+      fireEvent.click(screen.getByRole('button', { name: 'Editar aparência do avatar' }));
+    };
+
+    it('mostra o item não comprado bloqueado, com aviso de que está na loja', async () => {
+      catalogo(daLoja('bota-coturno', 'Bota Coturno', 'CALCADO', 'calcados', false));
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Calçados' }));
+      const bota = await screen.findByRole('button', { name: 'Bota Coturno (adquira na loja)' });
+
+      expect(bota).toHaveClass('bloqueado');
+      expect(bota).toHaveAttribute('aria-disabled', 'true');
+      expect(bota).toHaveAttribute('title', 'Adquira na loja');
+    });
+
+    it('não equipa o item bloqueado ao clicar e aponta para a Loja', async () => {
+      catalogo(daLoja('luva-goleiro', 'Luva de Goleiro', 'LUVA', 'luvas', false));
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Acessórios' }));
+      const luva = await screen.findByRole('button', { name: 'Luva de Goleiro (adquira na loja)' });
+      fireEvent.click(luva);
+
+      expect(luva).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: 'Nenhuma' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeDisabled();
+      expect(screen.getByText(/ainda não é seu/)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Loja' })).toHaveAttribute('href', '/aluno/loja');
+    });
+
+    it('o aviso some ao escolher um item liberado', async () => {
+      catalogo(daLoja('trancas', 'Tranças', 'CABELO', 'cabelo', false));
+      await abrirEditor();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Tranças (adquira na loja)' }));
+      expect(screen.getByText(/ainda não é seu/)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Loiro' }));
+      expect(screen.queryByText(/ainda não é seu/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Loiro' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('item comprado aparece liberado mesmo estando no catálogo', async () => {
+      catalogo(daLoja('chapeu-cowboy', 'Chapéu de Cowboy', 'ACESSORIO', 'acessorios', true));
+      jest.mocked(buscarInventarioCompleto).mockResolvedValue([
+        { id: 'inv-1', equipado: false, adquiridoEm: null, item: daLoja('chapeu-cowboy', 'Chapéu de Cowboy', 'ACESSORIO', 'acessorios', true) },
+      ] as unknown as InventarioItem[]);
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Acessórios' }));
+      const chapeu = await screen.findByRole('button', { name: 'Chapéu de Cowboy' });
+      expect(chapeu).not.toHaveClass('bloqueado');
+      fireEvent.click(chapeu);
+      expect(chapeu).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('ignora itens de outros tipos do catálogo', async () => {
+      catalogo(daLoja('icone-coruja', 'Coruja', 'ICONE_PERFIL', 'icones', false));
+      await abrirEditor();
+
+      expect(screen.queryByRole('button', { name: /Coruja/ })).not.toBeInTheDocument();
+    });
+  });
 });
