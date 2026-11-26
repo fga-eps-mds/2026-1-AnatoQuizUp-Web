@@ -10,6 +10,7 @@ export type TipoItemLoja =
   | 'PLANO_FUNDO'
   | 'ROSTO'
   | 'CABELO'
+  | 'ACESSORIO'
   | 'DICA'
   | 'POTENCIALIZADOR';
 export type OrigemItemInventario = 'COMPRA' | 'CONQUISTA';

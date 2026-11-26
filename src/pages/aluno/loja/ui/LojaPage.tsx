@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   Check,
   Coins,
+  Crown,
   Frame,
   History,
   LayoutGrid,
@@ -64,6 +65,7 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: "TITULO", label: "Títulos", icon: BadgeCheck },
   { key: "PLANO_FUNDO", label: "Fundos", icon: Palette },
   { key: "CABELO", label: "Cabelos", icon: Scissors },
+  { key: "ACESSORIO", label: "Acessórios", icon: Crown },
   { key: "INVENTARIO", label: "Meu Inventário", icon: Backpack },
   { key: "HISTORICO", label: "Histórico", icon: History },
 ];
