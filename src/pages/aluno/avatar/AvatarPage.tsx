@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { buscarInventarioCompleto, type InventarioItem } from '../../../features/loja';
 import { AvatarCerebro } from '../../../shared/avatar/AvatarCerebro';
 import { buscarAparenciaRemota, salvarAparenciaRemota } from '../../../shared/avatar/avatarApi';
 import { carregarAparencia, salvarAparencia as persistirAparencia } from '../../../shared/avatar/useAparenciaAvatar';
@@ -18,6 +19,7 @@ export function AvatarPage() {
   const [rascunho, setRascunho] = useState<AparenciaAvatar>(APARENCIA_PADRAO);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [itensComprados, setItensComprados] = useState<InventarioItem[]>([]);
   const userId = user?.id;
 
   // Carrega a aparencia salva assim que o usuario autenticado fica disponivel.
@@ -46,6 +48,17 @@ export function AvatarPage() {
     }).finally(() => {
       if (ativo) setCarregando(false);
     });
+    return () => { ativo = false; };
+  }, [userId]);
+
+  // Itens comprados na loja (cabelo, acessorio, luva, calcado) entram nas grades do editor.
+  // Se o inventario falhar, o editor continua com os itens base.
+  useEffect(() => {
+    if (!userId) return;
+    let ativo = true;
+    void buscarInventarioCompleto()
+      .then((itens) => { if (ativo) setItensComprados(itens); })
+      .catch(() => {});
     return () => { ativo = false; };
   }, [userId]);
 
@@ -140,6 +153,7 @@ export function AvatarPage() {
               aoSalvar={() => void salvarAparencia()}
               aoCancelar={cancelarAparencia}
               temAlteracoes={temAlteracoes && !salvando}
+              itensComprados={itensComprados}
             />
           </div>
         )}

@@ -26,6 +26,13 @@ import type {
   EstiloCalcado,
   EstiloLuva,
 } from './aparencia';
+import type { InventarioItem, TipoItemLoja } from '../../../features/loja';
+import {
+  normalizarAcessorio,
+  normalizarCabelo,
+  normalizarCalcado,
+  normalizarLuva,
+} from '../../../shared/avatar/useAparenciaAvatar';
 
 // Personalizacao de aparencia do avatar-cerebro: cor do cerebro, cabelo, acessorios de
 // cabeca + luvas (aba Acessorios) e calcados (aba Calcados). Base liberada com itens
@@ -71,6 +78,30 @@ const CALCADOS: { id: EstiloCalcado; label: string; imagem: string; posicao: str
   { id: 'tenis-cano-alto', label: 'Tênis cano alto', imagem: calcadoTenisCanoAltoIcone, posicao: calcadoTenisCanoAltoPosicao },
   { id: 'tenis-esportivo', label: 'Tênis esportivo', imagem: calcadoTenisEsportivoIcone, posicao: calcadoTenisEsportivoPosicao },
 ];
+
+type OpcaoGrade<T> = { id: T; label: string; imagem: string };
+
+/**
+ * Junta os itens base (liberados) com os itens daquele tipo que o aluno comprou na loja.
+ * O `codigo` do item no catalogo e o mesmo id usado no avatar; codigos que o avatar nao
+ * sabe desenhar sao ignorados, e itens base nao aparecem duplicados.
+ */
+const comItensComprados = <T extends string>(
+  base: OpcaoGrade<T>[],
+  comprados: InventarioItem[],
+  tipo: TipoItemLoja,
+  normalizar: (valor: unknown) => T | null,
+): OpcaoGrade<T>[] => {
+  const extras: OpcaoGrade<T>[] = [];
+  for (const { item } of comprados) {
+    if (item.tipo !== tipo) continue;
+    const id = normalizar(item.codigo);
+    if (!id || base.some((opcao) => opcao.id === id) || extras.some((opcao) => opcao.id === id)) continue;
+    const imagem = item.previewImagemUrl ?? item.imagemUrl;
+    if (imagem) extras.push({ id, label: item.nome, imagem });
+  }
+  return [...base, ...extras];
+};
 
 /** Miniatura do acessorio, usada na grade e no overlay do preview (ver HairThumb). */
 export const AccessoryThumb = ({ estilo, size }: { estilo: EstiloAcessorio; size?: number }) => {
@@ -128,6 +159,8 @@ type AparenciaPanelProps = {
   aoSalvar: () => void;
   aoCancelar: () => void;
   temAlteracoes: boolean;
+  /** Inventario do aluno: os cosmeticos de avatar comprados entram nas grades. */
+  itensComprados?: InventarioItem[];
 };
 
 type AbaPersonalizacao = 'aparencia' | 'calcados' | 'acessorios';
@@ -139,8 +172,13 @@ export const AparenciaPanel = ({
   aoSalvar,
   aoCancelar,
   temAlteracoes,
+  itensComprados = [],
 }: AparenciaPanelProps) => {
   const [aba, setAba] = useState<AbaPersonalizacao>('aparencia');
+  const cabelos = comItensComprados(CABELOS, itensComprados, 'CABELO', normalizarCabelo);
+  const acessorios = comItensComprados(ACESSORIOS, itensComprados, 'ACESSORIO', normalizarAcessorio);
+  const luvas = comItensComprados(LUVAS, itensComprados, 'LUVA', normalizarLuva);
+  const calcados = comItensComprados(CALCADOS, itensComprados, 'CALCADO', normalizarCalcado);
 
   return (
     <section className="avatar-personalizar-card" aria-label="Personalizar avatar">
@@ -188,7 +226,7 @@ export const AparenciaPanel = ({
               >
                 <X size={20} aria-hidden="true" />
               </button>
-              {ACESSORIOS.map((acessorio) => (
+              {acessorios.map((acessorio) => (
                 <button
                   key={acessorio.id}
                   type="button"
@@ -197,7 +235,7 @@ export const AparenciaPanel = ({
                   className={`avatar-cabelo-opcao${valor.acessorio === acessorio.id ? ' selecionado' : ''}`}
                   onClick={() => aoMudar({ ...valor, acessorio: acessorio.id })}
                 >
-                  <AccessoryThumb estilo={acessorio.id} size={32} />
+                  <img src={acessorio.imagem} alt="" aria-hidden="true" style={{ width: 32, height: 'auto' }} />
                 </button>
               ))}
             </div>
@@ -217,7 +255,7 @@ export const AparenciaPanel = ({
               >
                 <X size={20} aria-hidden="true" />
               </button>
-              {LUVAS.map((luva) => (
+              {luvas.map((luva) => (
                 <button
                   key={luva.id}
                   type="button"
@@ -263,7 +301,7 @@ export const AparenciaPanel = ({
               >
                 <X size={20} aria-hidden="true" />
               </button>
-              {CABELOS.map((estilo) => (
+              {cabelos.map((estilo) => (
                 <button
                   key={estilo.id}
                   type="button"
@@ -272,7 +310,7 @@ export const AparenciaPanel = ({
                   className={`avatar-cabelo-opcao${valor.cabelo === estilo.id ? ' selecionado' : ''}`}
                   onClick={() => aoMudar({ ...valor, cabelo: estilo.id })}
                 >
-                  <HairThumb estilo={estilo.id} size={32} />
+                  <img src={estilo.imagem} alt="" aria-hidden="true" style={{ width: 32, height: 'auto' }} />
                 </button>
               ))}
             </div>
@@ -291,7 +329,7 @@ export const AparenciaPanel = ({
             >
               <X size={20} aria-hidden="true" />
             </button>
-            {CALCADOS.map((calcado) => (
+            {calcados.map((calcado) => (
               <button
                 key={calcado.id}
                 type="button"

@@ -20,7 +20,7 @@ const normalizarCorCerebro = (valor: unknown): AparenciaAvatar['corCerebro'] => 
   }
 };
 
-const normalizarCabelo = (valor: unknown): AparenciaAvatar['cabelo'] => {
+export const normalizarCabelo = (valor: unknown): AparenciaAvatar['cabelo'] => {
   switch (valor) {
     case 'loiro': return 'loiro';
     case 'cacheado': return 'cacheado';
@@ -39,7 +39,7 @@ const normalizarCabelo = (valor: unknown): AparenciaAvatar['cabelo'] => {
   }
 };
 
-const normalizarAcessorio = (valor: unknown): AparenciaAvatar['acessorio'] => {
+export const normalizarAcessorio = (valor: unknown): AparenciaAvatar['acessorio'] => {
   switch (valor) {
     case 'coroa': return 'coroa';
     case 'oculos': return 'oculos';
@@ -58,7 +58,7 @@ const normalizarAcessorio = (valor: unknown): AparenciaAvatar['acessorio'] => {
   }
 };
 
-const normalizarLuva = (valor: unknown): AparenciaAvatar['luva'] => {
+export const normalizarLuva = (valor: unknown): AparenciaAvatar['luva'] => {
   switch (valor) {
     case 'luva-boxe': return 'luva-boxe';
     case 'luva-cirurgica': return 'luva-cirurgica';
@@ -77,7 +77,7 @@ const normalizarLuva = (valor: unknown): AparenciaAvatar['luva'] => {
   }
 };
 
-const normalizarCalcado = (valor: unknown): AparenciaAvatar['calcado'] => {
+export const normalizarCalcado = (valor: unknown): AparenciaAvatar['calcado'] => {
   switch (valor) {
     case 'sapato-plantao': return 'sapato-plantao';
     case 'tenis-cano-alto': return 'tenis-cano-alto';

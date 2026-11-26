@@ -3,10 +3,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { AvatarPage } from './AvatarPage';
 import { buscarAparenciaRemota, salvarAparenciaRemota } from '../../../shared/avatar/avatarApi';
+import { buscarInventarioCompleto, type InventarioItem } from '../../../features/loja';
 import { APARENCIA_PADRAO } from './aparencia';
 
 jest.mock('../../../app/providers/AuthProvider', () => ({ useAuth: jest.fn() }));
 jest.mock('../../../shared/avatar/avatarApi', () => ({ buscarAparenciaRemota: jest.fn(), salvarAparenciaRemota: jest.fn() }));
+jest.mock('../../../features/loja', () => ({ buscarInventarioCompleto: jest.fn() }));
 const mockedUseAuth = jest.mocked(useAuth);
 
 const renderPage = () => render(<MemoryRouter><AvatarPage /></MemoryRouter>);
@@ -16,6 +18,7 @@ describe('AvatarPage', () => {
     localStorage.clear();
     jest.mocked(buscarAparenciaRemota).mockResolvedValue(APARENCIA_PADRAO);
     jest.mocked(salvarAparenciaRemota).mockImplementation(async (aparencia) => aparencia);
+    jest.mocked(buscarInventarioCompleto).mockResolvedValue([]);
     mockedUseAuth.mockReturnValue({
       user: { id: 'user-1', name: 'Aluno Teste' },
     } as unknown as ReturnType<typeof useAuth>);
@@ -160,5 +163,77 @@ describe('AvatarPage', () => {
     await waitFor(() => expect(salvarAparenciaRemota).toHaveBeenCalledWith(APARENCIA_PADRAO));
     expect(screen.getByRole('button', { name: 'Rosa' })).toHaveClass('selecionado');
     expect(screen.getByText('Avatar restaurado ao padrão.')).toBeInTheDocument();
+  });
+
+  describe('itens comprados na loja', () => {
+    const comprado = (codigo: string, nome: string, tipo: string, pasta: string) => ({
+      id: `inv-${codigo}`,
+      equipado: false,
+      adquiridoEm: '2026-11-26T19:02:03.652Z',
+      item: {
+        id: codigo, codigo, nome, tipo, descricao: null, precoMoedas: 100, valor: null,
+        imagemUrl: `/avatar/${pasta}/${codigo}.png`, previewImagemUrl: null, ativo: true,
+      },
+    }) as unknown as InventarioItem;
+
+    const abrirEditor = async () => {
+      renderPage();
+      await waitFor(() => expect(buscarInventarioCompleto).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Editar aparência do avatar' })).toBeEnabled());
+      fireEvent.click(screen.getByRole('button', { name: 'Editar aparência do avatar' }));
+    };
+
+    it('mostra o tênis comprado na aba Calçados e deixa equipar e salvar', async () => {
+      jest.mocked(buscarInventarioCompleto).mockResolvedValue([
+        comprado('tenis-esportivo-preto', 'Tênis Esportivo Preto', 'CALCADO', 'calcados'),
+      ]);
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Calçados' }));
+      const tenis = await screen.findByRole('button', { name: 'Tênis Esportivo Preto' });
+      expect(tenis.querySelector('img')).toHaveAttribute('src', '/avatar/calcados/tenis-esportivo-preto.png');
+
+      fireEvent.click(tenis);
+      expect(tenis).toHaveAttribute('aria-pressed', 'true');
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+      await waitFor(() => expect(salvarAparenciaRemota).toHaveBeenCalledWith(
+        expect.objectContaining({ calcado: 'tenis-esportivo-preto' }),
+      ));
+    });
+
+    it('mostra cabelo, acessório e luva comprados nas suas grades', async () => {
+      jest.mocked(buscarInventarioCompleto).mockResolvedValue([
+        comprado('trancas', 'Tranças', 'CABELO', 'cabelo'),
+        comprado('chapeu-cowboy', 'Chapéu de Cowboy', 'ACESSORIO', 'acessorios'),
+        comprado('luva-goleiro', 'Luva de Goleiro', 'LUVA', 'luvas'),
+      ]);
+      await abrirEditor();
+
+      expect(await screen.findByRole('button', { name: 'Tranças' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('tab', { name: 'Acessórios' }));
+      expect(screen.getByRole('button', { name: 'Chapéu de Cowboy' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Luva de Goleiro' })).toBeInTheDocument();
+    });
+
+    it('não mostra item que não foi comprado nem item que o avatar não sabe desenhar', async () => {
+      jest.mocked(buscarInventarioCompleto).mockResolvedValue([
+        comprado('icone-coruja', 'Coruja', 'ICONE_PERFIL', 'icones'),
+        comprado('calcado-inexistente', 'Calçado Inexistente', 'CALCADO', 'calcados'),
+      ]);
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Calçados' }));
+      expect(screen.queryByRole('button', { name: 'Tênis Esportivo Preto' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Calçado Inexistente' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Coruja' })).not.toBeInTheDocument();
+    });
+
+    it('mantém os itens base quando o inventário não carrega', async () => {
+      jest.mocked(buscarInventarioCompleto).mockRejectedValue(new Error('falha'));
+      await abrirEditor();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Calçados' }));
+      expect(screen.getByRole('button', { name: 'Tênis esportivo' })).toBeInTheDocument();
+    });
   });
 });
