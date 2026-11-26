@@ -43,6 +43,7 @@ import type {
   ItemLoja,
   TipoItemLoja,
 } from "../../../../features/loja";
+import { useAuth } from "../../../../app/providers/AuthProvider";
 import { ModalConfirmarCompra } from "../../../../features/loja/ui/ModalConfirmarCompra";
 import {
   ModalResultadoCompra,
@@ -50,6 +51,7 @@ import {
 } from "../../../../features/loja/ui/ModalResultadoCompra";
 import { useStudentCoinsStore } from "../../../../features/student-coins/model/useStudentCoinsStore";
 import { CosmeticPreview } from "../../../../shared/ui/cosmetics";
+import { useAparenciaAvatar } from "../../../../shared/avatar/useAparenciaAvatar";
 
 // Aba ativa: "Todos", uma categoria especifica de item, ou o inventario do aluno.
 type Aba = "TODOS" | TipoItemLoja | "INVENTARIO" | "HISTORICO";
@@ -114,6 +116,9 @@ export const LojaPage = () => {
   const [abaAtiva, setAbaAtiva] = useState<Aba>("TODOS");
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("asc");
   const [itemSelecionado, setItemSelecionado] = useState<ItemLoja | null>(null);
+  // Aparencia salva do aluno, usada para pre-visualizar itens de avatar no modal.
+  const { user } = useAuth();
+  const aparenciaAtual = useAparenciaAvatar(user?.id);
   const [itemParaUsar, setItemParaUsar] = useState<InventarioItem | null>(null);
   // Id em compra (trava os botoes), resultado da compra (modal), erro e recarga.
   const [comprandoId, setComprandoId] = useState<string | null>(null);
@@ -495,6 +500,7 @@ export const LojaPage = () => {
       {itemSelecionado && (
         <ModalConfirmarCompra
           item={itemSelecionado}
+          aparenciaAtual={aparenciaAtual}
           saldoMoedas={saldoMoedas}
           comprando={comprandoId === itemSelecionado.id}
           onCancelar={() => setItemSelecionado(null)}

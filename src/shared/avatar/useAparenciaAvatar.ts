@@ -96,6 +96,37 @@ export const normalizarCalcado = (valor: unknown): AparenciaAvatar['calcado'] =>
   }
 };
 
+/**
+ * Aparencia com um item da loja aplicado no slot do seu tipo, para pre-visualizar.
+ * Devolve null quando o item nao e de avatar ou o avatar nao sabe desenha-lo.
+ * Nao grava nada: a aparencia salva continua a mesma.
+ */
+export const aplicarItemNaAparencia = (
+  aparencia: AparenciaAvatar,
+  item: { tipo: string; codigo: string },
+): AparenciaAvatar | null => {
+  switch (item.tipo) {
+    case 'CABELO': {
+      const cabelo = normalizarCabelo(item.codigo);
+      return cabelo ? { ...aparencia, cabelo } : null;
+    }
+    case 'ACESSORIO': {
+      const acessorio = normalizarAcessorio(item.codigo);
+      return acessorio ? { ...aparencia, acessorio } : null;
+    }
+    case 'LUVA': {
+      const luva = normalizarLuva(item.codigo);
+      return luva ? { ...aparencia, luva } : null;
+    }
+    case 'CALCADO': {
+      const calcado = normalizarCalcado(item.codigo);
+      return calcado ? { ...aparencia, calcado } : null;
+    }
+    default:
+      return null;
+  }
+};
+
 const normalizarAparencia = (dados: unknown): AparenciaAvatar => {
   if (!dados || typeof dados !== 'object') return APARENCIA_PADRAO;
   const valor = dados as Record<string, unknown>;

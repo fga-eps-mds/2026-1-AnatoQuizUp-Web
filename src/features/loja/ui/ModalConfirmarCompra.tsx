@@ -1,10 +1,15 @@
 // Modal de confirmacao de compra da loja ("Voce esta comprando:"). Nenhuma compra
 // e enviada sem passar por aqui. Para itens consumiveis mostra o seletor de
 // quantidade e o total; para cosmeticos, uma unidade. Tambem serve de
-// pre-visualizacao de cosmeticos ja adquiridos (sem botao de compra).
+// pre-visualizacao de cosmeticos ja adquiridos (sem botao de compra). Para itens de
+// avatar (cabelo, acessorio, luva, calcado), mostra tambem o avatar do aluno com o
+// item aplicado, so na tela: nada e salvo.
 import { useEffect, useId, useState } from 'react';
 import { Check, Coins, Lock, Minus, Plus } from 'lucide-react';
 
+import { AvatarCerebro } from '../../../shared/avatar/AvatarCerebro';
+import type { AparenciaAvatar } from '../../../shared/avatar/aparencia';
+import { aplicarItemNaAparencia } from '../../../shared/avatar/useAparenciaAvatar';
 import { CosmeticPreview } from '../../../shared/ui/cosmetics';
 import type { ItemLoja } from '../types';
 
@@ -17,6 +22,8 @@ type ModalConfirmarCompraProps = {
   comprando: boolean;
   onCancelar: () => void;
   onConfirmar: (quantidade: number) => void;
+  /** Aparencia salva do aluno: base da pre-visualizacao do item no avatar. */
+  aparenciaAtual?: AparenciaAvatar;
 };
 
 /**
@@ -35,6 +42,7 @@ export const ModalConfirmarCompra = ({
   comprando,
   onCancelar,
   onConfirmar,
+  aparenciaAtual,
 }: ModalConfirmarCompraProps) => {
   const tituloId = useId();
   const [quantidade, setQuantidade] = useState(1);
@@ -45,6 +53,7 @@ export const ModalConfirmarCompra = ({
   const total = item.precoMoedas * quantidade;
   const saldoInsuficiente = total > saldoMoedas;
   const saldoAposCompra = saldoMoedas - total;
+  const aparenciaComItem = aparenciaAtual ? aplicarItemNaAparencia(aparenciaAtual, item) : null;
 
   // Esc fecha o modal (exceto durante a compra, para nao perder o retorno).
   useEffect(() => {
@@ -82,6 +91,13 @@ export const ModalConfirmarCompra = ({
 
         <div className="mx-auto mt-5 flex max-w-xs flex-col items-center gap-3 rounded-2xl border border-[#0A1128]/10 bg-white px-5 py-5 text-center shadow-sm">
           <CosmeticPreview item={item} grande={!consumivel} />
+
+          {aparenciaComItem && (
+            <figure className="flex flex-col items-center gap-2">
+              <AvatarCerebro aparencia={aparenciaComItem} nome="você" className="h-36 w-36" />
+              <figcaption className="text-xs font-bold text-[#0A1128]/55">Como fica no seu avatar</figcaption>
+            </figure>
+          )}
 
           {consumivel && !somentePreview && (
             <div className="flex items-center gap-5" aria-label="Quantidade">
