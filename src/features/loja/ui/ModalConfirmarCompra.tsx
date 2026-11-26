@@ -46,6 +46,9 @@ export const ModalConfirmarCompra = ({
 }: ModalConfirmarCompraProps) => {
   const tituloId = useId();
   const [quantidade, setQuantidade] = useState(1);
+  // Pre-visualizacao: alterna entre o avatar com o item e o avatar salvo. O estado
+  // vive so no modal; ao fechar, nada do que foi visto aqui fica no avatar.
+  const [verAvatarSalvo, setVerAvatarSalvo] = useState(false);
 
   const consumivel = Boolean(item.consumivel);
   const somentePreview = item.adquirido && !consumivel;
@@ -92,10 +95,34 @@ export const ModalConfirmarCompra = ({
         <div className="mx-auto mt-5 flex max-w-xs flex-col items-center gap-3 rounded-2xl border border-[#0A1128]/10 bg-white px-5 py-5 text-center shadow-sm">
           <CosmeticPreview item={item} grande={!consumivel} />
 
-          {aparenciaComItem && (
+          {aparenciaAtual && aparenciaComItem && (
             <figure className="flex flex-col items-center gap-2">
-              <AvatarCerebro aparencia={aparenciaComItem} nome="você" className="h-36 w-36" />
-              <figcaption className="text-xs font-bold text-[#0A1128]/55">Como fica no seu avatar</figcaption>
+              <AvatarCerebro
+                aparencia={verAvatarSalvo ? aparenciaAtual : aparenciaComItem}
+                nome="você"
+                className="h-36 w-36"
+              />
+              <figcaption className="text-xs font-bold text-[#0A1128]/55">
+                {verAvatarSalvo ? 'Seu avatar como está agora' : 'Como fica no seu avatar'}
+              </figcaption>
+              <div className="flex rounded-full border border-[#0A1128]/10 bg-[#0A1128]/5 p-0.5 text-xs font-bold" role="group" aria-label="Pré-visualização no avatar">
+                <button
+                  type="button"
+                  aria-pressed={!verAvatarSalvo}
+                  onClick={() => setVerAvatarSalvo(false)}
+                  className={`cursor-pointer rounded-full px-3 py-1 ${verAvatarSalvo ? 'text-[#0A1128]/55' : 'bg-white text-[#0A1128] shadow-sm'}`}
+                >
+                  Com o item
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={verAvatarSalvo}
+                  onClick={() => setVerAvatarSalvo(true)}
+                  className={`cursor-pointer rounded-full px-3 py-1 ${verAvatarSalvo ? 'bg-white text-[#0A1128] shadow-sm' : 'text-[#0A1128]/55'}`}
+                >
+                  Como está agora
+                </button>
+              </div>
             </figure>
           )}
 
