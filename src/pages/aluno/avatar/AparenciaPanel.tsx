@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, Lock, X } from 'lucide-react';
 import cabeloLoiro from '../../../shared/assets/avatar/cabelo/cabelo-loiro.png';
 import cabeloCacheado from '../../../shared/assets/avatar/cabelo/cabelo-cacheado.png';
@@ -120,6 +121,7 @@ const OpcaoItem = <T extends string>({
     type="button"
     aria-label={opcao.bloqueado ? `${opcao.label} (adquira na loja)` : opcao.label}
     aria-pressed={selecionado}
+    aria-disabled={opcao.bloqueado ? true : undefined}
     title={opcao.bloqueado ? 'Adquira na loja' : undefined}
     className={`avatar-cabelo-opcao${selecionado ? ' selecionado' : ''}${opcao.bloqueado ? ' bloqueado' : ''}`}
     onClick={aoEscolher}
@@ -208,6 +210,17 @@ export const AparenciaPanel = ({
   itensLoja = [],
 }: AparenciaPanelProps) => {
   const [aba, setAba] = useState<AbaPersonalizacao>('aparencia');
+  // Item bloqueado clicado: nao e equipado, so explica que ele esta na loja.
+  const [itemNaLoja, setItemNaLoja] = useState<string | null>(null);
+
+  const escolher = <T extends string>(opcao: OpcaoGrade<T>, aplicar: () => void) => () => {
+    if (opcao.bloqueado) {
+      setItemNaLoja(opcao.label);
+      return;
+    }
+    setItemNaLoja(null);
+    aplicar();
+  };
   const cabelos = montarOpcoes(CABELOS, itensComprados, itensLoja, 'CABELO', normalizarCabelo);
   const acessorios = montarOpcoes(ACESSORIOS, itensComprados, itensLoja, 'ACESSORIO', normalizarAcessorio);
   const luvas = montarOpcoes(LUVAS, itensComprados, itensLoja, 'LUVA', normalizarLuva);
@@ -245,6 +258,16 @@ export const AparenciaPanel = ({
         </button>
       </div>
 
+      {itemNaLoja && (
+        <p className="avatar-aviso-loja" role="status">
+          <Lock size={14} aria-hidden="true" />
+          <span>
+            <strong>{itemNaLoja}</strong> ainda não é seu. Ele está disponível na{' '}
+            <Link to="/aluno/loja">Loja</Link>.
+          </span>
+        </p>
+      )}
+
       {aba === 'acessorios' ? (
         <div className="avatar-aparencia-conteudo">
           <div className="avatar-secao">
@@ -264,7 +287,7 @@ export const AparenciaPanel = ({
                   key={opcao.id}
                   opcao={opcao}
                   selecionado={valor.acessorio === opcao.id}
-                  aoEscolher={() => aoMudar({ ...valor, acessorio: opcao.id })}
+                  aoEscolher={escolher(opcao, () => aoMudar({ ...valor, acessorio: opcao.id }))}
                 />
               ))}
             </div>
@@ -289,7 +312,7 @@ export const AparenciaPanel = ({
                   key={opcao.id}
                   opcao={opcao}
                   selecionado={valor.luva === opcao.id}
-                  aoEscolher={() => aoMudar({ ...valor, luva: opcao.id })}
+                  aoEscolher={escolher(opcao, () => aoMudar({ ...valor, luva: opcao.id }))}
                 />
               ))}
             </div>
@@ -331,7 +354,7 @@ export const AparenciaPanel = ({
                   key={opcao.id}
                   opcao={opcao}
                   selecionado={valor.cabelo === opcao.id}
-                  aoEscolher={() => aoMudar({ ...valor, cabelo: opcao.id })}
+                  aoEscolher={escolher(opcao, () => aoMudar({ ...valor, cabelo: opcao.id }))}
                 />
               ))}
             </div>
@@ -355,7 +378,7 @@ export const AparenciaPanel = ({
                 key={opcao.id}
                 opcao={opcao}
                 selecionado={valor.calcado === opcao.id}
-                aoEscolher={() => aoMudar({ ...valor, calcado: opcao.id })}
+                aoEscolher={escolher(opcao, () => aoMudar({ ...valor, calcado: opcao.id }))}
               />
             ))}
           </div>
