@@ -13,6 +13,7 @@ import {
   Check,
   Coins,
   Crown,
+  Footprints,
   Frame,
   Hand,
   History,
@@ -68,6 +69,7 @@ const CATEGORIAS: { key: Aba; label: string; icon: LucideIcon }[] = [
   { key: "CABELO", label: "Cabelos", icon: Scissors },
   { key: "ACESSORIO", label: "Acessórios", icon: Crown },
   { key: "LUVA", label: "Luvas", icon: Hand },
+  { key: "CALCADO", label: "Calçados", icon: Footprints },
   { key: "INVENTARIO", label: "Meu Inventário", icon: Backpack },
   { key: "HISTORICO", label: "Histórico", icon: History },
 ];
