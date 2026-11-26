@@ -3,12 +3,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { AvatarPage } from './AvatarPage';
 import { buscarAparenciaRemota, salvarAparenciaRemota } from '../../../shared/avatar/avatarApi';
-import { buscarInventarioCompleto, type InventarioItem } from '../../../features/loja';
+import { buscarInventarioCompleto, listarCatalogo, type InventarioItem } from '../../../features/loja';
 import { APARENCIA_PADRAO } from './aparencia';
 
 jest.mock('../../../app/providers/AuthProvider', () => ({ useAuth: jest.fn() }));
 jest.mock('../../../shared/avatar/avatarApi', () => ({ buscarAparenciaRemota: jest.fn(), salvarAparenciaRemota: jest.fn() }));
-jest.mock('../../../features/loja', () => ({ buscarInventarioCompleto: jest.fn() }));
+jest.mock('../../../features/loja', () => ({ buscarInventarioCompleto: jest.fn(), listarCatalogo: jest.fn() }));
 const mockedUseAuth = jest.mocked(useAuth);
 
 const renderPage = () => render(<MemoryRouter><AvatarPage /></MemoryRouter>);
@@ -19,6 +19,7 @@ describe('AvatarPage', () => {
     jest.mocked(buscarAparenciaRemota).mockResolvedValue(APARENCIA_PADRAO);
     jest.mocked(salvarAparenciaRemota).mockImplementation(async (aparencia) => aparencia);
     jest.mocked(buscarInventarioCompleto).mockResolvedValue([]);
+    jest.mocked(listarCatalogo).mockResolvedValue({ dados: [], metadados: { page: 1, limit: 100, total: 0, totalPages: 1 } });
     mockedUseAuth.mockReturnValue({
       user: { id: 'user-1', name: 'Aluno Teste' },
     } as unknown as ReturnType<typeof useAuth>);

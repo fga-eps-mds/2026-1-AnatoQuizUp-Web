@@ -2,13 +2,34 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { buscarInventarioCompleto, type InventarioItem } from '../../../features/loja';
+import {
+  buscarInventarioCompleto,
+  listarCatalogo,
+  type InventarioItem,
+  type ItemLoja,
+} from '../../../features/loja';
 import { AvatarCerebro } from '../../../shared/avatar/AvatarCerebro';
 import { buscarAparenciaRemota, salvarAparenciaRemota } from '../../../shared/avatar/avatarApi';
 import { carregarAparencia, salvarAparencia as persistirAparencia } from '../../../shared/avatar/useAparenciaAvatar';
 import { AparenciaPanel } from './AparenciaPanel';
 import { APARENCIA_PADRAO, type AparenciaAvatar } from './aparencia';
 import '../perfil/ui/profile.css';
+
+const TIPOS_ITEM_AVATAR = new Set(['CABELO', 'ACESSORIO', 'LUVA', 'CALCADO']);
+
+/** Busca todas as paginas do catalogo e fica so com os itens de avatar. */
+const buscarItensAvatarDaLoja = async (): Promise<ItemLoja[]> => {
+  const itens: ItemLoja[] = [];
+  let pagina = 1;
+  let totalPaginas = 1;
+  do {
+    const resposta = await listarCatalogo({ page: pagina, limit: 100 });
+    itens.push(...resposta.dados);
+    totalPaginas = resposta.metadados.totalPages;
+    pagina += 1;
+  } while (pagina <= totalPaginas);
+  return itens.filter((item) => TIPOS_ITEM_AVATAR.has(item.tipo));
+};
 
 /** Primeira etapa do avatar: apresentação do cérebro padrão + personalização de aparência. */
 export function AvatarPage() {
@@ -20,6 +41,7 @@ export function AvatarPage() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [itensComprados, setItensComprados] = useState<InventarioItem[]>([]);
+  const [itensLoja, setItensLoja] = useState<ItemLoja[]>([]);
   const userId = user?.id;
 
   // Carrega a aparencia salva assim que o usuario autenticado fica disponivel.
@@ -58,6 +80,10 @@ export function AvatarPage() {
     let ativo = true;
     void buscarInventarioCompleto()
       .then((itens) => { if (ativo) setItensComprados(itens); })
+      .catch(() => {});
+    // Catalogo: os itens de avatar ainda nao comprados aparecem bloqueados no editor.
+    void buscarItensAvatarDaLoja()
+      .then((itens) => { if (ativo) setItensLoja(itens); })
       .catch(() => {});
     return () => { ativo = false; };
   }, [userId]);
@@ -154,6 +180,7 @@ export function AvatarPage() {
               aoCancelar={cancelarAparencia}
               temAlteracoes={temAlteracoes && !salvando}
               itensComprados={itensComprados}
+              itensLoja={itensLoja}
             />
           </div>
         )}

@@ -111,6 +111,9 @@
 .avatar-cabelo-opcao{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:1px solid #e0e4e8;border-radius:10px;background:#fff;color:#7d879d;cursor:pointer}
 .avatar-cabelo-opcao:hover{border-color:#14b8a6}
 .avatar-cabelo-opcao.selecionado{border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.15)}
+.avatar-cabelo-opcao.bloqueado{position:relative;border-style:dashed;background:#f8fafc}
+.avatar-cabelo-opcao.bloqueado img{opacity:.4;filter:grayscale(1)}
+.avatar-opcao-cadeado{position:absolute;right:4px;bottom:4px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
 .avatar-em-breve{color:#7d879d;font-size:14px;margin:0}
 .avatar-acoes{display:flex;justify-content:flex-end;gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid #eef0f3}
 .avatar-botao-secundario{border:1px solid #d2d5dc;background:#fff;color:#17264a;border-radius:8px;padding:11px 22px;font-weight:650;cursor:pointer}
