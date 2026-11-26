@@ -9,6 +9,9 @@ jest.mock('../../../../src/features/manage-questions/model/questionService', () 
   extractErrorMessage: jest.fn(() => 'Erro simulado pelo mock'),
 }));
 
+import { AxiosError, type AxiosResponse } from 'axios';
+
+import { AVISO_IA_INDISPONIVEL, ErroOsce } from '../../../../src/features/osce/erroOsce';
 import {
   enviarMensagemOsce,
   finalizarOsce,
@@ -94,6 +97,22 @@ describe('osceService', () => {
       await expect(enviarMensagemOsce('dor-toracica', 'Onde dói?', [])).rejects.toThrow(
         'Erro simulado pelo mock',
       );
+    });
+
+    it('lanca o aviso de IA indisponivel no 503, sem a mensagem do backend', async () => {
+      const resposta = {
+        status: 503,
+        data: { erro: { mensagem: 'Servico de IA ainda nao foi habilitado nesta release.' } },
+      } as AxiosResponse;
+      httpClientMock.post.mockRejectedValue(
+        new AxiosError('Request failed', 'ERR_BAD_RESPONSE', undefined, undefined, resposta),
+      );
+
+      const erro = await enviarMensagemOsce('dor-toracica', 'Onde dói?', []).catch((e: unknown) => e);
+
+      expect(erro).toBeInstanceOf(ErroOsce);
+      expect((erro as ErroOsce).aviso).toEqual(AVISO_IA_INDISPONIVEL);
+      expect((erro as ErroOsce).message).not.toMatch(/nesta release/);
     });
   });
 

@@ -6,6 +6,11 @@ import { ClipboardList, Loader2, Send, Stethoscope } from 'lucide-react';
 
 import { detectarDespedida } from '../../../features/osce/detectarDespedida';
 import {
+  AVISO_FALHA_FINALIZAR,
+  avisoDaFalhaDeEnvio,
+  type AvisoErroOsce,
+} from '../../../features/osce/erroOsce';
+import {
   enviarMensagemOsce,
   finalizarOsce,
   listarCenariosOsce,
@@ -13,6 +18,7 @@ import {
   type CenarioOsceResumo,
   type TurnoOsce,
 } from '../../../features/osce/osceService';
+import { AvisoFalhaOsce } from './AvisoFalhaOsce';
 import { CenarioApresentacao } from './CenarioApresentacao';
 import { FeedbackResultado } from './FeedbackResultado';
 import { ModalConfirmarEncerramento } from './ModalConfirmarEncerramento';
@@ -23,7 +29,21 @@ type EtapaOsce = 'lista' | 'cenario' | 'chat';
 
 // Turno como a tela guarda: o id existe so para a chave da lista e nao vai para o
 // BFF, que recebe apenas autor, texto e, nos cards de exame, o nome do exame.
-type TurnoExibido = TurnoOsce & { id: string };
+// `naoEnviada` marca a fala do aluno cujo envio falhou (T1.9): ela fica no chat,
+// mas fora do historico mandado a IA ate ser reenviada.
+type TurnoExibido = TurnoOsce & { id: string; naoEnviada?: boolean };
+
+// Falha mostrada no chat com a acao de tentar de novo: o envio de uma fala (com o
+// que e preciso para reenvia-la igual) ou a geracao da avaliacao.
+type FalhaOsce =
+  | {
+      tipo: 'mensagem';
+      aviso: AvisoErroOsce;
+      turnoAluno: TurnoExibido;
+      historicoAnterior: TurnoExibido[];
+      despedida: boolean;
+    }
+  | { tipo: 'finalizar'; aviso: AvisoErroOsce };
 
 const novoTurno = (turno: TurnoOsce): TurnoExibido => ({
   ...turno,
@@ -32,6 +52,8 @@ const novoTurno = (turno: TurnoOsce): TurnoExibido => ({
 
 const paraEnvio = ({ autor, texto, exame }: TurnoExibido): TurnoOsce =>
   exame ? { autor, texto, exame } : { autor, texto };
+
+const foiEnviado = (turno: TurnoExibido) => !turno.naoEnviada;
 
 const CORES_DIFICULDADE: Record<CenarioOsceResumo['dificuldade'], string> = {
   Fácil: 'bg-emerald-100 text-emerald-700',
@@ -51,7 +73,7 @@ export const OscePage = () => {
   const [enviando, setEnviando] = useState(false);
   const [avaliacao, setAvaliacao] = useState<AvaliacaoOsce | null>(null);
   const [finalizando, setFinalizando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [falha, setFalha] = useState<FalhaOsce | null>(null);
   const [confirmandoEncerramento, setConfirmandoEncerramento] = useState(false);
   // true depois da primeira despedida: uma nova despedida abre a confirmacao direto,
   // sem mandar a fala a IA (anti-loop de "tchau" que nao depende so do prompt).
@@ -75,7 +97,7 @@ export const OscePage = () => {
     setHistorico([]);
     setMensagemAtual('');
     setAvaliacao(null);
-    setErro(null);
+    setFalha(null);
     setConfirmandoEncerramento(false);
     setJaSeDespediu(false);
   };
@@ -92,6 +114,52 @@ export const OscePage = () => {
     setEtapa('lista');
   };
 
+  const marcarNaoEnviada = (turnoId: string, naoEnviada: boolean) => (atual: TurnoExibido[]) =>
+    atual.map((turno) => (turno.id === turnoId ? { ...turno, naoEnviada } : turno));
+
+  // Manda a fala do aluno a IA. Usada no envio e no "Tentar de novo", que reenvia a
+  // mesma fala com o mesmo historico anterior, sem duplicar o balao.
+  const enviarFala = async (
+    turnoAluno: TurnoExibido,
+    historicoAnterior: TurnoExibido[],
+    despedida: boolean,
+  ) => {
+    if (!cenarioAtivo) return;
+
+    setEnviando(true);
+    setFalha(null);
+
+    try {
+      // A resposta pode trazer a fala do paciente e os cards dos exames pedidos (US25).
+      const turnosResposta = await enviarMensagemOsce(
+        cenarioAtivo.id,
+        turnoAluno.texto,
+        historicoAnterior.map(paraEnvio),
+      );
+      setHistorico((atual) => [
+        ...marcarNaoEnviada(turnoAluno.id, false)(atual),
+        ...turnosResposta.map(novoTurno),
+      ]);
+    } catch (error) {
+      setHistorico(marcarNaoEnviada(turnoAluno.id, true));
+      setFalha({
+        tipo: 'mensagem',
+        aviso: avisoDaFalhaDeEnvio(error),
+        turnoAluno,
+        historicoAnterior,
+        despedida,
+      });
+    } finally {
+      setEnviando(false);
+      // O paciente responde uma vez a despedida e entao vem a confirmacao —
+      // inclusive se o envio falhou, para o aluno nao ficar preso no chat.
+      if (despedida) {
+        setJaSeDespediu(true);
+        setConfirmandoEncerramento(true);
+      }
+    }
+  };
+
   const handleEnviarMensagem = async () => {
     const texto = mensagemAtual.trim();
     if (!texto || enviando || !cenarioAtivo) return;
@@ -105,32 +173,18 @@ export const OscePage = () => {
       return;
     }
 
-    setEnviando(true);
-    setErro(null);
-
-    const historicoAnterior = historico;
-    setHistorico((atual) => [...atual, novoTurno({ autor: 'aluno', texto })]);
+    const turnoAluno = novoTurno({ autor: 'aluno', texto });
+    // Falas que nao chegaram a IA ficam fora do historico.
+    const historicoAnterior = historico.filter(foiEnviado);
+    setHistorico((atual) => [...atual, turnoAluno]);
     setMensagemAtual('');
 
-    try {
-      // A resposta pode trazer a fala do paciente e os cards dos exames pedidos (US25).
-      const turnosResposta = await enviarMensagemOsce(
-        cenarioAtivo.id,
-        texto,
-        historicoAnterior.map(paraEnvio),
-      );
-      setHistorico((atual) => [...atual, ...turnosResposta.map(novoTurno)]);
-    } catch (error) {
-      setErro((error as Error).message);
-    } finally {
-      setEnviando(false);
-      // O paciente responde uma vez a despedida e entao vem a confirmacao —
-      // inclusive se o envio falhou, para o aluno nao ficar preso no chat.
-      if (despedida) {
-        setJaSeDespediu(true);
-        setConfirmandoEncerramento(true);
-      }
-    }
+    await enviarFala(turnoAluno, historicoAnterior, despedida);
+  };
+
+  const tentarDeNovo = () => {
+    if (falha?.tipo !== 'mensagem') return;
+    void enviarFala(falha.turnoAluno, falha.historicoAnterior, falha.despedida);
   };
 
   const continuarAtendimento = () => {
@@ -142,13 +196,17 @@ export const OscePage = () => {
     if (!cenarioAtivo || finalizando) return;
 
     setFinalizando(true);
-    setErro(null);
+    setFalha(null);
 
     try {
-      const resultado = await finalizarOsce(cenarioAtivo.id, historico.map(paraEnvio));
+      const resultado = await finalizarOsce(
+        cenarioAtivo.id,
+        historico.filter(foiEnviado).map(paraEnvio),
+      );
       setAvaliacao(resultado);
-    } catch (error) {
-      setErro((error as Error).message);
+    } catch {
+      // Qualquer falha ao avaliar vira o mesmo aviso, sem mensagem tecnica do backend.
+      setFalha({ tipo: 'finalizar', aviso: AVISO_FALHA_FINALIZAR });
     } finally {
       setFinalizando(false);
       // Sucesso mostra a avaliacao; falha mostra o erro no chat. Nos dois casos o
@@ -242,16 +300,19 @@ export const OscePage = () => {
           <div className="flex-1 overflow-y-auto p-5">
             <ul className="flex flex-col gap-3">
               {historico.map((turno) => (
-                <TurnoChatOsce key={turno.id} turno={turno} />
+                <TurnoChatOsce key={turno.id} turno={turno} naoEnviada={turno.naoEnviada} />
               ))}
             </ul>
 
             {avaliacao && <FeedbackResultado avaliacao={avaliacao} />}
 
-            {erro && (
-              <p role="alert" className="mt-3 text-sm font-medium text-rose-600">
-                {erro}
-              </p>
+            {falha && (
+              <AvisoFalhaOsce
+                aviso={falha.aviso}
+                rotuloAcao={falha.tipo === 'mensagem' ? 'Tentar de novo' : 'Encerrar de novo'}
+                onAcao={falha.tipo === 'mensagem' ? tentarDeNovo : () => void handleFinalizar()}
+                acaoDesabilitada={enviando || finalizando}
+              />
             )}
 
             <div ref={fimDaConversaRef} />
@@ -262,7 +323,7 @@ export const OscePage = () => {
             <button
               type="button"
               onClick={() => void handleFinalizar()}
-              disabled={historico.length === 0 || enviando || finalizando || Boolean(avaliacao)}
+              disabled={!historico.some(foiEnviado) || enviando || finalizando || Boolean(avaliacao)}
               className="flex items-center justify-center gap-1.5 self-start rounded-lg bg-[#0A1128] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110 disabled:opacity-40"
             >
               {finalizando ? (
