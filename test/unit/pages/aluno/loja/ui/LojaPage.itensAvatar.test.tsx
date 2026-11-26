@@ -9,6 +9,7 @@ import {
 } from '../../../../../../src/features/loja';
 import { LojaPage } from '../../../../../../src/pages/aluno/loja/ui/LojaPage';
 import { useStudentCoinsStore } from '../../../../../../src/features/student-coins/model/useStudentCoinsStore';
+import { salvarAparenciaRemota } from '../../../../../../src/shared/avatar/avatarApi';
 
 jest.mock('../../../../../../src/app/providers/AuthProvider', () => ({
   useAuth: () => ({ user: { id: 'aluno-1' } }),
@@ -105,5 +106,51 @@ describe('LojaPage - itens novos do avatar', () => {
     }
 
     expect(comprarItemMock).toHaveBeenCalledTimes(4);
+  });
+
+  describe('pré-visualização no avatar', () => {
+    const CHAVE_AVATAR = 'anatoquizup:avatar:aluno-1';
+    const avatarSalvo = JSON.stringify({ corCerebro: 'azul', cabelo: 'loiro', acessorio: null, luva: null, calcado: null });
+
+    beforeEach(() => {
+      localStorage.clear();
+      localStorage.setItem(CHAVE_AVATAR, avatarSalvo);
+    });
+
+    it('mostra o item no avatar do aluno e, ao sair sem comprar, nada muda', async () => {
+      render(<LojaPage />);
+      await screen.findByText('Bota Coturno');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Pré-visualizar Bota Coturno' }));
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText('Como fica no seu avatar')).toBeInTheDocument();
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Como está agora' }));
+      expect(within(dialog).getByText('Seu avatar como está agora')).toBeInTheDocument();
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Sem compra, sem gasto e sem mudanca na aparencia salva (local ou remota).
+      expect(comprarItemMock).not.toHaveBeenCalled();
+      expect(useStudentCoinsStore.getState().saldoMoedas).toBe(1000);
+      expect(localStorage.getItem(CHAVE_AVATAR)).toBe(avatarSalvo);
+      expect(salvarAparenciaRemota).not.toHaveBeenCalled();
+      expect(within(screen.getByText('Bota Coturno').closest('article') as HTMLElement).getByRole('button', { name: 'Comprar' })).toBeInTheDocument();
+    });
+
+    it('ao reabrir, a prévia volta a mostrar o item', async () => {
+      render(<LojaPage />);
+      await screen.findByText('Bota Coturno');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Pré-visualizar Bota Coturno' }));
+      await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Como está agora' }));
+      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Pré-visualizar Bota Coturno' }));
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText('Como fica no seu avatar')).toBeInTheDocument();
+      expect(within(dialog).getByRole('button', { name: 'Com o item' })).toHaveAttribute('aria-pressed', 'true');
+    });
   });
 });
