@@ -21,7 +21,7 @@ const TIPOS_ITEM_AVATAR = new Set(['CABELO', 'ACESSORIO', 'LUVA', 'CALCADO']);
 const buscarItensAvatarDaLoja = async (): Promise<ItemLoja[]> => {
   const itens: ItemLoja[] = [];
   let pagina = 1;
-  let totalPaginas = 1;
+  let totalPaginas: number;
   do {
     const resposta = await listarCatalogo({ page: pagina, limit: 100 });
     itens.push(...resposta.dados);
